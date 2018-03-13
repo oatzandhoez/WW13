@@ -5,7 +5,7 @@
 		if(istype(loc,/turf))
 			I.throw_at(get_edge_target_turf(src,pick(alldirs)),rand(1,3),30)
 
-	for(var/obj/item/organ/external/E in src.organs)
+	for(var/obj/item/organ/external/E in organs)
 		E.droplimb(0,DROPLIMB_EDGE,1)
 
 	sleep(1)
@@ -30,9 +30,16 @@
 	else
 		..()
 
-/mob/living/carbon/human/death(gibbed)
+/mob/living/carbon/human/death(gibbed = FALSE)
 
 	if(stat == DEAD) return
+
+	if (original_job)
+		switch (original_job.base_type_flag())
+			if (GERMAN)
+				++battlereport.german_deaths_this_cycle
+			if (SOVIET)
+				++battlereport.soviet_deaths_this_cycle
 
 	BITSET(hud_updateflag, HEALTH_HUD)
 	BITSET(hud_updateflag, STATUS_HUD)
@@ -45,12 +52,15 @@
 
 	callHook("death", list(src, gibbed))
 
+	if(l_hand) unEquip(l_hand)
+	if(r_hand) unEquip(r_hand)
+
 	if(ticker && ticker.mode)
 
 		ticker.mode.check_win()
 
 	if (client)
-		client.next_normal_respawn = world.realtime + 3000
+		client.next_normal_respawn = world.realtime + (map ? map.respawn_delay : 3000)
 		client << "<span class = 'good'>You can respawn with the 'Respawn' verb in the IC tab.</span>"
 
 	. = ..(gibbed)//,species.death_message)
@@ -80,7 +90,7 @@
 	return
 
 /mob/living/carbon/human/proc/ChangeToSkeleton()
-	if(SKELETON in src.mutations)	return
+	if(SKELETON in mutations)	return
 
 	if(f_style)
 		f_style = "Shaved"

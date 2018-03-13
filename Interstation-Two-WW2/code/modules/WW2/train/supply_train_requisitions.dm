@@ -8,120 +8,6 @@
 
 	var/memo = ""
 
-	var/static/list/crate_types = list(
-
-		// AMMO AND MISC.
-		"Flammenwerfer Fuel Tanks" = /obj/structure/closet/crate/flammenwerfer_fueltanks,
-		"Vehicle Fuel Tanks" = /obj/structure/closet/crate/vehicle_fueltanks,
-		"Maxim Belts" = /obj/structure/closet/crate/maximbelt,
-		"Guaze" = /obj/structure/closet/crate/gauze,
-		"Luger Ammo" = /obj/structure/closet/crate/lugerammo,
-		"Kar Ammo" = /obj/structure/closet/crate/kar98kammo,
-		"Mp40 Ammo" = /obj/structure/closet/crate/mp40kammo,
-		"Mg34 Ammo" = /obj/structure/closet/crate/mg34ammo,
-		"Mp43 Ammo" = /obj/structure/closet/crate/mp43ammo,
-		"PTRD Ammo" = /obj/structure/closet/crate/ptrdammo,
-		"Mines Ammo" = /obj/structure/closet/crate/bettymines,
-		"Grenades" = /obj/structure/closet/crate/german_grenade,
-		"Panzerfausts" = /obj/structure/closet/crate/panzerfaust,
-		"Smoke Grenades" = /obj/structure/closet/crate/german_grenade, // too lazy to fix this typo rn
-		"Sandbags" = /obj/structure/closet/crate/sandbags,
-		"Flaregun Ammo" = /obj/structure/closet/crate/flares_ammo,
-		"Flares" = /obj/structure/closet/crate/flares,
-		"Bayonet" = /obj/structure/closet/crate/bayonets,
-		"Solid Rations" = /obj/structure/closet/crate/rations/german_solids,
-		"Liquid Rations" = /obj/structure/closet/crate/rations/german_liquids,
-		"Dessert Rations" = /obj/structure/closet/crate/rations/german_desserts,
-		"Water Rations" = /obj/structure/closet/crate/rations/water,
-		"Alcohol Rations" = /obj/structure/closet/crate/rations/german_alcohol,
-		"Supply Requisition Sheets" = /obj/structure/closet/crate/supply_req_sheets,
-
-		// MATERIALS
-		"Wood Planks" = /obj/structure/closet/crate/wood,
-		"Steel Sheets" = /obj/structure/closet/crate/steel,
-		"Iron Ingots" = /obj/structure/closet/crate/iron,
-
-		// GUNS & ARTILLERY
-		"PTRD" = /obj/item/weapon/gun/projectile/heavysniper/ptrd,
-		"Flammenwerfer" = /obj/item/weapon/storage/backpack/flammenwerfer,
-		"7,5 cm FK 18 Artillery Piece" = /obj/machinery/artillery,
-		"Luger Crate" = /obj/structure/closet/crate/lugers,
-
-		// ARTILLERY AMMO
-		"Artillery Ballistic Shells Crate" = /obj/structure/closet/crate/artillery,
-		"Artillery Gas Shells Crate" = /obj/structure/closet/crate/artillery_gas,
-
-		// CLOSETS
-		"Tool Closet" = /obj/structure/closet/toolcloset,
-
-		// MINES
-		"Betty Mines Crate" = /obj/structure/closet/crate/bettymines,
-
-		// ANIMAL CRATES
-		"German Shepherd Crate" = /obj/structure/largecrate/animal/dog/german,
-
-		// MEDICAL STUFF
-		"Medical Crate" = /obj/structure/closet/crate/medical
-
-	)
-
-	var/static/list/costs = list(
-
-		// AMMO AND MISC.
-		"Flammenwerfer Fuel Tanks" = 50,
-		"Vehicle Fuel Tanks" = 75,
-		"Maxim Belts" = 40,
-		"Guaze" = 35,
-		"Luger Ammo" = 30,
-		"Kar Ammo" = 35,
-		"Mp40 Ammo" = 40,
-		"Mg34 Ammo" = 40,
-		"Mp43 Ammo" = 40,
-		"PTRD Ammo" = 100,
-		"Mines Ammo" = 50,
-		"Grenades" = 65,
-		"Panzerfausts" = 60,
-		"Smoke Grenades" = 55, // too lazy to fix this typo rn
-		"Sandbags" = 20,
-		"Flaregun Ammo" = 15,
-		"Flares" = 10,
-		"Bayonet" = 10,
-		"Solid Rations" = 80,
-		"Liquid Rations" = 80,
-		"Dessert Rations" = 160,
-		"Water Rations" = 50,
-		"Alcohol Rations" = 75,
-		"Supply Requisition Sheets" = 10,
-
-		// MATERIALS
-		"Wood Planks" = 75,
-		"Steel Sheets" = 100,
-		"Iron Ingots" = 125,
-
-		// GUNS & ARTILLERY
-		"PTRD" = 200,
-		"Flammenwerfer" = 250,
-		"7,5 cm FK 18 Artillery Piece" = 300,
-		"Luger Crate" = 400,
-
-		// ARTILLERY AMMO
-		"Artillery Ballistic Shells Crate" = 100,
-		"Artillery Gas Shells Crate" = 200,
-
-		// CLOSETS
-		"Tool Closet" = 50,
-
-		// MINES
-		"Betty Mines Crate" = 200,
-
-		// ANIMAL CRATES
-		"German Shepherd Crate" = 150,
-
-		// MEDICAL STUFF
-		"Medical Crate" = 75
-
-	)
-
 /obj/item/weapon/paper/supply_train_requisitions_sheet/New()
 	..()
 	regenerate_info()
@@ -146,11 +32,11 @@
 			var/mob/living/carbon/human/H = user
 			if (!istype(H) || !H.original_job)
 				return
-			var/sign = input("Sign the [src.name]?") in list("Yes", "No")
+			var/sign = input("Sign the [name]?") in list("Yes", "No")
 			if (sign == "Yes")
 				if (do_after(H, 20, get_turf(H)))
 					if (loc == H)
-						visible_message("<span class = 'notice'>[H] signs [src.name].</span>")
+						visible_message("<span class = 'notice'>[H] signs [name].</span>")
 						signatures += "<i>[H.real_name] - [H.original_job.title]</i>"
 						regenerate_info()
 						show_content(H)
@@ -161,8 +47,8 @@
 	<b><big>CRATES</big></b><br><br>
 	"}
 
-	for (var/name in crate_types)
-		info_links += "[make_purchase_href_link(name)]<br> - [costs[name]] requisition points<br>"
+	for (var/name in german_supply_crate_types)
+		info_links += "[make_purchase_href_link(name)]<br> - [supply_crate_costs[name]] requisition points<br>"
 
 	info_links += "<br><br><b>Purchasing:</b><br><br>"
 
@@ -170,7 +56,7 @@
 
 	for (var/purchase in purchases)
 		info_links += "<i>[purchase]</i><br>"
-		total_cost += costs[purchase]
+		total_cost += supply_crate_costs[purchase]
 
 	if (purchases.len)
 		info_links += "<br><b>Total Cost:<b> [total_cost]<br>"
@@ -234,28 +120,32 @@
 	var/CO_sig = FALSE
 
 	for (var/signature in signatures)
-		if (findtext(signature, "Stabsgefreiter"))
+		if (findtext(signature, GERMAN_QM_TITLE))
 			QM_sig = TRUE
-		if (findtext(signature, "Stabsoffizier"))
+	//		log_debug("1")
+		if (findtext(signature, GERMAN_SO_TITLE))
 			SO_sig = TRUE
-		if (findtext(signature, "Oberleutnant"))
+	//		log_debug("2")
+		if (findtext(signature, GERMAN_CO_TITLE) || findtext(signature, GERMAN_XO_TITLE))
 			CO_sig = TRUE
+	//		log_debug("3")
 
 	if (!QM_sig && !SO_sig && !CO_sig)
 		memo = "<i>We didn't find any valid signatures, so your requisition has been rejected.</span><br>"
 		goto end
+	//else log_debug(":ok_hand:")
 
 	for (var/purchase in purchases)
-		var/cost = costs[purchase]
-		var/cratetype = crate_types[purchase]
+		var/cost = supply_crate_costs[purchase]
+		var/cratetype = german_supply_crate_types[purchase]
 		if (cost > train.supply_points)
 			memo = "<i>Unfortunately, you did not have enough supply points left to purchase the [purchase] crate, or any of the purchases listed after it.</i><br>"
 			break
 		create_crates += cratetype
 		train.supply_points -= cost
 
-	for (var/obj/train_car_center/tcc in train.train_car_centers)
-		for (var/obj/train_pseudoturf/tpt in tcc.forwards_pseudoturfs)
+	for (var/obj/train_car_center/tcc in train.reverse_train_car_centers)
+		for (var/obj/train_pseudoturf/tpt in tcc.backwards_pseudoturfs)
 			if (locate(/obj/train_decal/cargo/outline) in get_turf(tpt))
 				if (!locate(/obj/structure/closet/crate) in get_turf(tpt))
 					if (create_crates.len)
@@ -277,9 +167,9 @@
 	if (create_crates.len) // we didn't have enough space to send them all
 		memo = "<i><br>We didn't have enough space for the crates listed below, so you were reimbursed for their cost: </i><br><br>"
 		for (var/cratetype in create_crates)
-			for (var/cratename in crate_types)
-				if (crate_types[cratename] == cratetype)
-					var/cost = costs[cratename]
+			for (var/cratename in german_supply_crate_types)
+				if (german_supply_crate_types[cratename] == cratetype)
+					var/cost = supply_crate_costs[cratename]
 					train.supply_points += cost
 					memo += "<i>[cratename]</i><br>"
 

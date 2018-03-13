@@ -1,14 +1,14 @@
 // All mobs should have custom emote, really..
 //m_type == TRUE --> visual.
 //m_type == 2 --> audible
-/mob/proc/custom_emote(var/m_type=1,var/message = null)
+/mob/proc/custom_emote(var/m_type=1,var/message = null,var/span_class = null)
 
 	if(usr && stat || !use_me && usr == src)
 		if (usr.stat != DEAD && usr.stat != UNCONSCIOUS) // fixes spam when you die? - Kachnov
 			src << "You are unable to emote."
 		return
 
-	var/muzzled = istype(src.wear_mask, /obj/item/clothing/mask/muzzle) || istype(src.wear_mask, /obj/item/weapon/grenade)
+	var/muzzled = istype(wear_mask, /obj/item/clothing/mask/muzzle) || istype(wear_mask, /obj/item/weapon/grenade)
 	if(m_type == 2 && muzzled) return
 
 	var/input
@@ -17,10 +17,12 @@
 	else
 		input = message
 	if(input)
-		message = "<B>[src]</B> [input]"
+		message = "<b>[src]</b> [input]"
 	else
 		return
 
+	if (span_class)
+		message = "<span class = '[span_class]'>[message]</span>"
 
 	if (message)
 		log_emote("[name]/[key] : [message]")
@@ -72,7 +74,7 @@
 		src << "<span class='danger'>You have deadchat muted.</span>"
 		return
 
-	if(!src.client.holder)
+	if(!client.holder)
 		if(!config.dsay_allowed)
 			src << "<span class='danger'>Deadchat is globally muted.</span>"
 			return
@@ -85,5 +87,5 @@
 		input = message
 
 	if(input)
-		log_emote("Ghost/[src.key] : [input]")
+		log_emote("Ghost/[key] : [input]")
 		say_dead_direct(input, src)

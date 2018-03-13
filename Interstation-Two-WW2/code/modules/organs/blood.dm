@@ -55,6 +55,7 @@ var/const/BLOOD_VOLUME_SURVIVE = 40
 
 	//Bleeding out
 	var/blood_max = FALSE
+	var/bleeding_at_all = FALSE
 	for(var/obj/item/organ/external/temp in organs)
 		if(!(temp.status & ORGAN_BLEEDING))
 			continue
@@ -63,15 +64,20 @@ var/const/BLOOD_VOLUME_SURVIVE = 40
 				blood_max += (W.damage / 40 / BLEEDING_NERF)
 		if (temp.open)
 			blood_max += 2/SEVERE_BLEEDING_NERF  //Yer stomach is cut open
+		bleeding_at_all = TRUE
+
+	if (bleeding_at_all)
+		blood_max += 0.40
 
 	if (blood_max) // we're bleeding
 		drip(blood_max)
-	else // we're not bleeding, regenerate some blood (experimental) - kachnov
+
+	else // we're not bleeding, regenerate some blood (experimental) - Kachnov
 		for (var/datum/reagent/r in vessel.reagent_list)
 			if (istype(r, /datum/reagent/blood))
 				if (r.volume >= species.blood_volume)
 					return // we're full on blood.
-		vessel.add_reagent("blood", TRUE/(rand(1,3)))
+		vessel.add_reagent("blood", 1/(rand(1,3)))
 
 
 //Makes a blood drop, leaking amt units of blood from the mob
@@ -103,11 +109,11 @@ var/const/BLOOD_VOLUME_SURVIVE = 40
 	/*
 	if (!B.data["virus2"])
 		B.data["virus2"] = list()
-	B.data["virus2"] |= virus_copylist(src.virus2)
+	B.data["virus2"] |= virus_copylist(virus2)
 	*/
-	B.data["antibodies"] = src.antibodies
-	B.data["blood_DNA"] = copytext(src.dna.unique_enzymes,1,0)
-	B.data["blood_type"] = copytext(src.dna.b_type,1,0)
+	B.data["antibodies"] = antibodies
+	B.data["blood_DNA"] = copytext(dna.unique_enzymes,1,0)
+	B.data["blood_type"] = copytext(dna.b_type,1,0)
 
 	// Putting this here due to return shenanigans.
 	if(istype(src,/mob/living/carbon/human))
@@ -116,7 +122,7 @@ var/const/BLOOD_VOLUME_SURVIVE = 40
 		B.color = B.data["blood_colour"]
 
 	var/list/temp_chem = list()
-	for(var/datum/reagent/R in src.reagents.reagent_list)
+	for(var/datum/reagent/R in reagents.reagent_list)
 		temp_chem += R.id
 		temp_chem[R.id] = R.volume
 	B.data["trace_chem"] = list2params(temp_chem)
@@ -148,7 +154,7 @@ var/const/BLOOD_VOLUME_SURVIVE = 40
 	var/list/chems = list()
 	chems = params2list(injected.data["trace_chem"])
 	for(var/C in chems)
-		src.reagents.add_reagent(C, (text2num(chems[C]) / species.blood_volume) * amount)//adds trace chemicals to owner's blood
+		reagents.add_reagent(C, (text2num(chems[C]) / species.blood_volume) * amount)//adds trace chemicals to owner's blood
 	reagents.update_total()
 
 //Transfers blood from reagents to vessel, respecting blood types compatability.

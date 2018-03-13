@@ -329,9 +329,9 @@
 		var/msg = trim(replacetext(flavor_text, "\n", " "))
 		if(!msg) return ""
 		if(lentext(msg) <= 40)
-			return "\blue [msg]"
+			return "<span class = 'notice'>[msg]</span>"
 		else
-			return "\blue [copytext_preserve_html(msg, TRUE, 37)]... <a href='byond://?src=\ref[src];flavor_more=1'>More...</a>"
+			return "<span class = 'notice'>[copytext_preserve_html(msg, TRUE, 37)]... <a href='byond://?src=\ref[src];flavor_more=1'>More...</a></span>"
 
 /*
 /mob/verb/help()
@@ -347,23 +347,20 @@
 	if (!( config.abandon_allowed ))
 		usr << "<span class='notice'>Respawn is disabled.</span>"
 		return
+
 	if ((stat != DEAD || !( ticker )))
-		usr << "<span class='notice'><B>You must be dead to use this!</B></span>"
+		usr << "<span class='notice'><b>You must be dead to use this!</b></span>"
 		return
+
 	if (ticker.mode && ticker.mode.deny_respawn)
 		usr << "<span class='notice'>Respawn is disabled for this roundtype.</span>"
 		return
-
-	else if(!MayRespawn(1, config.respawn_delay))
-		if (config.respawn_delay != FALSE)
-			if(!check_rights(0, FALSE) || alert("Normal players must wait at least [config.respawn_delay] minutes to respawn! Would you?","Warning", "No", "Ok") != "Ok")
-				return
 
 	usr << "You can respawn now, enjoy your new life!"
 
 	log_game("[usr.name]/[usr.key] used abandon mob.")
 
-	usr << "<span class='notice'><B>Make sure to play a different character, and please roleplay correctly!</B></span>"
+	usr << "<span class='notice'><b>Make sure to play a different character, and please roleplay correctly!</b></span>"
 
 	if(!client)
 		log_game("[usr.key] AM failed due to disconnect.")
@@ -423,7 +420,7 @@
 	if(client.holder && (client.holder.rights & R_ADMIN))
 		is_admin = TRUE
 	else if(stat != DEAD || istype(src, /mob/new_player))
-		usr << "\blue You must be observing to use this!"
+		usr << "<span class = 'notice'>You must be observing to use this!</span>"
 		return
 
 	if(is_admin && stat == DEAD)
@@ -545,7 +542,7 @@
 
 /mob/proc/start_pulling(var/atom/movable/AM)
 
-	if ( !AM || !usr || src==AM || !isturf(src.loc) )	//if there's no person pulling OR the person is pulling themself OR the object being pulled is inside something: abort!
+	if ( !AM || !usr || src==AM || !isturf(loc) )	//if there's no person pulling OR the person is pulling themself OR the object being pulled is inside something: abort!
 		return
 
 	if (AM.anchored)
@@ -589,17 +586,17 @@
 		if(pulling_old == AM)
 			return
 
-	src.pulling = AM
+	pulling = AM
 	AM.pulledby = src
 
 	/*if(pullin)
 		pullin.icon_state = "pull1"*/
-
+/*
 	if(ishuman(AM))
 		var/mob/living/carbon/human/H = AM
 		if(H.pull_damage())
-			src << "\red <B>Pulling \the [H] in their current condition would probably be a bad idea.</B>"
-
+			src << "\red <b>Pulling \the [H] in their current condition would probably be a bad idea.</b>"
+*/
 	//Attempted fix for people flying away through space when cuffed and dragged.
 	if(ismob(AM))
 		var/mob/pulled = AM
@@ -640,11 +637,35 @@
 	. = (is_client_active(10 MINUTES))
 	if(.)
 		if(statpanel("Status") && ticker && ticker.current_state != GAME_STATE_PREGAME)
-			stat("People Online", clients.len)
-			stat("Round Duration", roundduration2text())
-			stat("Time of Day", time_of_day)
-			stat("Season", ticker.mode.season())
-			stat("Weather", ticker.mode.weather())
+			stat("Players Online (Playing, Observing, Lobby):", "[clients.len] ([human_clients_mob_list.len], [observer_mob_list.len], [new_player_mob_list.len])")
+			stat("Round Duration:", roundduration2text())
+
+			if (ticker && ticker.mode && ticker.mode.config_tag == "WW2")
+				var/datum/game_mode/ww2/mode = ticker.mode
+				stat("Current Round End Condition:", mode.current_stat_message())
+
+			if (map)
+				var/grace_period_string = ""
+				for (var/faction in map.faction_organization)
+					if (!list(GERMAN, SOVIET).Find(faction))
+						continue
+					if (grace_period_string)
+						grace_period_string += ", "
+					if (map.last_crossing_block_status[faction])
+						grace_period_string += "[faction_const2name(faction)] may cross"
+					else
+						grace_period_string += "[faction_const2name(faction)] may not cross"
+				stat("Grace Period Status:", grace_period_string)
+
+			stat("Map:", map.title)
+			stat("Season:", ticker.mode.season())
+			stat("Weather:", ticker.mode.weather())
+			stat("Time of Day:", time_of_day)
+
+			if (z == 2 && map && map.ID == "FOREST")
+				stat("Altitude:", paratrooper_plane_master.altitude)
+
+			stat("Time Dilation:", time_track ? "[ceil(time_track.dilation)]%" : "???")
 
 		if(client.holder)
 			if(statpanel("Status"))
@@ -719,8 +740,8 @@
 
 	if(lying)
 		density = FALSE
-		if(l_hand) unEquip(l_hand)
-		if(r_hand) unEquip(r_hand)
+	//	if(l_hand) unEquip(l_hand)
+	//	if(r_hand) unEquip(r_hand)
 	else
 		density = initial(density)
 
@@ -842,7 +863,7 @@ mob/proc/yank_out_object()
 		visible_message("<span class='warning'><b>[usr] rips [selection] out of [src]'s body.</b></span>","<span class='warning'><b>[usr] rips [selection] out of your body.</b></span>")
 	valid_objects = get_visible_implants(0)
 	if(valid_objects.len == TRUE) //Yanking out last object - removing verb.
-		src.verbs -= /mob/proc/yank_out_object
+		verbs -= /mob/proc/yank_out_object
 
 	if(ishuman(src))
 		var/mob/living/carbon/human/H = src
@@ -1009,26 +1030,26 @@ mob/proc/yank_out_object()
 //Throwing stuff
 
 /mob/proc/toggle_throw_mode()
-	if (src.in_throw_mode)
+	if (in_throw_mode)
 		throw_mode_off()
 	else
 		throw_mode_on()
 
 /mob/proc/throw_mode_off()
-	src.in_throw_mode = FALSE
-	/*for (var/obj/screen/HUDthrow/HUD in src.client.screen.)
+	in_throw_mode = FALSE
+	/*for (var/obj/screen/HUDthrow/HUD in client.screen.)
 		if(HUD.name == "throw") //in case we don't have the HUD and we use the hotkey
-			//src.throw_icon.icon_state = "act_throw_off"
+			//throw_icon.icon_state = "act_throw_off"
 			HUD.toggle_throw_mode()
 			break*/
 
 /mob/proc/throw_mode_on()
-	src.in_throw_mode = TRUE
-	/*if(src.throw_icon)
-		src.throw_icon.icon_state = "act_throw_on"*/
-	/*for (var/obj/screen/HUDthrow/HUD in src.client.screen.)
+	in_throw_mode = TRUE
+	/*if(throw_icon)
+		throw_icon.icon_state = "act_throw_on"*/
+	/*for (var/obj/screen/HUDthrow/HUD in client.screen.)
 		if(HUD.name == "throw") //in case we don't have the HUD and we use the hotkey
-			//src.throw_icon.icon_state = "act_throw_off"
+			//throw_icon.icon_state = "act_throw_off"
 			HUD.toggle_throw_mode()
 			break*/
 

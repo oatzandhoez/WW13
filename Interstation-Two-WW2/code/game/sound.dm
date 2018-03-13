@@ -54,15 +54,14 @@ var/list/ric_sound = list ('sound/weapons/guns/misc/ric1.ogg','sound/weapons/gun
 var/list/casing_sound = list ('sound/weapons/guns/misc/casingfall1.ogg','sound/weapons/guns/misc/casingfall2.ogg','sound/weapons/guns/misc/casingfall3.ogg')
 var/list/bullet_hit_object_sound = list('sound/weapons/guns/misc/bullethit.ogg')
 var/list/trauma_sound = list('sound/effects/gore/trauma1.ogg', 'sound/effects/gore/trauma2.ogg', 'sound/effects/gore/trauma3.ogg')
-var/list/erikafootsteps = list('sound/effects/footsteps/tile1.wav','sound/effects/footsteps/tile2.wav','sound/effects/footsteps/tile3.wav','sound/effects/footsteps/tile4.wav')
-var/list/grassfootsteps = list('sound/effects/footsteps/grass/grass1.wav','sound/effects/footsteps/grass/grass2.wav','sound/effects/footsteps/grass/grass3.wav','sound/effects/footsteps/grass/grass4.wav')
-var/list/dirtfootsteps = list('sound/effects/footsteps/dirt/dirt1.wav','sound/effects/footsteps/dirt/dirt2.wav','sound/effects/footsteps/dirt/dirt3.wav','sound/effects/footsteps/dirt/dirt4.wav')
-var/list/waterfootsteps = list('sound/effects/footsteps/water/slosh1.wav','sound/effects/footsteps/water/slosh2.wav','sound/effects/footsteps/water/slosh3.wav','sound/effects/footsteps/water/slosh4.wav')
+var/list/platingfootsteps = list('sound/effects/footsteps/plating/plating1.ogg','sound/effects/footsteps/plating/plating2.ogg','sound/effects/footsteps/plating/plating3.ogg','sound/effects/footsteps/plating/plating4.ogg')
+var/list/erikafootsteps = list('sound/effects/footsteps/tile1.ogg','sound/effects/footsteps/tile2.ogg','sound/effects/footsteps/tile3.ogg','sound/effects/footsteps/tile4.ogg')
+var/list/grassfootsteps = list('sound/effects/footsteps/grass/grass1.ogg','sound/effects/footsteps/grass/grass2.ogg','sound/effects/footsteps/grass/grass3.ogg','sound/effects/footsteps/grass/grass4.ogg')
+var/list/dirtfootsteps = list('sound/effects/footsteps/dirt/dirt1.ogg','sound/effects/footsteps/dirt/dirt2.ogg','sound/effects/footsteps/dirt/dirt3.ogg','sound/effects/footsteps/dirt/dirt4.ogg')
+var/list/waterfootsteps = list('sound/effects/footsteps/water/slosh1.ogg','sound/effects/footsteps/water/slosh2.ogg','sound/effects/footsteps/water/slosh3.ogg','sound/effects/footsteps/water/slosh4.ogg')
 var/list/sandfootsteps = list('sound/effects/footsteps/sand/sand_step1.ogg','sound/effects/footsteps/sand/sand_step2.ogg','sound/effects/footsteps/sand/sand_step3.ogg','sound/effects/footsteps/sand/sand_step4.ogg','sound/effects/footsteps/sand/sand_step5.ogg','sound/effects/footsteps/sand/sand_step6.ogg','sound/effects/footsteps/sand/sand_step7.ogg','sound/effects/footsteps/sand/sand_step8.ogg')
 var/list/woodfootsteps = list ('sound/effects/footsteps/wood/wood_step1.ogg','sound/effects/footsteps/wood/wood_step2.ogg','sound/effects/footsteps/wood/wood_step3.ogg','sound/effects/footsteps/wood/wood_step4.ogg','sound/effects/footsteps/wood/wood_step5.ogg','sound/effects/footsteps/wood/wood_step6.ogg','sound/effects/footsteps/wood/wood_step7.ogg','sound/effects/footsteps/wood/wood_step8.ogg')
 var/list/carpetfootsteps = list ('sound/effects/footsteps/carpet/carpet_step1.ogg','sound/effects/footsteps/carpet/carpet_step2.ogg','sound/effects/footsteps/carpet/carpet_step3.ogg','sound/effects/footsteps/carpet/carpet_step4.ogg','sound/effects/footsteps/carpet/carpet_step5.ogg','sound/effects/footsteps/carpet/carpet_step6.ogg','sound/effects/footsteps/carpet/carpet_step7.ogg','sound/effects/footsteps/carpet/carpet_step8.ogg')
-//var/list/gun_sound = list('sound/weapons/Gunshot.ogg', 'sound/weapons/Gunshot2.ogg','sound/weapons/Gunshot3.ogg','sound/weapons/Gunshot4.ogg')
-
 
 var/list/artillery_out = list( 'sound/weapons/WW2/new_exp_1.ogg', 'sound/weapons/WW2/new_exp_2.ogg', 'sound/weapons/WW2/new_exp_high_1.ogg', 'sound/weapons/WW2/new_exp_high_2.ogg', 'sound/weapons/WW2/new_exp_high_3.ogg')
 var/list/artillery_in = list( 'sound/weapons/WW2/new_artillery_incoming01.ogg', 'sound/weapons/WW2/new_artillery_incoming02.ogg', 'sound/weapons/WW2/new_artillery_incoming03.ogg', 'sound/weapons/WW2/new_artillery_incoming04.ogg', 'sound/weapons/WW2/new_artillery_incoming05.ogg', 'sound/weapons/WW2/new_artillery_incoming06.ogg')
@@ -71,6 +70,77 @@ var/list/artillery_in_distance = list( 'sound/weapons/WW2/explo_distant01.ogg', 
 
 var/list/train_movement_sounds = list( 'sound/effects/train/moving.ogg' )
 var/list/train_halting_sounds = list( 'sound/effects/train/halting.ogg' )
+
+var/list/wryyys = list('sound/voice/wryyy_1.ogg', 'sound/voice/wryyy_2.ogg',
+	'sound/voice/wryyy_3.ogg', 'sound/voice/wryyy_4.ogg',
+	'sound/voice/wryyy_5.ogg', 'sound/voice/wryyy_6.ogg')
+
+var/list/doorknock_sounds = list(
+	'sound/effects/doorknock1.ogg',
+	'sound/effects/doorknock2.ogg',
+	'sound/effects/doorknock3.ogg',
+	'sound/effects/doorknock4.ogg',
+	'sound/effects/doorknock5.ogg',
+	'sound/effects/doorknock6.ogg')
+
+// emote sounds from InterBay
+var/list/cough_sounds_male = list(
+	'sound/effects/emotes/male_cough1.ogg',
+	'sound/effects/emotes/male_cough2.ogg',
+	'sound/effects/emotes/male_cough3.ogg',
+	'sound/effects/emotes/male_cough4.ogg')
+
+var/list/cry_sounds_male = list(
+	'sound/effects/emotes/male_cry1.ogg',
+	'sound/effects/emotes/male_cry2.ogg')
+
+var/list/laugh_sounds_male = list(
+	'sound/effects/emotes/male_laugh1.ogg',
+	'sound/effects/emotes/male_laugh2.ogg',
+	'sound/effects/emotes/male_laugh3.ogg')
+
+var/list/yawn_sounds_male = list(
+	'sound/effects/emotes/male_yawn1.ogg',
+	'sound/effects/emotes/male_yawn2.ogg')
+
+var/list/sigh_sounds_male = list(
+	'sound/effects/emotes/male_sigh.ogg')
+
+var/list/sneeze_sounds_male = list(
+	'sound/effects/emotes/male_sneeze1.ogg',
+	'sound/effects/emotes/male_sneeze2.ogg')
+
+var/list/cough_sounds_female = list(
+	'sound/effects/emotes/female_cough1.ogg',
+	'sound/effects/emotes/female_cough2.ogg',
+	'sound/effects/emotes/female_cough3.ogg',
+	'sound/effects/emotes/female_cough4.ogg',
+	'sound/effects/emotes/female_cough5.ogg',
+	'sound/effects/emotes/female_cough6.ogg')
+
+var/list/cry_sounds_female = list(
+	'sound/effects/emotes/female_cry1.ogg',
+	'sound/effects/emotes/female_cry2.ogg')
+
+var/list/laugh_sounds_female = list(
+	'sound/effects/emotes/female_laugh1.ogg',
+	'sound/effects/emotes/female_laugh2.ogg',
+	'sound/effects/emotes/female_laugh3.ogg')
+
+var/list/yawn_sounds_female = list(
+	'sound/effects/emotes/female_yawn1.ogg',
+	'sound/effects/emotes/female_yawn2.ogg',
+	'sound/effects/emotes/female_yawn3.ogg')
+
+var/list/sigh_sounds_female = list(
+	'sound/effects/emotes/female_sigh.ogg')
+
+var/list/sneeze_sounds_female = list(
+	'sound/effects/emotes/female_sneeze1.ogg',
+	'sound/effects/emotes/female_sneeze2.ogg')
+
+// pain, etc sounds from Interbay
+
 
 /proc/playsound(var/atom/source, soundin, vol as num, vary, extrarange as num, falloff, var/is_global, var/list/excluded = list())
 
@@ -109,6 +179,8 @@ var/const/FALLOFF_SOUNDS = 0.5
 	if(!client || ear_deaf > FALSE)	return
 	soundin = get_sfx(soundin)
 
+	var/distance = -1
+
 	var/sound/S = sound(soundin)
 	S.wait = FALSE //No queue
 	S.channel = FALSE //Any channel
@@ -125,10 +197,10 @@ var/const/FALLOFF_SOUNDS = 0.5
 		var/turf/T = get_turf(src)
 
 		//sound volume falloff with distance
-		var/distance = get_dist(T, turf_source)
+		distance = get_dist(T, turf_source)
 
-		S.volume -= (max(distance - world.view, FALSE) * 2)//multiplicative falloff to add on top of natural audio falloff.
-		S.volume = max(S.volume, rand(5,9))
+		S.volume -= (max(distance - world.view, 0) * 2)//multiplicative falloff to add on top of natural audio falloff.
+		S.volume = max(S.volume, rand(8,12))
 
 		if (S.volume <= FALSE)
 			return	//no volume means no sound
@@ -162,19 +234,10 @@ var/const/FALLOFF_SOUNDS = 0.5
 			var/area/A = get_area(src)
 			S.environment = A.sound_env
 
+	if (distance > 30)
+		S.environment = UNDERWATER
+
 	src << S
-
-/client/proc/playsound_personal(var/soundin, var/_volume = 50)
-	soundin = get_sfx(soundin)
-	var/sound/S = sound(soundin)
-	src << sound(S, repeat = FALSE, wait = FALSE, volume = _volume, channel = TRUE)
-
-/client/proc/playtitlemusic()
-	if(!ticker || !ticker.login_music)	return
-	if(!istype(mob, /mob/new_player)) return
-	if(is_preference_enabled(/datum/client_preference/play_lobby_music))
-		src << sound(ticker.login_music, repeat = TRUE, wait = FALSE, volume = 85, channel = TRUE) // MAD JAMS
-		lobby_music_player.announce(src)
 
 /proc/get_rand_frequency()
 	return rand(32000, 55000) //Frequency stuff only works with 45kbps oggs.
@@ -199,6 +262,7 @@ var/const/FALLOFF_SOUNDS = 0.5
 			if ("casing_sound") soundin = pick(casing_sound)
 			if ("hitobject") soundin = pick(bullet_hit_object_sound)
 			if ("trauma") soundin = pick(trauma_sound)
+			if ("platingfootsteps") soundin = pick(platingfootsteps)
 			if ("erikafootsteps") soundin = pick(erikafootsteps)
 			if ("grassfootsteps") soundin = pick(grassfootsteps)
 			if ("dirtfootsteps") soundin = pick(dirtfootsteps)
@@ -212,5 +276,34 @@ var/const/FALLOFF_SOUNDS = 0.5
 			if ("artillery_in_distance") soundin = pick(artillery_in_distance)
 			if ("train_movement") soundin = pick(train_movement_sounds)
 			if ("train_halting") soundin = pick(train_halting_sounds)
-			//if ("gunshot") soundin = pick(gun_sound)
+			if ("wryyy") soundin = pick(wryyys)
+			if ("doorknock") soundin = pick(doorknock_sounds)
+
+			// emote sounds from InterBay
+			if ("cough_male")
+				soundin = pick(cough_sounds_male)
+			if ("cry_male")
+				soundin = pick(cry_sounds_male)
+			if ("laugh_male")
+				soundin = pick(laugh_sounds_male)
+			if ("yawn_male")
+				soundin = pick(yawn_sounds_male)
+			if ("sigh_male")
+				soundin = pick(sigh_sounds_male)
+			if ("sneeze_male")
+				soundin = pick(sneeze_sounds_male)
+
+			if ("cough_female")
+				soundin = pick(cough_sounds_female)
+			if ("cry_female")
+				soundin = pick(cry_sounds_female)
+			if ("laugh_female")
+				soundin = pick(laugh_sounds_female)
+			if ("yawn_female")
+				soundin = pick(yawn_sounds_female)
+			if ("sigh_female")
+				soundin = pick(sigh_sounds_female)
+			if ("sneeze_female")
+				soundin = pick(sneeze_sounds_female)
+
 	return soundin

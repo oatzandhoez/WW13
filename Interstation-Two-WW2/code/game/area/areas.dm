@@ -14,8 +14,8 @@ NOTE: there are two lists of areas in the end of this file: centcom and station 
 
 */
 
-#define AREA_INSIDE FALSE
-#define AREA_OUTSIDE TRUE
+#define AREA_INSIDE 0
+#define AREA_OUTSIDE 1
 
 /area
 	var/fire = null
@@ -58,6 +58,9 @@ NOTE: there are two lists of areas in the end of this file: centcom and station 
 	var/list/snowfall_valid_turfs = list()
 
 	var/is_train_area = FALSE
+
+	var/parent_area_type = null
+	var/area/parent_area = null
 
 /*Adding a wizard area teleport list because motherfucking lag -- Urist*/
 /*I am far too lazy to make it a proper list of areas so I'll just make it run the usual telepot routine at the start of the game*/
@@ -113,6 +116,10 @@ var/list/ghostteleportlocs = list()
 
 	update_snowfall_valid_turfs()
 
+	spawn (100)
+		if (parent_area_type)
+			parent_area = locate(parent_area_type)
+
 /area/proc/initialize()
 	if(config.machinery_does_not_use_power)
 		requires_power = FALSE
@@ -120,7 +127,7 @@ var/list/ghostteleportlocs = list()
 		power_light = FALSE
 		power_equip = FALSE
 		power_environ = FALSE
-	power_change()		// all machines set to current power level, also updates lighting icon
+//	power_change()		// all machines set to current power level, also updates lighting icon
 
 /area/proc/get_contents()
 	return contents
@@ -236,11 +243,12 @@ var/list/ghostteleportlocs = list()
 	return FALSE
 
 // called when power status changes
+/*
 /area/proc/power_change()
 	for(var/obj/machinery/M in src)	// for each machine in the area
 		M.power_change()			// reverify power status (to update icons etc.)
 	if (fire || eject)
-		updateicon()
+		updateicon()*/
 
 /area/proc/usage(var/chan)
 	var/used = FALSE

@@ -1,12 +1,13 @@
 //Updates the mob's health from organs and mob damage variables
 /mob/living/carbon/human/updatehealth()
 
-	next_calculate_tally = world.timeofday - 1
+	next_calculate_tally = world.time - 1
 
 	if(status_flags & GODMODE)
 		health = maxHealth
 		stat = CONSCIOUS
 		return
+
 	var/total_burn  = FALSE
 	var/total_brute = FALSE
 	for(var/obj/item/organ/external/O in organs)	//hardcoded to streamline things a bit
@@ -89,6 +90,10 @@
 
 /mob/living/carbon/human/adjustBruteLoss(var/amount)
 	amount = amount*species.brute_mod
+	if (ishuman(src))
+		var/mob/living/carbon/human/H = src
+		if (H.takes_less_damage)
+			amount /= H.getStatCoeff("strength")
 	if(amount > FALSE)
 		take_overall_damage(amount, FALSE)
 	else
@@ -97,6 +102,10 @@
 
 /mob/living/carbon/human/adjustFireLoss(var/amount)
 	amount = amount*species.burn_mod
+	if (ishuman(src))
+		var/mob/living/carbon/human/H = src
+		if (H.takes_less_damage)
+			amount /= H.getStatCoeff("strength")
 	if(amount > FALSE)
 		take_overall_damage(0, amount)
 	else
@@ -108,11 +117,11 @@
 	if (organ_name in organs_by_name)
 		var/obj/item/organ/external/O = get_organ(organ_name)
 
-		if(amount > FALSE)
-			O.take_damage(amount, FALSE, sharp=is_sharp(damage_source), edge=has_edge(damage_source), used_weapon=damage_source)
+		if(amount > 0)
+			O.take_damage(amount, 0, sharp=is_sharp(damage_source), edge=damage_source ? damage_source.edge : 0, used_weapon=damage_source)
 		else
 			//if you don't want to heal robot organs, they you will have to check that yourself before using this proc.
-			O.heal_damage(-amount, FALSE, internal=0, robo_repair=(O.status & ORGAN_ROBOT))
+			O.heal_damage(-amount, 0, internal=0, robo_repair=(O.status & ORGAN_ROBOT))
 
 	BITSET(hud_updateflag, HEALTH_HUD)
 
@@ -122,10 +131,10 @@
 		var/obj/item/organ/external/O = get_organ(organ_name)
 
 		if(amount > FALSE)
-			O.take_damage(0, amount, sharp=is_sharp(damage_source), edge=has_edge(damage_source), used_weapon=damage_source)
+			O.take_damage(amount, amount, sharp=is_sharp(damage_source), edge=damage_source ? damage_source.edge : 0, used_weapon=damage_source)
 		else
 			//if you don't want to heal robot organs, they you will have to check that yourself before using this proc.
-			O.heal_damage(0, -amount, internal=0, robo_repair=(O.status & ORGAN_ROBOT))
+			O.heal_damage(-amount, -amount, internal=0, robo_repair=(O.status & ORGAN_ROBOT))
 
 	BITSET(hud_updateflag, HEALTH_HUD)
 
@@ -135,6 +144,13 @@
 
 /mob/living/carbon/human/Weaken(amount)
 	if(HULK in mutations)	return
+	// 60% chance Vampires won't be affected; 96% Pillar Men won't be
+	if(takes_less_damage && prob(15 + ceil(getStatCoeff("strength") * 9)))
+		return
+	// failing that, addition 50%/77% chance to get less weakened
+	else if (prob(5 + ceil(getStatCoeff("strength") * 9)))
+		amount /= pick(2,3)
+
 	..()
 
 /mob/living/carbon/human/Paralyse(amount)

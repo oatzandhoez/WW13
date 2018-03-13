@@ -1,3 +1,8 @@
+#define GERMAN_CO_TITLE "Hauptmann"
+#define GERMAN_XO_TITLE "Oberleutnant"
+#define GERMAN_SO_TITLE "Leutnant"
+#define GERMAN_QM_TITLE "Frachtoffizier"
+
 /datum/job/german
 	faction = "Station"
 
@@ -6,26 +11,35 @@
 	H.real_name = H.name
 
 /datum/job/german/commander
-	title = "Oberleutnant"
-	en_meaning = "Commander"
-	total_positions = TRUE
+	title = GERMAN_CO_TITLE
+	en_meaning = "Company Commander"
+	rank_abbreviation = "hptm"
 	head_position = TRUE
 	selection_color = "#2d2d63"
 	spawn_location = "JoinLateHeerCO"
 	additional_languages = list( "Russian" = 100, "Ukrainian" = 50 )
 	is_officer = TRUE
 	is_commander = TRUE
-	absolute_limit = TRUE
 	whitelisted = TRUE
+
+	// AUTOBALANCE
+	min_positions = 1
+	max_positions = 1
 
 /datum/job/german/commander/equip(var/mob/living/carbon/human/H)
 	if(!H)	return FALSE
 	H.equip_to_slot_or_del(new /obj/item/clothing/shoes/swat(H), slot_shoes)
 	H.equip_to_slot_or_del(new /obj/item/clothing/under/geruni/gerofficer(H), slot_w_uniform)
 	H.equip_to_slot_or_del(new /obj/item/clothing/head/caphat/gerofficercap(H), slot_head)
-	H.equip_to_slot_or_del(new /obj/item/weapon/gun/projectile/pistol/luger(H), slot_belt)
+	if (istype(H, /mob/living/carbon/human/mechahitler))
+		H.equip_to_slot_or_del(new /obj/item/weapon/gun/projectile/pistol/luger/gibber(H), slot_belt)
+	else
+		H.equip_to_slot_or_del(new /obj/item/weapon/gun/projectile/pistol/luger(H), slot_belt)
 	H.equip_to_slot_or_del(new /obj/item/weapon/attachment/scope/adjustable/binoculars(H), slot_l_hand)
-	world << "<b><big>[H.client.prefs.german_name] is the [title] of the German forces!</big></b>"
+	spawn (5) // after we have our name
+		if (!istype(H, /mob/living/carbon/human/mechahitler))
+			if (!istype(get_area(H), /area/prishtina/admin))
+				world << "<b><big>[H.real_name] is the [title] of the German forces!</big></b>"
 	H << "<span class = 'notice'>You are the <b>[title]</b>, the highest ranking officer present. Your job is the organize the German forces and lead them to victory, while working alongside the <b>SS-Untersharffuhrer</b>. You take orders from the <b>German High Command</b>.</span>"
 	H.give_radio()
 	H.setStat("strength", STAT_MEDIUM_LOW)
@@ -37,13 +51,53 @@
 	H.setStat("medical", STAT_VERY_LOW)
 	return TRUE
 
-/datum/job/german/commander/update_character(var/mob/living/carbon/human/H)
-	..()
-	H.make_artillery_officer()
-
 /datum/job/german/commander/get_keys()
 	return list(new/obj/item/weapon/key/german, new/obj/item/weapon/key/german/soldat, new/obj/item/weapon/key/german/medic, new/obj/item/weapon/key/german/engineer,
 		new/obj/item/weapon/key/german/QM, new/obj/item/weapon/key/german/command_intermediate, new/obj/item/weapon/key/german/command_high, new/obj/item/weapon/key/german/train, new/obj/item/weapon/key/german/SS)
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/datum/job/german/XO
+	title = GERMAN_XO_TITLE
+	en_meaning = "Company XO"
+	rank_abbreviation = "olt"
+	head_position = FALSE
+	selection_color = "#2d2d63"
+	spawn_location = "JoinLateHeerXO"
+	additional_languages = list( "Russian" = 100, "Ukrainian" = 50 )
+	is_officer = TRUE
+
+	// AUTOBALANCE
+	min_positions = 1
+	max_positions = 1
+	player_threshold = PLAYER_THRESHOLD_MEDIUM
+
+/datum/job/german/XO/equip(var/mob/living/carbon/human/H)
+	if(!H)	return FALSE
+	H.equip_to_slot_or_del(new /obj/item/clothing/shoes/swat(H), slot_shoes)
+	H.equip_to_slot_or_del(new /obj/item/clothing/under/geruni/gerofficer(H), slot_w_uniform)
+	H.equip_to_slot_or_del(new /obj/item/clothing/head/caphat/gerofficercap(H), slot_head)
+	H.equip_to_slot_or_del(new /obj/item/weapon/gun/projectile/pistol/luger(H), slot_belt)
+	H.equip_to_slot_or_del(new /obj/item/weapon/attachment/scope/adjustable/binoculars(H), slot_l_hand)
+	H << "<span class = 'notice'>You are the <b>[title]</b>, the XO of the German forces. Your job is to take orders from the <b>Hauptmann</b> and coordinate with squad leaders.</span>"
+	H.give_radio()
+	H.setStat("strength", STAT_MEDIUM_LOW)
+	H.setStat("engineering", STAT_VERY_LOW)
+	H.setStat("rifle", STAT_LOW)
+	H.setStat("mg", STAT_MEDIUM_LOW)
+	H.setStat("pistol", STAT_NORMAL)
+	H.setStat("heavyweapon", STAT_NORMAL)
+	H.setStat("medical", STAT_VERY_LOW)
+	return TRUE
+
+/datum/job/german/XO/get_keys()
+	return list(new/obj/item/weapon/key/german, new/obj/item/weapon/key/german/soldat, new/obj/item/weapon/key/german/medic, new/obj/item/weapon/key/german/engineer,
+		new/obj/item/weapon/key/german/QM, new/obj/item/weapon/key/german/command_intermediate, new/obj/item/weapon/key/german/command_high, new/obj/item/weapon/key/german/train, new/obj/item/weapon/key/german/SS)
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -51,15 +105,20 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /datum/job/german/staff_officer
-	title = "Stabsoffizier"
-	en_meaning = "Staff Officer"
-	total_positions = 2
+	title = GERMAN_SO_TITLE
+	en_meaning = "Platoon Officer"
+	rank_abbreviation = "lt"
 	head_position = FALSE
 	selection_color = "#2d2d63"
 	spawn_location = "JoinLateHeerSO"
 	additional_languages = list( "Russian" = 100, "Ukrainian" = 50 )
 	is_officer = TRUE
-	absolute_limit = 3
+
+	// AUTOBALANCE
+	min_positions = 1
+	max_positions = 2
+	player_threshold = PLAYER_THRESHOLD_HIGH
+	scale_to_players = PLAYER_THRESHOLD_HIGHEST
 
 /datum/job/german/staff_officer/equip(var/mob/living/carbon/human/H)
 	if(!H)	return FALSE
@@ -68,7 +127,7 @@
 	H.equip_to_slot_or_del(new /obj/item/clothing/head/caphat/gerofficercap(H), slot_head)
 	H.equip_to_slot_or_del(new /obj/item/weapon/gun/projectile/pistol/luger(H), slot_belt)
 	H.equip_to_slot_or_del(new /obj/item/weapon/attachment/scope/adjustable/binoculars(H), slot_l_hand)
-	H << "<span class = 'notice'>You are the <b>[title]</b>, one of the vice-commanders of the German forces. Your job is to take orders from the <b>Feldwebel</b> and coordinate with squad leaders.</span>"
+	H << "<span class = 'notice'>You are the <b>[title]</b>, one of the vice-commanders of the German forces. Your job is to take orders from the <b>Hauptmann</b> and coordinate with squad leaders.</span>"
 	H.give_radio()
 	H.setStat("strength", STAT_MEDIUM_LOW)
 	H.setStat("engineering", STAT_VERY_LOW)
@@ -94,13 +153,18 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /datum/job/german/MP
 	title = "Militärpolizei"
-	en_meaning = "Military Police Officer"
-	total_positions = 2
+	en_meaning = "MPO"
+	rank_abbreviation = "uffz"
 	selection_color = "#2d2d63"
-	spawn_location = "JoinLateHeer"
+	spawn_location = "JoinLateHeerMP"
 	additional_languages = list( "Russian" = 100, "Ukrainian" = 33 )
-	absolute_limit = 3
 	is_officer = TRUE
+
+	// AUTOBALANCE
+	min_positions = 1
+	max_positions = 3
+	player_threshold = PLAYER_THRESHOLD_LOW
+	scale_to_players = PLAYER_THRESHOLD_HIGHEST
 
 /datum/job/german/MP/equip(var/mob/living/carbon/human/H)
 	if(!H)	return FALSE
@@ -130,14 +194,19 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /datum/job/german/squad_leader
 	title = "Gruppenfuhrer"
-	en_meaning = "Squad Leader"
-	total_positions = 4
+	en_meaning = "Platoon 2IC"
+	rank_abbreviation = "uffz"
 	head_position = FALSE
 	selection_color = "#4c4ca5"
 	spawn_location = "JoinLateHeerSL"
 	additional_languages = list( "Russian" = 33 )
 	is_officer = TRUE
 	is_squad_leader = TRUE
+	SL_check_independent = TRUE
+
+	// AUTOBALANCE
+	min_positions = 4
+	max_positions = 4
 
 /datum/job/german/squad_leader/equip(var/mob/living/carbon/human/H)
 	if(!H)	return FALSE
@@ -146,8 +215,8 @@
 	H.equip_to_slot_or_del(new /obj/item/clothing/under/geruni/gerofficer(H), slot_w_uniform)
 	H.equip_to_slot_or_del(new /obj/item/clothing/head/caphat/gerofficercap(H), slot_head)
 	H.equip_to_slot_or_del(new /obj/item/weapon/gun/projectile/automatic/mp40(H), slot_back)
-	H.equip_to_slot_or_del(new /obj/item/weapon/attachment/scope/adjustable/binoculars(H), slot_l_hand)
-	H << "<span class = 'notice'>You are the <b>[title]</b>. Your job is to lead offensive units of the German force according to the <b>Feldwebel</b>'s and <b>Stabsoffizier</b>en's orders.</span>"
+	H.equip_to_slot_or_del(new /obj/item/weapon/attachment/scope/adjustable/binoculars(H), slot_belt)
+	H << "<span class = 'notice'>You are the <b>[title]</b>. Your job is to lead offensive units of the German force according to the <b>Hauptmann</b>'s and <b>Stabsoffizier</b>en's orders.</span>"
 	H.give_radio()
 	H.setStat("strength", STAT_NORMAL)
 	H.setStat("engineering", STAT_LOW)
@@ -171,11 +240,17 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /datum/job/german/medic
-	title = "Feldarzt"
-	en_meaning = "Medic"
-	total_positions = 5
+	title = "Sanitäter"
+	en_meaning = "Field Medic"
+	rank_abbreviation = "oGftr"
 	selection_color = "#4c4ca5"
 	spawn_location = "JoinLateHeer"
+
+	// AUTOBALANCE
+	min_positions = 1
+	max_positions = 5
+	player_threshold = PLAYER_THRESHOLD_LOW
+	scale_to_players = PLAYER_THRESHOLD_HIGHEST
 
 /datum/job/german/medic/equip(var/mob/living/carbon/human/H)
 	if(!H)	return FALSE
@@ -203,11 +278,17 @@
 /datum/job/german/doctor
 	title = "Medizinier"
 	en_meaning = "Doctor"
-	total_positions = 3
+	rank_abbreviation = "uffz"
 	selection_color = "#4c4ca5"
 	spawn_location = "JoinLateHeerDr"
 	is_nonmilitary = TRUE
 	additional_languages = list( "Russian" = 100, "Ukrainian" = 50 )
+	SL_check_independent = TRUE
+
+	// AUTOBALANCE
+	min_positions = 1
+	max_positions = 3
+	scale_to_players = PLAYER_THRESHOLD_HIGHEST
 
 /datum/job/german/doctor/equip(var/mob/living/carbon/human/H)
 	if(!H)	return FALSE
@@ -232,7 +313,7 @@
 	return TRUE
 
 /datum/job/german/doctor/get_keys()
-	return list(new/obj/item/weapon/key/german, new/obj/item/weapon/key/german/medic, new/obj/item/weapon/key/german/command_intermediate)
+	return list(new/obj/item/weapon/key/german, new/obj/item/weapon/key/german/medic)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -243,11 +324,15 @@
 /datum/job/german/flamethrower_man
 	title = "Flammenwerfersoldat"
 	en_meaning = "Flamethrower Soldier"
-	total_positions = 3
+	rank_abbreviation = "gftr"
 	selection_color = "#4c4ca5"
 	spawn_location = "JoinLateHeer"
-	is_primary = FALSE
-	is_secondary = TRUE
+
+	// AUTOBALANCE
+	min_positions = 1
+	max_positions = 2
+	player_threshold = PLAYER_THRESHOLD_MEDIUM
+	scale_to_players = PLAYER_THRESHOLD_HIGHEST
 
 /datum/job/german/flamethrower_man/equip(var/mob/living/carbon/human/H)
 	if(!H)	return FALSE
@@ -277,13 +362,17 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /datum/job/german/sniper
-	title = "Sharfshutze"
+	title = "Scharfschütze"
 	en_meaning = "Sniper"
-	total_positions = 3
+	rank_abbreviation = "gftr"
 	selection_color = "#4c4ca5"
 	spawn_location = "JoinLateHeer"
-	is_primary = FALSE
-	is_secondary = TRUE
+
+	// AUTOBALANCE
+	min_positions = 1
+	max_positions = 4
+	player_threshold = PLAYER_THRESHOLD_MEDIUM
+	scale_to_players = PLAYER_THRESHOLD_HIGHEST
 
 /datum/job/german/sniper/equip(var/mob/living/carbon/human/H)
 	if(!H)	return FALSE
@@ -315,9 +404,15 @@
 /datum/job/german/engineer
 	title = "Pionier"
 	en_meaning = "Engineer"
-	total_positions = 3
+	rank_abbreviation = "gftr"
 	selection_color = "#4c4ca5"
 	spawn_location = "JoinLateHeer"
+
+	// AUTOBALANCE
+	min_positions = 1
+	max_positions = 4
+	player_threshold = PLAYER_THRESHOLD_LOW
+	scale_to_players = PLAYER_THRESHOLD_HIGHEST
 
 /datum/job/german/engineer/equip(var/mob/living/carbon/human/H)
 	if(!H)	return FALSE
@@ -349,13 +444,17 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /datum/job/german/heavy_weapon
-	title = "Machinegewehrschutze"
+	title = "Maschinengewehrschütze"
 	en_meaning = "Heavy Weapons Soldier"
-	total_positions = 2
+	rank_abbreviation = "oGftr"
 	selection_color = "#4c4ca5"
 	spawn_location = "JoinLateHeer"
-	is_primary = FALSE
-	is_secondary = TRUE
+
+	// AUTOBALANCE
+	min_positions = 1
+	max_positions = 3
+	player_threshold = PLAYER_THRESHOLD_LOW
+	scale_to_players = PLAYER_THRESHOLD_HIGHEST
 
 /datum/job/german/heavy_weapon/equip(var/mob/living/carbon/human/H)
 	if(!H)	return FALSE
@@ -363,8 +462,8 @@
 	H.equip_to_slot_or_del(new /obj/item/clothing/shoes/swat(H), slot_shoes)
 	H.equip_to_slot_or_del(new /obj/item/clothing/under/geruni(H), slot_w_uniform)
 	H.equip_to_slot_or_del(new /obj/item/clothing/head/helmet/tactical/gerhelm(H), slot_head)
-	H.equip_to_slot_or_del(new /obj/item/weapon/gun/projectile/automatic/l6_saw(H), slot_r_hand)
-	H.equip_to_slot_or_del(new /obj/item/weapon/storage/backpack/german(H), slot_l_hand)
+	H.equip_to_slot_or_del(new /obj/item/weapon/gun/projectile/automatic/mg34(H), slot_r_hand)
+	H.equip_to_slot_or_del(new /obj/item/weapon/storage/backpack/german(H), slot_back)
 	H << "<span class = 'notice'>You are the <b>[title]</b>, a heavy weapons unit. Your job is to assist normal <b>Soldat</b>en in front line combat.</span>"
 	H.give_radio()
 	H.setStat("strength", STAT_VERY_HIGH)
@@ -387,10 +486,15 @@
 /datum/job/german/soldier
 	title = "Soldat"
 	en_meaning = "Infantry Soldier"
-	total_positions = 200 // this was causing an error with latejoin spawning
+	rank_abbreviation = "schtz"
 	selection_color = "#4c4ca5"
 	spawn_location = "JoinLateHeer"
 	allow_spies = TRUE
+
+	// AUTOBALANCE
+	min_positions = 5
+	max_positions = 12
+	scale_to_players = PLAYER_THRESHOLD_HIGHEST
 
 /datum/job/german/soldier/equip(var/mob/living/carbon/human/H)
 	if(!H)	return FALSE
@@ -398,7 +502,7 @@
 	H.equip_to_slot_or_del(new /obj/item/clothing/shoes/swat(H), slot_shoes)
 	H.equip_to_slot_or_del(new /obj/item/clothing/under/geruni(H), slot_w_uniform)
 	H.equip_to_slot_or_del(new /obj/item/clothing/head/helmet/tactical/gerhelm(H), slot_head)
-	H.equip_to_slot_or_del(new /obj/item/weapon/shovel/spade/russia(H), slot_belt)
+	H.equip_to_slot_or_del(new /obj/item/weapon/storage/belt/german_basic/soldier(H), slot_belt)
 	H.equip_to_slot_or_del(new /obj/item/weapon/gun/projectile/boltaction/kar98k(H), slot_back)
 	H << "<span class = 'notice'>You are the <b>[title]</b>, a normal infantry unit. Your job is to participate in front line combat.</span>"
 	H.give_radio()
@@ -419,10 +523,10 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/datum/job/german/dogmaster
+/*/datum/job/german/dogmaster
 	title = "Hunden Trainer"
 	en_meaning = "Dog Trainer"
-	total_positions = 50
+	rank_abbreviation = "gftr"
 	selection_color = "#4c4ca5"
 	spawn_location = "JoinLateHeer"
 	allow_spies = TRUE
@@ -439,8 +543,8 @@
 
 	H.add_memory("As a Hunden Trainer, you have access to a number of dog commands. To use them, simply shout! them near a dog which belongs to your faction. These are listed below:")
 	H.add_memory("")
-	H.add_memory("defend! - attack armed enemies.")
-	H.add_memory("attack! - attack armed or unarmed enemies.")
+	H.add_memory("attack! - attack armed enemies.")
+	H.add_memory("kill! - kill armed or unarmed enemies.")
 	H.add_memory("guard! - attack enemies who come near us.")
 	H.add_memory("patrol! - start patrolling.")
 	H.add_memory("stop patrolling! - stop patrolling.")
@@ -448,9 +552,11 @@
 	H.add_memory("stop everything! - stop patrolling and be passive.")
 	H.add_memory("follow! - follow me.")
 	H.add_memory("stop following! - stop following whoever you're following.")
+	H.add_memory("prioritize {following/attacking}! - tells the dog if it should stop following you when it finds a target to attack.")
 	H.add_memory("")
 	H.add_memory("Some commands overlap. There are three categories of commands: attack modes, patrol modes, and follow modes. Each type of command can be used in tandem with commands of the other types.")
 	H.add_memory("")
+	H.memory()
 	H.give_radio()
 	H.setStat("strength", STAT_MEDIUM_LOW)
 	H.setStat("engineering", STAT_MEDIUM_LOW)
@@ -463,7 +569,7 @@
 
 /datum/job/german/dogmaster/get_keys()
 	return list(new/obj/item/weapon/key/german, new/obj/item/weapon/key/german/soldat)
-
+*/
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -473,13 +579,15 @@
 /datum/job/german/tankcrew
 	title = "Panzerbesatzung"
 	en_meaning = "Tank Crewman"
-	total_positions = 4
+	rank_abbreviation = "gftr"
 	selection_color = "#4c4ca5"
 	spawn_location = "JoinLateHeer"
-	is_primary = FALSE
-	is_secondary = TRUE
-	absolute_limit = 4
 	is_tankuser = TRUE
+
+	// AUTOBALANCE
+	min_positions = 2
+	max_positions = 2
+	player_threshold = PLAYER_THRESHOLD_MEDIUM
 
 /datum/job/german/tankcrew/equip(var/mob/living/carbon/human/H)
 	if(!H)	return FALSE
@@ -510,12 +618,14 @@
 /datum/job/german/anti_tank_crew
 	title = "Panzer-Soldat"
 	en_meaning = "Anti Tank Soldier"
-	total_positions = 4
+	rank_abbreviation = "schtz"
 	selection_color = "#4c4ca5"
 	spawn_location = "JoinLateHeer"
-	is_primary = FALSE
-	is_secondary = TRUE
-	absolute_limit = 4
+
+	// AUTOBALANCE
+	min_positions = 2
+	max_positions = 2
+	player_threshold = PLAYER_THRESHOLD_MEDIUM
 
 /datum/job/german/anti_tank_crew/equip(var/mob/living/carbon/human/H)
 	if(!H)	return FALSE
@@ -525,6 +635,7 @@
 	H.equip_to_slot_or_del(new /obj/item/clothing/head/helmet/tactical/gerhelm(H), slot_head)
 	H.equip_to_slot_or_del(new /obj/item/weapon/gun/projectile/heavysniper/ptrd(H), slot_back)
 	H.equip_to_slot_or_del(new /obj/item/weapon/storage/belt/german/anti_tank_crew, slot_belt)
+	H.equip_to_slot_or_del(new /obj/item/weapon/gun/projectile/pistol/luger(H), slot_r_store)
 	H << "<span class = 'notice'>You are the <b>[title]</b>, an anti-tank infantry unit. Your job is to destroy enemy tanks.</span>"
 	H.give_radio()
 	H.setStat("strength", STAT_NORMAL)
@@ -542,20 +653,26 @@
 var/first_fallschirm = TRUE
 
 /datum/job/german/paratrooper
-	title = "Fallschirmjager"
+	title = "Fallschirmjäger"
 	en_meaning = "Paratrooper"
-	total_positions = 7
+	rank_abbreviation = "schtz"
 	selection_color = "#4c4ca5"
 	spawn_location = "Fallschirm"
-	additional_languages = list( "Russian" = 100 )
-	spawn_delay = 3000
-	delayed_spawn_message = "<span class = 'danger'><big>You are parachuting behind Russian lines. You won't spawn until 5 minutes.</big></span>"
+	additional_languages = list( "Russian" = 100, "Ukrainian" = 100 )
+//	spawn_delay = 3000
+//	delayed_spawn_message = "<span class = 'danger'><big>You are parachuting behind Russian lines. You won't spawn for 5 minutes.</big></span>"
 	is_paratrooper = TRUE
 	var/fallschirm_spawnzone = null
 	var/list/fallschirm_spawnpoints = list()
 
+	// AUTOBALANCE
+	min_positions = 3
+	max_positions = 8
+	player_threshold = PLAYER_THRESHOLD_HIGH
+	scale_to_players = PLAYER_THRESHOLD_HIGHEST + 10
+
 /datum/job/german/paratrooper/equip(var/mob/living/carbon/human/H)
-	spawn_delay = config.paratrooper_drop_time
+//	spawn_delay = config.paratrooper_drop_time
 
 	if(!H)	return FALSE
 
@@ -593,6 +710,7 @@ var/first_fallschirm = TRUE
 		H.loc = pick(fallschirm_spawnpoints)
 
 	H << "<span class = 'notice'>You are the <b>[title]</b>, a paratrooper. Your job is to help any other units that need assistance.</span>"
+	H << "<big><span class = 'red'>The Plane's current altitude is [paratrooper_plane_master.altitude]m. It is lethal to jump until it has descended to [paratrooper_plane_master.first_nonlethal_altitude]m."
 	H.give_radio()
 	// Paratroopers are elite so they have very nicu stats - Kachnov
 	H.setStat("strength", STAT_MEDIUM_HIGH)
@@ -612,18 +730,22 @@ var/first_fallschirm = TRUE
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/datum/job/german/stabsgefreiter
-	title = "Stabsgefreiter"
+/datum/job/german/QM
+	title = GERMAN_QM_TITLE
 	en_meaning = "Quartermaster"
-	total_positions = TRUE
+	rank_abbreviation = "uffz"
 	selection_color = "#4c4ca5"
 	spawn_location = "JoinLateHeerQM"
-
 	additional_languages = list( "Russian" = 100 )
 	is_officer = TRUE
-	absolute_limit = TRUE
+	SL_check_independent = TRUE
 
-/datum/job/german/stabsgefreiter/equip(var/mob/living/carbon/human/H)
+	// AUTOBALANCE
+	min_positions = 1
+	max_positions = 1
+	player_threshold = PLAYER_THRESHOLD_LOW
+
+/datum/job/german/QM/equip(var/mob/living/carbon/human/H)
 	if(!H)	return FALSE
 
 	H.equip_to_slot_or_del(new /obj/item/clothing/head/caphat/gercap/fieldcap(H), slot_head)
@@ -641,8 +763,8 @@ var/first_fallschirm = TRUE
 	H.setStat("medical", STAT_VERY_LOW)
 	return TRUE
 
-/datum/job/german/stabsgefreiter/get_keys()
-	return list(new/obj/item/weapon/key/german, new/obj/item/weapon/key/german/soldat, new/obj/item/weapon/key/german/QM, new/obj/item/weapon/key/german/command_intermediate)
+/datum/job/german/QM/get_keys()
+	return list(new/obj/item/weapon/key/german, new/obj/item/weapon/key/german/soldat, new/obj/item/weapon/key/german/QM, new/obj/item/weapon/key/german/command_intermediate, new/obj/item/weapon/key/german/engineer)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -652,11 +774,15 @@ var/first_fallschirm = TRUE
 /datum/job/german/artyman
 	title = "Kanonier"
 	en_meaning = "Artillery Officer"
-	total_positions = 2
+	rank_abbreviation = "uffz"
 	selection_color = "#4c4ca5"
 	spawn_location = "JoinLateHeerSO"
 	is_officer = TRUE
-	absolute_limit = 2
+
+	// AUTOBALANCE
+	min_positions = 1
+	max_positions = 1
+	player_threshold = PLAYER_THRESHOLD_HIGH
 
 /datum/job/german/artyman/equip(var/mob/living/carbon/human/H)
 	if(!H)	return FALSE
@@ -664,10 +790,10 @@ var/first_fallschirm = TRUE
 	H.equip_to_slot_or_del(new /obj/item/clothing/shoes/swat(H), slot_shoes)
 	H.equip_to_slot_or_del(new /obj/item/clothing/under/geruni(H), slot_w_uniform)
 	H.equip_to_slot_or_del(new /obj/item/clothing/head/caphat/gercap/fieldcap(H), slot_head)
-	H.equip_to_slot_or_del(new /obj/item/weapon/gun/projectile/boltaction/kar98k(H), slot_back)
+	H.equip_to_slot_or_del(new /obj/item/weapon/gun/projectile/automatic/mp40(H), slot_back)
 	H.equip_to_slot_or_del(new /obj/item/weapon/wrench(H), slot_l_hand)
-	H.equip_to_slot_or_del(new /obj/item/weapon/attachment/scope/adjustable/binoculars(H), slot_r_hand)
-	H << "<span class = 'notice'>You are the <b>[title]</b>, an artillery officer. Your job is to bomb the shit out of the enemy.</span>"
+	H.equip_to_slot_or_del(new /obj/item/weapon/attachment/scope/adjustable/binoculars(H), slot_belt)
+	H << "<span class = 'notice'>You are the <b>[title]</b>, an artillery officer. Your job is to obliterate the enemy with HE and gas shell attacks.</span>"
 	H.give_radio()
 	H.setStat("strength", STAT_MEDIUM_HIGH)
 	H.setStat("engineering", STAT_MEDIUM_LOW)
@@ -683,10 +809,6 @@ var/first_fallschirm = TRUE
 
 	H.make_artillery_officer()
 
-
-	if (istype(H.languages[1], /datum/language/common))
-		H.languages[1] = null
-
 /datum/job/german/artyman/get_keys()
 	return list(new/obj/item/weapon/key/german, new/obj/item/weapon/key/german/soldat, new/obj/item/weapon/key/german/command_intermediate)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -696,11 +818,16 @@ var/first_fallschirm = TRUE
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /datum/job/german/scout
-	title = "Aufklartrupp"
+	title = "Aufklärtrupp"
 	en_meaning = "Scout"
-	total_positions = 2
+	rank_abbreviation = "schtz"
 	selection_color = "#4c4ca5"
 	spawn_location = "JoinLateHeer"
+
+	// AUTOBALANCE
+	min_positions = 1
+	max_positions = 1
+	player_threshold = PLAYER_THRESHOLD_HIGH
 
 /datum/job/german/scout/equip(var/mob/living/carbon/human/H)
 	if(!H)	return FALSE
@@ -709,7 +836,7 @@ var/first_fallschirm = TRUE
 	H.equip_to_slot_or_del(new /obj/item/clothing/under/geruni(H), slot_w_uniform)
 	H.equip_to_slot_or_del(new /obj/item/clothing/head/helmet/tactical/gerhelm(H), slot_head)
 	H.equip_to_slot_or_del(new /obj/item/weapon/gun/projectile/boltaction/kar98k(H), slot_back)
-	H.equip_to_slot_or_del(new /obj/item/weapon/attachment/scope/adjustable/binoculars(H), slot_l_hand)
+	H.equip_to_slot_or_del(new /obj/item/weapon/attachment/scope/adjustable/binoculars(H), slot_belt)
 	H << "<span class = 'notice'>You are the <b>[title]</b>, a scout. Your job is to assist the <b>Kanonier</b> by getting coordinates.</span>"
 	H.give_radio()
 	H.setStat("strength", STAT_NORMAL)
@@ -726,9 +853,6 @@ var/first_fallschirm = TRUE
 
 	H.make_artillery_scout()
 
-	if (istype(H.languages[1], /datum/language/common))
-		H.languages[1] = null
-
 /datum/job/german/scout/get_keys()
 	return list(new/obj/item/weapon/key/german, new/obj/item/weapon/key/german/soldat)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -740,11 +864,15 @@ var/first_fallschirm = TRUE
 /datum/job/german/conductor
 	title = "Dirigent"
 	en_meaning = "Train Conductor"
-	total_positions = 2
+	rank_abbreviation = "uffz"
 	selection_color = "#4c4ca5"
 	spawn_location = "JoinLateHeerSO"
 	is_officer = TRUE
-	absolute_limit = TRUE
+	SL_check_independent = TRUE
+
+	// AUTOBALANCE
+	min_positions = 1
+	max_positions = 1
 
 /datum/job/german/conductor/train_check() // if there's no train, don't let people be conductors!
 	return WW2_train_check()
@@ -773,9 +901,9 @@ var/first_fallschirm = TRUE
 
 ////////////////////////////////
 /datum/job/german/squad_leader_ss
-	title = "SS-Untersharffuhrer"
+	title = "SS-Unterscharfuhrer"
 	en_meaning = "SS Squad Leader"
-	total_positions = TRUE
+	rank_abbreviation = "uscha"
 	head_position = TRUE
 	selection_color = "#4c4ca5"
 	spawn_location = "JoinLateSS-Officer"
@@ -784,6 +912,12 @@ var/first_fallschirm = TRUE
 	is_officer = TRUE
 	is_commander = TRUE // not a squad leader despite the title
 	is_petty_commander = TRUE
+	SL_check_independent = TRUE
+
+	// AUTOBALANCE
+	min_positions = 1
+	max_positions = 1
+	player_threshold = PLAYER_THRESHOLD_HIGHEST - 10
 
 /datum/job/german/squad_leader_ss/equip(var/mob/living/carbon/human/H)
 	if(!H)	return FALSE
@@ -792,14 +926,15 @@ var/first_fallschirm = TRUE
 	H.equip_to_slot_or_del(new /obj/item/clothing/under/geruni/ssuni(H), slot_w_uniform)
 	H.equip_to_slot_or_del(new /obj/item/clothing/head/caphat/gercap/fieldcap(H), slot_head)
 	H.equip_to_slot_or_del(new /obj/item/weapon/gun/projectile/automatic/akm(H), slot_back)
-	H.equip_to_slot_or_del(new /obj/item/weapon/attachment/scope/adjustable/binoculars(H), slot_l_hand)
-	H << "<span class = 'notice'>You are the <b>[title]</b>, a squad leader for an elite SS unit. Your job is to work alongside normal <b>Gruppenfuhrer</b>s and the <b>Feldwebel</b>, while setting your own goals. Also, kill any jews you find on sight. They usually have long hair and beards.</span>"
+	H.equip_to_slot_or_del(new /obj/item/weapon/attachment/scope/adjustable/binoculars(H), slot_belt)
+	H << "<span class = 'notice'>You are the <b>[title]</b>, a squad leader for an elite SS unit. Your job is to work alongside normal <b>Gruppenfuhrer</b>s and the <b>Hauptmann</b>, while setting your own goals. Also, kill any jews you find on sight. They usually have long hair and beards.</span>"
 	H.give_radio()
 	if (secret_ladder_message)
 		H << "<br>[secret_ladder_message]"
 
 	H.stamina *= 1.5
 	H.max_stamina *= 1.5
+
 	// glorious SS stats
 	H.setStat("strength", STAT_VERY_HIGH)
 	H.setStat("engineering", STAT_MEDIUM_HIGH)
@@ -807,16 +942,13 @@ var/first_fallschirm = TRUE
 	H.setStat("mg", STAT_VERY_HIGH)
 	H.setStat("pistol", STAT_VERY_HIGH)
 	H.setStat("heavyweapon", STAT_MEDIUM_HIGH)
-	H.setStat("medical", STAT_LOW)
+	H.setStat("medical", STAT_NORMAL)
 	return TRUE
 
 /datum/job/german/squad_leader_ss/update_character(var/mob/living/carbon/human/H)
 	..()
 
 	H.make_artillery_officer()
-
-	if (istype(H.languages[1], /datum/language/common))
-		H.languages[1] = null
 
 /datum/job/german/squad_leader_ss/get_keys()
 	return list(new/obj/item/weapon/key/german, new/obj/item/weapon/key/german/soldat,
@@ -830,10 +962,17 @@ var/first_fallschirm = TRUE
 /datum/job/german/soldier_ss
 	title = "SS-Schutze"
 	en_meaning = "SS Infantry Soldier"
-	total_positions = 5 // this was causing an error with latejoin spawning
+	rank_abbreviation = "schtz"
 	selection_color = "#4c4ca5"
 	spawn_location = "JoinLateSS"
 	is_SS = TRUE
+	SL_check_independent = TRUE
+
+	// AUTOBALANCE
+	min_positions = 3
+	max_positions = 10
+	player_threshold = PLAYER_THRESHOLD_HIGHEST - 10
+	scale_to_players = PLAYER_THRESHOLD_HIGHEST + 10
 
 /datum/job/german/soldier_ss/equip(var/mob/living/carbon/human/H)
 	if(!H)	return FALSE
@@ -848,6 +987,7 @@ var/first_fallschirm = TRUE
 
 	H.stamina *= 1.5
 	H.max_stamina *= 1.5
+
 	// glorious SS stats
 	H.setStat("strength", STAT_VERY_HIGH)
 	H.setStat("engineering", STAT_MEDIUM_HIGH)
@@ -855,7 +995,8 @@ var/first_fallschirm = TRUE
 	H.setStat("mg", STAT_MEDIUM_HIGH)
 	H.setStat("pistol", STAT_VERY_HIGH)
 	H.setStat("heavyweapon", STAT_MEDIUM_HIGH)
-	H.setStat("medical", STAT_LOW)
+	H.setStat("medical", STAT_NORMAL)
+	H.setStat("survival", STAT_VERY_HIGH)
 	return TRUE
 
 /datum/job/german/soldier_ss/get_keys()
@@ -871,13 +1012,15 @@ var/first_fallschirm = TRUE
 /datum/job/german/chef
 	title = "Kuchenchef" // note: SS13 does not like ü in job titles
 	en_meaning = "Chef"
-	total_positions = TRUE
+	rank_abbreviation = "Kch"
 	selection_color = "#4c4ca5"
 	spawn_location = "JoinLateHeerChef"
 	is_nonmilitary = TRUE
-	is_primary = FALSE
-	is_secondary = TRUE
-	absolute_limit = TRUE
+	SL_check_independent = TRUE
+
+	// AUTOBALANCE
+	min_positions = 1
+	max_positions = 1
 
 /datum/job/german/chef/equip(var/mob/living/carbon/human/H)
 	if(!H)	return FALSE
@@ -896,6 +1039,7 @@ var/first_fallschirm = TRUE
 	H.setStat("pistol", STAT_NORMAL)
 	H.setStat("heavyweapon", STAT_VERY_LOW)
 	H.setStat("medical", STAT_MEDIUM_LOW)
+	H.setStat("survival", STAT_VERY_HIGH)
 	return TRUE
 
 /datum/job/german/chef/get_keys()
@@ -903,11 +1047,9 @@ var/first_fallschirm = TRUE
 
 // this is a horrible hack.
 /datum/job/german/trainsystem
-	title = "N/A"
+	title = "N/A" // makes us unchooseable
 	en_meaning = "N/A"
-	total_positions = FALSE
 	head_position = FALSE
 	is_officer = FALSE
 	is_commander = FALSE
-	absolute_limit = FALSE
 	faction = "trainsystem"

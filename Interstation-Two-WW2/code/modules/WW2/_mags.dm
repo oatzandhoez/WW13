@@ -75,8 +75,8 @@ WW 2 WEAPONS MAGS N AMMO
 	caliber = "a762x54"
 	w_class = 4
 	matter = list(DEFAULT_WALL_MATERIAL = 4500)
-	ammo_type = /obj/item/ammo_casing/a762x54
-	max_ammo = 100
+	ammo_type = /obj/item/ammo_casing/a127x108
+	max_ammo = 250
 	multiple_sprites = TRUE
 	var/slot = "decor"
 	var/obj/item/clothing/under/has_suit = null		//the suit the tie may be attached to
@@ -116,7 +116,7 @@ WW 2 WEAPONS MAGS N AMMO
 	has_suit.overlays += get_inv_overlay()
 
 	user << "<span class='notice'>You attach [src] to [has_suit].</span>"
-	src.add_fingerprint(user)
+	add_fingerprint(user)
 
 /obj/item/ammo_magazine/maxim/proc/on_removed(mob/user as mob)
 	if(!has_suit)
@@ -124,7 +124,7 @@ WW 2 WEAPONS MAGS N AMMO
 	has_suit.overlays -= get_inv_overlay()
 	has_suit = null
 	usr.put_in_hands(src)
-	src.add_fingerprint(user)
+	add_fingerprint(user)
 
 /obj/item/ammo_magazine/luger
 	name = "Luger magazine"
@@ -132,9 +132,74 @@ WW 2 WEAPONS MAGS N AMMO
 //	origin_tech = "combat=2"
 	mag_type = MAGAZINE
 	matter = list(DEFAULT_WALL_MATERIAL = 600)
-	caliber = "a9mm_para"
-	ammo_type = /obj/item/ammo_casing/a9_parabellum
+	caliber = "a9mm_para_luger"
+	ammo_type = /obj/item/ammo_casing/a9_parabellum_luger
 	max_ammo = 8
+	multiple_sprites = TRUE
+
+/obj/item/ammo_magazine/c45m
+	name = "magazine (.45)"
+	icon_state = "45"
+	mag_type = MAGAZINE
+	ammo_type = /obj/item/ammo_casing/c45
+	matter = list(DEFAULT_WALL_MATERIAL = 525) //metal costs are very roughly based around TRUE .45 casing = 75 metal
+	caliber = ".45"
+	max_ammo = 7
+	multiple_sprites = TRUE
+
+/obj/item/ammo_magazine/c762mm_tokarev
+	name = "magazine (7.62mm)"
+	icon_state = "tokarevmag"
+	mag_type = MAGAZINE
+	ammo_type = /obj/item/ammo_casing/c762mm_tokarev
+	matter = list(DEFAULT_WALL_MATERIAL = 500)
+	caliber = "7.62mm"
+	max_ammo = 8
+	multiple_sprites = TRUE
+
+/obj/item/ammo_magazine/c763x25mm_mauser
+	name = "stripper clip (7.63x25mm)"
+	icon_state = "7.63x25m"
+	ammo_type = /obj/item/ammo_casing/c763x25mm_mauser
+	matter = list(DEFAULT_WALL_MATERIAL = 500)
+	caliber = "7.63x25mm"
+	max_ammo = 10
+	multiple_sprites = TRUE
+
+/obj/item/ammo_magazine/c9x19mm_stenmk3
+	name = "magazine (9x19mm)"
+	icon_state = "mp40mag" // GET A STENMK3 AMMO MAG MP40 AMMO MAG IS BEING USED AS PLACEHOLDER
+	mag_type = MAGAZINE
+	ammo_type = /obj/item/ammo_casing/c9x19mm_stenmk3
+	caliber = "9x19mm"
+	max_ammo = 32
+	multiple_sprites = TRUE
+
+////////// NAGANT REVOLVER ///////////////
+/obj/item/ammo_magazine/c762x38mmR
+	name = "handful of bullets (7.62x38mmR)"
+	icon_state = "7.62x38mmRPouch" // TO DO
+	ammo_type = /obj/item/ammo_casing/c762x38mmR
+	caliber = "7.62x38mmR"
+	max_ammo = 14
+	multiple_sprites = FALSE
+
+/obj/item/ammo_magazine/c762x25mm_pps
+	name = "magazine (7.62x25mm)"
+	icon_state = "c762"
+	mag_type = MAGAZINE
+	ammo_type = /obj/item/ammo_casing/c762x25mm_pps
+	caliber = "7.62x25mm"
+	max_ammo = 35
+	multiple_sprites = TRUE
+
+/obj/item/ammo_magazine/c792x57_fg42
+	name = "magazine (7.92x57mm)"
+	icon_state = "fg42"
+	mag_type = MAGAZINE
+	ammo_type = /obj/item/ammo_casing/c792x57_fg42
+	caliber = "7.92x57mm"
+	max_ammo = 20
 	multiple_sprites = TRUE
 
 /***********************************
@@ -204,11 +269,11 @@ OTHER
 	icon_state = "mg34_drum"
 ////	origin_tech = "combat=2"
 	mag_type = MAGAZINE
-	w_class = 2
+	w_class = 3
 	caliber = "a792x57"
 	matter = list(DEFAULT_WALL_MATERIAL = 4500)
 	ammo_type = /obj/item/ammo_casing/a792x57
-	max_ammo = 100
+	max_ammo = 50
 	multiple_sprites = TRUE
 
 /obj/item/ammo_magazine/a762x39/empty
@@ -267,9 +332,9 @@ OTHER
 /obj/item/ammo_magazine/chameleon/empty
 	initial_ammo = FALSE
 
-/obj/item/ammo_magazine/a556/m4
+/obj/item/ammo_magazine/a556/ppsh
 	icon_state = "ppshmag"
-	max_ammo = 81
+	max_ammo = 71
 	multiple_sprites = TRUE
 
 /obj/item/ammo_magazine/a762/akm
@@ -279,15 +344,16 @@ OTHER
 	ammo_type = /obj/item/ammo_casing/a792x33
 	max_ammo = 30
 	multiple_sprites = TRUE
+	w_class = 2
 
-/obj/item/ammo_magazine/a762/pkm
+/obj/item/ammo_magazine/a762/dp
 	name = "DP ammo disk"
 	icon_state = "dpdisk"
 	caliber = "a762x39"
 	ammo_type = /obj/item/ammo_casing/a762x39
-	max_ammo = 41
+	max_ammo = 47
 	multiple_sprites = TRUE
-	w_class = 2
+	w_class = 3
 
 /obj/item/ammo_magazine/a762/m240
 	name = "M240 ammo"
@@ -337,16 +403,6 @@ OTHER
 	max_ammo = 10
 	multiple_sprites = FALSE
 
-/obj/item/ammo_magazine/g41
-	name = "magazine (7.92x57)"
-	icon_state = "127x108"
-	mag_type = MAGAZINE
-	caliber = "a792x57"
-	matter = list(DEFAULT_WALL_MATERIAL = 1800)
-	ammo_type = /obj/item/ammo_casing/a792x57
-	max_ammo = 10
-	multiple_sprites = FALSE
-
 /*
 //unused garbage
 
@@ -374,6 +430,7 @@ OTHER
 	ammo_type = /obj/item/ammo_casing/a9x39
 	max_ammo = 20
 	multiple_sprites = TRUE
+
 
 /////////////////////FLAREGUNS//////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////

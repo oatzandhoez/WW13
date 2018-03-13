@@ -131,7 +131,7 @@
 	icon_state = "shower"
 	density = FALSE
 	anchored = TRUE
-	use_power = FALSE
+//	use_power = FALSE
 	var/on = FALSE
 	var/obj/effect/mist/mymist = null
 	var/ismist = FALSE				//needs a var so we can make it linger~
@@ -160,7 +160,7 @@
 		if (M.loc == loc)
 			wash(M)
 			process_heat(M)
-		for (var/atom/movable/G in src.loc)
+		for (var/atom/movable/G in loc)
 			G.clean_blood()
 
 /obj/machinery/shower/attackby(obj/item/I as obj, mob/user as mob)
@@ -169,7 +169,7 @@
 	if(istype(I, /obj/item/weapon/wrench))
 		var/newtemp = input(user, "What setting would you like to set the temperature valve to?", "Water Temperature Valve") in temperature_settings
 		user << "<span class='notice'>You begin to adjust the temperature valve with \the [I].</span>"
-		playsound(src.loc, 'sound/items/Ratchet.ogg', 50, TRUE)
+		playsound(loc, 'sound/items/Ratchet.ogg', 50, TRUE)
 		if(do_after(user, 50, src))
 			watertemp = newtemp
 			user.visible_message("<span class='notice'>\The [user] adjusts \the [src] with \the [I].</span>", "<span class='notice'>You adjust the shower with \the [I].</span>")
@@ -349,6 +349,7 @@
 	desc = "A sink used for washing one's hands and face."
 	anchored = TRUE
 	var/busy = FALSE 	//Something's being washed at the moment
+	var/sound = 'sound/effects/sink.ogg'
 
 /obj/structure/sink/MouseDrop_T(var/obj/item/thing, var/mob/user)
 	..()
@@ -380,15 +381,16 @@
 	if(!Adjacent(user))
 		return
 
-	if(busy)
+	if(busy && busy != user)
 		user << "<span class='warning'>Someone's already washing here.</span>"
 		return
 
-	usr << "<span class='notice'>You start washing your hands.</span>"
+	user << "<span class='notice'>You start washing your hands.</span>"
 
-	playsound(loc, 'sound/effects/watersplash.ogg', 100, TRUE)
+	if (sound)
+		playsound(loc, sound, 100, TRUE)
 
-	busy = TRUE
+	busy = user
 	sleep(40)
 	busy = FALSE
 
@@ -401,7 +403,7 @@
 		V.show_message("<span class='notice'>[user] washes their hands using \the [src].</span>")
 
 /obj/structure/sink/attackby(obj/item/O as obj, mob/living/user as mob)
-	if(busy)
+	if(busy && busy != user)
 		user << "<span class='warning'>Someone's already washing here.</span>"
 		return
 
@@ -468,6 +470,7 @@
 /obj/structure/sink/puddle	//splishy splashy ^_^
 	name = "puddle"
 	icon_state = "puddle"
+	sound = 'sound/effects/watersplash.ogg'
 
 /obj/structure/sink/puddle/attack_hand(mob/M as mob)
 	icon_state = "puddle-splash"

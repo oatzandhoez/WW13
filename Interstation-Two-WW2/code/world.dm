@@ -132,9 +132,11 @@ var/world_is_open = TRUE
 var/world_topic_spam_protect_ip = "0.0.0.0"
 var/world_topic_spam_protect_time = world.timeofday
 
-
 // todo: add aspect to this
 /world/proc/replace_custom_hub_text(T)
+
+	if (!ticker || !ticker.mode)
+		return ""
 
 	// numerical constants
 	T = replacetext(T, "{CLIENTS}", clients.len) // # of clients
@@ -150,17 +152,17 @@ var/world_topic_spam_protect_time = world.timeofday
 	T = replacetextEx(T, "{TIMEOFDAY}", uppertext(time_of_day))
 	T = replacetextEx(T, "{WEATHER}", uppertext(ticker.mode.weather()))
 	T = replacetextEx(T, "{SEASON}", uppertext(ticker.mode.season()))
-	T = replacetextEx(T, "{MAP}", uppertext(map.ID)) // name of the map
+	T = replacetextEx(T, "{MAP}", uppertext(map.title)) // name of the map
 	// Capitalized constants - no change
 	T = replacetextEx(T, "{Timeofday}", time_of_day)
 	T = replacetextEx(T, "{Weather}", ticker.mode.weather())
 	T = replacetextEx(T, "{Season}", ticker.mode.season())
-	T = replacetextEx(T, "{Map}", map.ID) // name of the map
+	T = replacetextEx(T, "{Map}", map.title) // name of the map
 	// lowercase constants
 	T = replacetextEx(T, "{timeofday}", lowertext(time_of_day))
 	T = replacetextEx(T, "{weather}", lowertext(ticker.mode.weather()))
 	T = replacetextEx(T, "{season}", lowertext(ticker.mode.season()))
-	T = replacetextEx(T, "{map}", lowertext(map.ID)) // name of the map
+	T = replacetextEx(T, "{map}", lowertext(map.title)) // name of the map
 
 	return T
 
@@ -254,7 +256,7 @@ var/world_topic_spam_protect_time = world.timeofday
 		serverswap_close_server()
 
 	// wait for serverswap to do its magic - kachnov
-	spawn (90)
+	spawn (50)
 
 		if (serverswap.Find("snext"))
 			if (serverswap.Find(serverswap["snext"]))
@@ -262,6 +264,7 @@ var/world_topic_spam_protect_time = world.timeofday
 				world << "<span class = 'danger'>Rebooting!</span> <span class='notice'>If you aren't taken there automatically, click here to join the linked server: <b>[new_address]</b></span>"
 				for (var/client/C in clients)
 					C << link(new_address)
+					winset(C, null, "mainwindow.flash=1")
 			else
 				world << "<span class = 'danger'>Rebooting!</span> <span class='notice'>Click here to rejoin (It may take a minute or two): <b>byond://[world.internet_address]:[port]</b></span>"
 		else
@@ -271,7 +274,7 @@ var/world_topic_spam_protect_time = world.timeofday
 			if (config.jojoreference)
 				roundabout()
 
-		spawn (10)
+		spawn (50)
 
 			processScheduler.stop()
 
@@ -303,7 +306,6 @@ var/world_topic_spam_protect_time = world.timeofday
 	fdel(F)
 	F << the_mode
 
-
 /hook/startup/proc/loadMOTD()
 	world.load_motd()
 	return TRUE
@@ -314,10 +316,15 @@ var/world_topic_spam_protect_time = world.timeofday
 
 /proc/load_configuration()
 	config = new /datum/configuration()
-	config.load("config/config.txt")
+	config.load("config/config.txt", "config")
 	config.load("config/game_options.txt","game_options")
 	config.load("config/hub.txt", "hub")
 	config.load("config/game_schedule.txt", "game_schedule")
+
+	/* config options get overwritten by global config options
+	 * only useful for serverswap memery - Kachnov */
+	if (config.global_config_path)
+		config.load(config.global_config_path, "config")
 
 /world/proc/update_status()
 
@@ -334,7 +341,7 @@ var/world_topic_spam_protect_time = world.timeofday
 	// for the custom WW13 hub only!
 
 	// we can't execute code in config settings, so this is a workaround.
-	config.hub_body = replacetext(config.hub_body, "TIME_OF_DAY", lowertext(time_of_day))
+	config.hub_body = replacetext(config.hub_body, "TIME_OF_DAY", capitalize(lowertext(time_of_day)))
 
 	if (ticker && ticker.mode && istype(ticker.mode, /datum/game_mode/ww2))
 		config.hub_body = replacetext(config.hub_body, "SEASON", lowertext(ticker.mode:season))
@@ -348,7 +355,7 @@ var/world_topic_spam_protect_time = world.timeofday
 		s += "<b>[config.hub_features]</b><br>"
 
 	if (map)
-		s += "<b>Map: [map.ID]</b><br>"
+		s += "<b>Map:</b> [map.title]<br>"
 
 	if (config.hub_banner_url)
 		s += config.hub_banner_url
@@ -481,7 +488,22 @@ var/setting_up_db_connection = FALSE
 	return .
 
 #undef FAILED_DB_CONNECTION_CUTOFF
-/*
+
+/proc/get_packaged_server_status_data()
+	. = ""
+	. += "<b>Server Status</b>: Online"
+	. += ";"
+	. += "<b>Address</b>: byond://[world.internet_address]:[world.port]"
+	. += ";"
+	. += "<b>Map</b>: [map.title]"
+	. += ";"
+	. += "<b>Players</b>: [clients.len]" // turns out the bot only considers itself a player sometimes? its weird. Maybe it was fixed, not sure - Kachnov
+	if (config.usewhitelist)
+		. += ";"
+		. += "<b>Whitelist</b>: Enabled"
+	. += ";"
+	. += "realtime=[num2text(world.realtime, 20)]"
+
 /proc/start_serverdata_loop()
 	spawn while (1)
 		var/F = file("serverdata.txt")
@@ -489,71 +511,84 @@ var/setting_up_db_connection = FALSE
 			fdel(F)
 		if (!serverswap.len || !serverswap.Find("masterdir") || serverswap_open_status)
 			F << get_packaged_server_status_data()
-		sleep (100)*/
+		sleep (100)
 
 /proc/start_serverswap_loop()
 	spawn while (1)
-		DEBUG_SERVERSWAP(8)
-		if (!serverswap.len)
-			break
-		DEBUG_SERVERSWAP(9)
-		if (!serverswap.Find("masterdir")) // we can't do anything without this!
-			break
-		DEBUG_SERVERSWAP(10)
-		if (!serverswap.Find("this")) // ditto
-			break
-		DEBUG_SERVERSWAP(11)
-		if (!serverswap.Find("sfinal")) // ditto
-			break
-		DEBUG_SERVERSWAP(12)
-		var/wdir = ""
-		var/F = ""
-		DEBUG_SERVERSWAP("13 = [serverswap_open_status]")
-		switch (serverswap_open_status)
-			if (0) // we're waiting for the server before us or the very last server to tell us its ok to go up
-				var/our_server_id = serverswap["this"] // "s1"
-				var/our_number = text2num(replacetext(our_server_id, "s", "")) // '1'
-				var/waiting_on_id = null
-				if (our_number > TRUE)
-					waiting_on_id = "s[our_number-1]" // "s2" waits on "s1", "s3" waits on "s2"
-				else if (our_number == TRUE)
-					waiting_on_id = serverswap["sfinal"]
 
-				DEBUG_SERVERSWAP("13.01 = [waiting_on_id]")
-				DEBUG_SERVERSWAP("13.02 = [serverswap["masterdir"]]/sharedinfo/[waiting_on_id]_closed.txt")
-				DEBUG_SERVERSWAP("13.03 = [serverswap_open_status]")
-				DEBUG_SERVERSWAP("13.04 = [serverswap_closed]")
+		try
+			if (!global_game_schedule)
+				global_game_schedule = new
 
-				if (fexists("[serverswap["masterdir"]]/sharedinfo/[waiting_on_id]_closed.txt"))
-					// other server is closed, time to open (if we aren't already open)
-					serverswap_open_status = TRUE
-					serverswap_closed = FALSE
-					if (ticker)
-						ticker.pregame_timeleft = initial(ticker.pregame_timeleft)
-					DEBUG_SERVERSWAP("13.1")
+			global_game_schedule.update()
 
-					// make sure we aren't marked as closed anymore
-					wdir = "[serverswap["masterdir"]]/sharedinfo/[serverswap["this"]]_closed.txt"
-					if (fexists(wdir))
-						fdel(wdir)
-			/*	else
-					F = file("test_[waiting_on_id].txt")
+			DEBUG_SERVERSWAP(8)
+			if (!serverswap.len)
+				break
+			DEBUG_SERVERSWAP(9)
+			if (!serverswap.Find("masterdir")) // we can't do anything without this!
+				break
+			DEBUG_SERVERSWAP(10)
+			if (!serverswap.Find("this")) // ditto
+				break
+			DEBUG_SERVERSWAP(11)
+			if (!serverswap.Find("sfinal")) // ditto
+				break
+			DEBUG_SERVERSWAP(12)
+			var/wdir = ""
+			var/F = ""
+			DEBUG_SERVERSWAP("13 = [serverswap_open_status]")
+			switch (serverswap_open_status)
+				if (0) // we're waiting for the server before us or the very last server to tell us its ok to go up
+					var/our_server_id = serverswap["this"] // "s1"
+					var/our_number = text2num(replacetext(our_server_id, "s", "")) // '1'
+					var/waiting_on_id = null
+					if (our_number > TRUE)
+						waiting_on_id = "s[our_number-1]" // "s2" waits on "s1", "s3" waits on "s2"
+					else if (our_number == TRUE)
+						waiting_on_id = serverswap["sfinal"]
+
+					DEBUG_SERVERSWAP("13.01 = [waiting_on_id]")
+					DEBUG_SERVERSWAP("13.02 = [serverswap["masterdir"]]/sharedinfo/[waiting_on_id]_closed.txt")
+					DEBUG_SERVERSWAP("13.03 = [serverswap_open_status]")
+					DEBUG_SERVERSWAP("13.04 = [serverswap_closed]")
+
+					if (fexists("[serverswap["masterdir"]]/sharedinfo/[waiting_on_id]_closed.txt"))
+						// other server is closed, time to open (if we aren't already open)
+						serverswap_open_status = TRUE
+						serverswap_closed = FALSE
+						if (ticker)
+							// reset the pregame timer
+							ticker.pregame_timeleft = 185
+							// recreate the database, may or may not fix a DB bug
+							database = new("[serverswap["masterdir"]]/SQL/database.db")
+
+						DEBUG_SERVERSWAP("13.1")
+
+						// make sure we aren't marked as closed anymore
+						wdir = "[serverswap["masterdir"]]/sharedinfo/[serverswap["this"]]_closed.txt"
+						if (fexists(wdir))
+							fdel(wdir)
+				/*	else
+						F = file("test_[waiting_on_id].txt")
+						fdel(F)
+						F << "hello world!"*/
+				if (1) // we're going to send updates every second in the form of text files telling the server after us what to do
+
+			/*		if (!serverswap_closed)
+						// delete the other file, if it exists
+						if (fexists("[serverswap["masterdir"]]/sharedinfo/[serverswap["this"]]_closed.txt"))
+							DEBUG_SERVERSWAP("13.29")
+							fdel("[serverswap["masterdir"]]/sharedinfo/[serverswap["this"]]_closed.txt")*/
+
+					wdir = "[serverswap["masterdir"]]/sharedinfo/[serverswap["this"]]_normal.txt"
+					F = file(wdir)
 					fdel(F)
-					F << "hello world!"*/
-			if (1) // we're going to send updates every second in the form of text files telling the server after us what to do
-
-		/*		if (!serverswap_closed)
-					// delete the other file, if it exists
-					if (fexists("[serverswap["masterdir"]]/sharedinfo/[serverswap["this"]]_closed.txt"))
-						DEBUG_SERVERSWAP("13.29")
-						fdel("[serverswap["masterdir"]]/sharedinfo/[serverswap["this"]]_closed.txt")*/
-
-				wdir = "[serverswap["masterdir"]]/sharedinfo/[serverswap["this"]]_normal.txt"
-				F = file(wdir)
-				fdel(F)
-				F << "testing"
-				DEBUG_SERVERSWAP("13.3: [wdir]")
-				// otherwise do nothing - code moved to serverswap_close_server()
+					F << "testing"
+					DEBUG_SERVERSWAP("13.3: [wdir]")
+					// otherwise do nothing - code moved to serverswap_close_server()
+		catch(var/exception/e)
+			log_debug("Exception in serverswap loop: [e.name]/[e.desc]")
 
 		sleep(10)
 

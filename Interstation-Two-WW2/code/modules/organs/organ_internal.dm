@@ -77,7 +77,7 @@
 
 	if (germ_level > INFECTION_LEVEL_ONE)
 		if(prob(1))
-			owner << "\red Your skin itches."
+			owner << "<span class = 'red'>Your skin itches.</span>"
 	if (germ_level > INFECTION_LEVEL_TWO)
 		if(prob(1))
 			spawn owner.vomit()
@@ -87,8 +87,8 @@
 		//High toxins levels are dangerous
 		if(owner.getToxLoss() >= 60 && !owner.reagents.has_reagent("anti_toxin"))
 			//Healthy liver suffers on its own
-			if (src.damage < min_broken_damage)
-				src.damage += 0.2 * PROCESS_ACCURACY
+			if (damage < min_broken_damage)
+				damage += 0.2 * PROCESS_ACCURACY
 			//Damaged one shares the fun
 			else
 				var/obj/item/organ/O = pick(owner.internal_organs)
@@ -96,11 +96,11 @@
 					O.damage += 0.2  * PROCESS_ACCURACY
 
 		//Detox can heal small amounts of damage
-		if (src.damage && src.damage < src.min_bruised_damage && owner.reagents.has_reagent("anti_toxin"))
-			src.damage -= 0.2 * PROCESS_ACCURACY
+		if (damage && damage < min_bruised_damage && owner.reagents.has_reagent("anti_toxin"))
+			damage -= 0.2 * PROCESS_ACCURACY
 
-		if(src.damage < FALSE)
-			src.damage = FALSE
+		if(damage < FALSE)
+			damage = FALSE
 
 		// Get the effectiveness of the liver.
 		var/filter_effect = 3

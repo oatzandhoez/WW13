@@ -29,43 +29,41 @@
 	return TRUE
 
 /obj/structure/closet/crate/open()
-	if(src.opened)
+	if(opened)
 		return FALSE
-	if(!src.can_open())
+	if(!can_open())
 		return FALSE
 
-	playsound(src.loc, 'sound/machines/click.ogg', 15, TRUE, -3)
+	playsound(loc, 'sound/machines/click.ogg', 15, TRUE, -3)
 	for(var/obj/O in src)
 		O.forceMove(get_turf(src))
 	icon_state = icon_opened
-	src.opened = TRUE
+	opened = TRUE
 
 	if(climbable)
 		structure_shaken()
 	return TRUE
 
 /obj/structure/closet/crate/close()
-	if(!src.opened)
+	if(!opened)
 		return FALSE
-	if(!src.can_close())
+	if(!can_close())
 		return FALSE
 
-	playsound(src.loc, 'sound/machines/click.ogg', 15, TRUE, -3)
+	playsound(loc, 'sound/machines/click.ogg', 15, TRUE, -3)
 	var/itemcount = FALSE
 	for(var/obj/O in get_turf(src))
-		if(itemcount >= storage_capacity)
+		if (itemcount >= storage_capacity)
 			break
-		if(O.density || O.anchored || istype(O,/obj/structure/closet))
+		if (O.density || O.anchored)
 			continue
-		if(istype(O, /obj/structure/bed)) //This is only necessary because of rollerbeds and swivel chairs.
-			var/obj/structure/bed/B = O
-			if(B.buckled_mob)
-				continue
+		if (istype(O, /obj/structure))
+			continue
 		O.forceMove(src)
 		itemcount++
 
 	icon_state = icon_closed
-	src.opened = FALSE
+	opened = FALSE
 	return TRUE
 
 /obj/structure/closet/crate/attackby(obj/item/weapon/W as obj, mob/user as mob)
@@ -91,12 +89,12 @@
 /obj/structure/closet/crate/ex_act(severity)
 	switch(severity)
 		if(1.0)
-			for(var/obj/O in src.contents)
+			for(var/obj/O in contents)
 				qdel(O)
 			qdel(src)
 			return
 		if(2.0)
-			for(var/obj/O in src.contents)
+			for(var/obj/O in contents)
 				if(prob(50))
 					qdel(O)
 			qdel(src)
@@ -134,13 +132,13 @@
 	return !locked
 
 /obj/structure/closet/crate/secure/proc/togglelock(mob/user as mob)
-	if(src.opened)
+	if(opened)
 		user << "<span class='notice'>Close the crate first.</span>"
 		return
-	if(src.broken)
+	if(broken)
 		user << "<span class='warning'>The crate appears to be broken.</span>"
 		return
-	if(src.allowed(user))
+	if(allowed(user))
 		set_locked(!locked, user)
 	else
 		user << "<span class='notice'>Access Denied</span>"
@@ -164,23 +162,23 @@
 		return
 
 	if(ishuman(usr))
-		src.add_fingerprint(usr)
-		src.togglelock(usr)
+		add_fingerprint(usr)
+		togglelock(usr)
 	else
 		usr << "<span class='warning'>This mob type can't use this verb.</span>"
 
 /obj/structure/closet/crate/secure/attack_hand(mob/user as mob)
-	src.add_fingerprint(user)
+	add_fingerprint(user)
 	if(locked)
-		src.togglelock(user)
+		togglelock(user)
 	else
-		src.toggle(user)
+		toggle(user)
 
 /obj/structure/closet/crate/secure/attackby(obj/item/weapon/W as obj, mob/user as mob)
 	if(is_type_in_list(W, list(/obj/item/stack/cable_coil, /obj/item/weapon/wirecutters)))
 		return ..()
 	if(!opened)
-		src.togglelock(user)
+		togglelock(user)
 		return
 	return ..()
 
@@ -189,7 +187,7 @@
 		O.emp_act(severity)
 	if(!broken && !opened  && prob(50/severity))
 		if(!locked)
-			src.locked = TRUE
+			locked = TRUE
 			overlays.Cut()
 			overlays += redlight
 		else
@@ -197,14 +195,14 @@
 			overlays += emag
 			overlays += sparks
 			spawn(6) overlays -= sparks //Tried lots of stuff but nothing works right. so i have to use this *sadface*
-			playsound(src.loc, 'sound/effects/sparks4.ogg', 75, TRUE)
-			src.locked = FALSE
+			playsound(loc, 'sound/effects/sparks4.ogg', 75, TRUE)
+			locked = FALSE
 	if(!opened && prob(20/severity))
 		if(!locked)
 			open()
 		else
-			src.req_access = list()
-			src.req_access += pick(get_all_station_access())
+			req_access = list()
+			req_access += pick(get_all_station_access())
 	..()
 */
 /obj/structure/closet/crate/plastic
@@ -375,7 +373,7 @@
 	. = ..()
 	if (.)//we can hold up to one large item
 		var/found = FALSE
-		for(var/obj/structure/S in src.loc)
+		for(var/obj/structure/S in loc)
 			if(S == src)
 				continue
 			if(!S.anchored)
@@ -383,7 +381,7 @@
 				S.forceMove(src)
 				break
 		if(!found)
-			for(var/obj/machinery/M in src.loc)
+			for(var/obj/machinery/M in loc)
 				if(!M.anchored)
 					M.forceMove(src)
 					break
@@ -403,7 +401,7 @@
 	. = ..()
 	if (.)//we can hold up to one large item
 		var/found = FALSE
-		for(var/obj/structure/S in src.loc)
+		for(var/obj/structure/S in loc)
 			if(S == src)
 				continue
 			if(!S.anchored)
@@ -411,7 +409,7 @@
 				S.forceMove(src)
 				break
 		if(!found)
-			for(var/obj/machinery/M in src.loc)
+			for(var/obj/machinery/M in loc)
 				if(!M.anchored)
 					M.forceMove(src)
 					break

@@ -83,9 +83,9 @@ mob/living/carbon/human/proc/custom_pain(var/message, var/flash_strength)
 		return
 	if(analgesic)
 		return
-	var/msg = "\red <b>[message]</b>"
+	var/msg = "<span class = 'red'><b>[message]</b></span>"
 	if(flash_strength >= TRUE)
-		msg = "\red <font size=3><b>[message]</b></font>"
+		msg = "<span class = 'red'><font size=3><b>[message]</b></font></span>"
 
 	// Anti message spam checks
 	if(msg && ((msg != last_pain_message) || (world.time >= next_pain_time)))
@@ -93,10 +93,12 @@ mob/living/carbon/human/proc/custom_pain(var/message, var/flash_strength)
 		src << msg
 	next_pain_time = world.time + 100
 
-mob/living/carbon/human/proc/handle_pain()
+/mob/living/carbon/human/proc/handle_pain()
 	// not when sleeping
 
 	if(species.flags & NO_PAIN) return
+
+	if(!has_pain) return
 
 	if(stat >= 2) return
 	if(analgesic > 70)
@@ -112,7 +114,8 @@ mob/living/carbon/human/proc/handle_pain()
 			damaged_organ = E
 			maxdam = dam
 	if(damaged_organ)
-		pain(damaged_organ.name, maxdam, FALSE)
+		if (prob(30))
+			pain(damaged_organ.name, maxdam, FALSE)
 		damaged_organ.pain = maxdam
 
 	// Damage to internal organs hurts a lot.
@@ -120,7 +123,7 @@ mob/living/carbon/human/proc/handle_pain()
 		if(I.status & (ORGAN_DEAD|ORGAN_ROBOT)) continue
 		if(I.damage > 2) if(prob(2))
 			var/obj/item/organ/external/parent = get_organ(I.parent_organ)
-			src.custom_pain("You feel a sharp pain in your [parent.name]", TRUE)
+			custom_pain("You feel a sharp pain in your [parent.name]", TRUE)
 
 	var/toxDamageMessage = null
 	var/toxMessageProb = TRUE
@@ -142,7 +145,7 @@ mob/living/carbon/human/proc/handle_pain()
 			toxDamageMessage = "Your body aches all over, it's driving you mad."
 
 	if(toxDamageMessage && prob(toxMessageProb))
-		src.custom_pain(toxDamageMessage, getToxLoss() >= 15)
+		custom_pain(toxDamageMessage, getToxLoss() >= 15)
 
 
 /mob/living/carbon/human/proc/painchecks()
@@ -169,5 +172,5 @@ mob/living/carbon/human/proc/handle_pain()
 		Weaken(10)
 		shake_camera(src, 20, 3)
 		if(!stat)//So this doesn't get displayed when you're asleep.
-			src.visible_message("<span class='warning'>[src] gives into the pain!</span>")
+			visible_message("<span class='warning'>[src] gives into the pain!</span>")
 			*/ //to be finished soon.

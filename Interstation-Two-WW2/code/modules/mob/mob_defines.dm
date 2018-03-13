@@ -5,11 +5,15 @@
 	flags = PROXMOVE
 
 	var/last_movement = -1
+	var/movement_speed_multiplier = 1.0
 	var/atom/movable/attached_to_object = null
 
 	var/datum/mind/mind
 
 	var/lastKnownIP = null
+	var/lastKnownCID = null
+	var/lastKnownCkey = null
+
 	var/computer_id = null
 
 	var/stat = FALSE //Whether a mob is alive or dead. TODO: Move this to living - Nodrak
@@ -194,3 +198,13 @@
 	var/bladder = FALSE //For pissing
 
 	var/using_object = null
+
+	var/roundUID = 0
+
+/mob/proc/getRoundUID(var/text = FALSE)
+	if (!roundUID)
+		roundUID = rand(1, 10000000)
+	if (text)
+		return num2text(roundUID, 20)
+	else
+		return roundUID

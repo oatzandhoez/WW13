@@ -25,7 +25,7 @@
 		shake_camera(L, 3, 2)
 
 /obj/item/projectile/bullet/attack_mob(var/mob/living/target_mob, var/distance, var/miss_modifier)
-	if(penetrating > FALSE && damage > 20 && prob(damage))
+	if(penetrating > 1 && damage > 20 && prob(damage))
 		mob_passthrough_check = TRUE
 	else
 		mob_passthrough_check = FALSE
@@ -40,21 +40,21 @@
 /obj/item/projectile/bullet/check_penetrate(var/atom/A)
 	if(!A || !A.density) return TRUE //if whatever it was got destroyed when we hit it, then I guess we can just keep going
 
-	if(ismob(A))
+	else if(ismob(A))
 		if(!mob_passthrough_check)
 			return FALSE
 		if(iscarbon(A))
 			damage *= 0.7 //squishy mobs absorb KE
 		return TRUE
 
-	var/chance = FALSE
+	var/chance = 0
 	if(istype(A, /turf/wall))
 		var/turf/wall/W = A
-		chance = round(damage/(W.material ? W.material.integrity : 150)*180)
+		chance = round(damage/(W.material ? W.material.integrity : 175)*100) + 7
 	else if(istype(A, /obj/structure/girder))
-		chance = 100
+		chance = 66
 	else if(istype(A, /obj/machinery) || istype(A, /obj/structure))
-		chance = damage
+		chance = round(damage/2) + 10
 
 	if(prob(chance))
 		if(A.opacity)
@@ -68,7 +68,7 @@
 /obj/item/projectile/bullet/pellet
 	name = "shrapnel" //'shrapnel' sounds more dangerous (i.e. cooler) than 'pellet'
 	damage = 20
-	//icon_state = "bullet" //TODO: would be nice to have it's own icon state
+	icon_state = "bullet" //TODO: would be nice to have it's own icon state
 	var/pellets = 4			//number of pellets
 	var/range_step = 2		//projectile will lose a fragment each time it travels this distance. Can be a non-integer.
 	var/base_spread = 90	//lower means the pellets spread more across body parts. If zero then this is considered a shrapnel explosion instead of a shrapnel cone
@@ -81,10 +81,10 @@
 
 /obj/item/projectile/bullet/pellet/proc/get_pellets(var/distance)
 	var/pellet_loss = round((distance - TRUE)/range_step) //pellets lost due to distance
-	return max(pellets - pellet_loss, TRUE)
+	return max(pellets - pellet_loss, 1)
 
 /obj/item/projectile/bullet/pellet/attack_mob(var/mob/living/target_mob, var/distance, var/miss_modifier)
-	if (pellets < FALSE) return TRUE
+	if (pellets < 0) return TRUE
 
 	var/total_pellets = get_pellets(distance)
 	var/spread = max(base_spread - (spread_step*distance), FALSE)
@@ -95,7 +95,7 @@
 		prone_chance = max(spread_step*(distance - 2), FALSE)
 
 	var/hits = FALSE
-	for (var/i in TRUE to total_pellets)
+	for (var/i in 1 to total_pellets)
 		if(target_mob.lying && target_mob != original && prob(prone_chance))
 			continue
 
@@ -152,7 +152,7 @@
 
 /obj/item/projectile/bullet/shotgun
 	name = "slug"
-	damage = 50
+	damage = 77
 	armor_penetration = 15
 
 /obj/item/projectile/bullet/shotgun/beanbag		//because beanbags are not bullets
@@ -163,7 +163,7 @@
 	embed = FALSE
 	sharp = FALSE
 
-//Should do about 80 damage at TRUE tile distance (adjacent), and 50 damage at 3 tiles distance.
+//Should do about 80 damage at 1 tile distance (adjacent), and 50 damage at 3 tiles distance.
 //Overall less damage than slugs in exchange for more damage at very close range and more embedding
 /obj/item/projectile/bullet/pellet/shotgun
 	name = "shrapnel"
@@ -176,7 +176,7 @@
 
 /obj/item/projectile/bullet/rifle
 	armor_penetration = 20
-	penetrating = TRUE
+	penetrating = 1
 
 /obj/item/projectile/bullet/rifle/a762
 	damage = 25

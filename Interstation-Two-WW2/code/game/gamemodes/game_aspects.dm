@@ -3,6 +3,7 @@
 #define WW2_ASPECT_SPAN "<span class = 'notice' style = 'font-size: 2.0em;'>"
 #define WW2_ASPECTDESC_SPAN "<span class = 'notice' style = 'font-size: 1.33em;'>"
 #define TANK_LOWPOP_THRESHOLD 12
+#define ARTILLERY_LOWPOP_THRESHOLD 15
 
 /datum/game_aspect
 	var/game_mode_type = null
@@ -11,17 +12,20 @@
 	var/list/possible_subtypes = list()
 	var/datum/game_mode/mode = null
 	var/desc = ""
-	var/required_clients = FALSE
+	var/required_clients = 0
 	var/list/real_aspects = list()
 
 /datum/game_aspect/New(var/datum/game_mode/M)
 	..()
 	if (M) // if we don't pass an arg, this code is ommitted. Intentional.
-		if (!game_mode_type || !default_aspect_type || !possible_subtypes.len)
+	//	if (map) log_debug(map.ID)
+	//	else log_debug("test")
+		var/list/subtypes = possible_subtypes[map.ID]
+		if (!game_mode_type || !default_aspect_type || !subtypes.len)
 			qdel(src)
 			return
 
-		for (var/aspecttype in possible_subtypes)
+		for (var/aspecttype in subtypes)
 			var/datum/game_aspect/A = new aspecttype
 			if (A && clients.len >= A.required_clients && A.specialcheck())
 				real_aspects += A
@@ -29,6 +33,9 @@
 		if (prob(100 - default_aspect_chance))
 			M.aspect = pick(real_aspects)
 		else
+			M.aspect = new default_aspect_type
+
+		if (!M.aspect)
 			M.aspect = new default_aspect_type
 
 		M.aspect.mode = M
@@ -53,20 +60,23 @@
 /datum/game_aspect/ww2
 	game_mode_type = /datum/game_mode/ww2
 	default_aspect_type = /datum/game_aspect/ww2/default
-	possible_subtypes = list(/datum/game_aspect/ww2/german_padvantage,
-		/datum/game_aspect/ww2/german_pdisadvantage,
-		/datum/game_aspect/ww2/russian_padvantage,
-		/datum/game_aspect/ww2/russian_pdisadvantage,
+	possible_subtypes = list(
 
-		/datum/game_aspect/ww2/german_sadvantage,
-		/datum/game_aspect/ww2/german_sdisadvantage,
-		/datum/game_aspect/ww2/russian_sadvantage,
-		/datum/game_aspect/ww2/russian_sdisadvantage,
+		"FOREST" = list(/datum/game_aspect/ww2/german_padvantage,
+				/datum/game_aspect/ww2/german_pdisadvantage,
+				/datum/game_aspect/ww2/russian_padvantage,
+				/datum/game_aspect/ww2/russian_pdisadvantage,
+				/datum/game_aspect/ww2/no_tanks,
+				/datum/game_aspect/ww2/no_artillery),
 
-		/datum/game_aspect/ww2/german_logistical_disadvantage,
+		"CITY" = list(/datum/game_aspect/ww2/german_padvantage,
+				/datum/game_aspect/ww2/german_pdisadvantage,
+				/datum/game_aspect/ww2/russian_padvantage,
+				/datum/game_aspect/ww2/russian_pdisadvantage,
+				/datum/game_aspect/ww2/no_tanks,
+				/datum/game_aspect/ww2/no_artillery),
 
-		/datum/game_aspect/ww2/no_tanks,
-		/datum/game_aspect/ww2/no_artillery
+		"PILLARMAP" = list()
 
 		)
 
@@ -93,7 +103,7 @@
 
 /datum/game_aspect/ww2/default
 	desc = "Nothing is out of the ordinary this round."
-	required_clients = FALSE
+	required_clients = 0
 
 /datum/game_aspect/ww2/default/activate()
 	. = ..()
@@ -153,7 +163,7 @@
 	world << "<br><i>[desc]</i>"
 	var/datum/game_mode/ww2/mymode = mode
 	mymode.personnel[SOVIET] = random_decimal(0.8,0.9)
-
+/*
 /datum/game_aspect/ww2/german_sadvantage
 	desc = "The German Wehrmacht has extra supply points this round."
 
@@ -201,21 +211,7 @@
 	world << "<br><i>[desc]</i>"
 	var/datum/game_mode/ww2/mymode = mode
 	mymode.supplies[SOVIET] = random_decimal(0.8, 0.9)
-
-/datum/game_aspect/ww2/german_logistical_disadvantage
-	desc = "The German High Command has disallowed sending the train until after 15 minutes for this round."
-
-/datum/game_aspect/ww2/german_logistical_disadvantage/specialcheck()
-	return locate(/obj/effect/landmark/train/german_train_start) in world
-
-/datum/game_aspect/ww2/german_logistical_disadvantage/activate()
-	. = ..()
-	if (. == FALSE)
-		return .
-	world << "[WW2_ASPECT_SPAN][.]German Logistical Disadvantage!</span>"
-	world << "<br><i>[desc]</i>"
-	GRACE_PERIOD_LENGTH = 15
-
+*/
 /datum/game_aspect/ww2/no_tanks
 	desc = "There are no tanks this battle."
 
@@ -235,7 +231,7 @@
 	desc = "The Germans have no artillery for this battle."
 
 /datum/game_aspect/ww2/no_artillery/specialcheck()
-	return locate(/obj/machinery/artillery) in world
+	return (locate(/obj/machinery/artillery) in world && clients.len > ARTILLERY_LOWPOP_THRESHOLD)
 
 /datum/game_aspect/ww2/no_artillery/activate()
 	. = ..()
@@ -257,8 +253,8 @@
 	world << "[WW2_ASPECT_SPAN][.]Foreign Armies!</span>"
 	world << "<br><i>[desc]</i>"
 
-	job_master.allow_italians = TRUE
-	job_master.allow_ukrainians = TRUE
+//	job_master.allow_italians = TRUE
+//	job_master.allow_ukrainians = TRUE
 
 
 #undef WW2_ASPECT_SPAN

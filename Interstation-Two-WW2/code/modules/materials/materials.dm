@@ -211,7 +211,7 @@ var/list/name_to_material
 // As above.
 /material/proc/place_shard(var/turf/target)
 	if(shard_type)
-		return new /obj/item/weapon/material/shard(target, src.name)
+		return new /obj/item/weapon/material/shard(target, name)
 
 // Used by walls and weapons to determine if they break or not.
 /material/proc/is_brittle()
@@ -254,6 +254,19 @@ var/list/name_to_material
 	tableslam_noise = 'sound/effects/Glasshit.ogg'
 	hardness = 30
 	stack_origin_tech = list(TECH_MATERIAL = 6)
+
+/material/rope
+	name = "rope"
+	stack_type = /obj/item/stack/material/rope
+	flags = MATERIAL_UNMELTABLE
+	cut_delay = 5
+	icon_colour = "#FFFFFF"
+	shard_type = null
+	tableslam_noise = null
+	hardness = 10
+	stack_origin_tech = list(TECH_MATERIAL = 6)
+	sheet_singular_name = "coil"
+	sheet_plural_name = "coils"
 
 /material/gold
 	name = "gold"
@@ -322,6 +335,10 @@ var/list/name_to_material
 	door_icon_base = "stone"
 	sheet_singular_name = "brick"
 	sheet_plural_name = "bricks"
+
+/material/stone/stone
+	name = "stone"
+	icon_colour = "#808080"
 
 /material/stone/stonebrick
 	name = "brick"
@@ -566,6 +583,13 @@ var/list/name_to_material
 	sheet_singular_name = "ingot"
 	sheet_plural_name = "ingots"
 	hitsound = 'sound/weapons/smash.ogg'
+
+/material/iron/indestructable
+	name = "indestructable"
+	icon_base = "metal"
+	integrity = 1000000
+	hardness = 1000000
+	melting_point = 1000000
 
 /material/morgue
 	name = "morgue"

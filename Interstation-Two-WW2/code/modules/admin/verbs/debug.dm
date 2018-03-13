@@ -27,11 +27,11 @@
 
 	var/datum/gas_mixture/env = T.return_air()
 
-	var/t = "\blue Coordinates: [T.x],[T.y],[T.z]\n"
-	t += "\red Temperature: [env.temperature]\n"
-	t += "\red Pressure: [env.return_pressure()]kPa\n"
+	var/t = "<span class = 'notice'>Coordinates: [T.x],[T.y],[T.z]\n</span>"
+	t += "<span class = 'red'>Temperature: [env.temperature]</span>\n"
+	t += "<span class = 'red'>Pressure: [env.return_pressure()]kPa</span>\n"
 	for(var/g in env.gas)
-		t += "\blue [g]: [env.gas[g]] / [env.gas[g] * R_IDEAL_GAS_EQUATION * env.temperature / env.volume]kPa\n"
+		t += "<span class = 'notice'>[g]: [env.gas[g]] / [env.gas[g] * R_IDEAL_GAS_EQUATION * env.temperature / env.volume]kPa</span>\n"
 
 	usr.show_message(t, TRUE)
 
@@ -61,114 +61,6 @@
 	spawn(10)
 		M.Animalize()
 
-/*
-/client/proc/cmd_admin_slimeize(var/mob/M in mob_list)
-	set category = "Fun"
-	set name = "Make slime"
-
-	if(!ticker)
-		alert("Wait until the game starts")
-		return
-	if(ishuman(M))
-		log_admin("[key_name(src)] has slimeized [M.key].")
-		spawn(10)
-			M:slimeize()
-
-		log_admin("[key_name(usr)] made [key_name(M)] into a slime.")
-		message_admins("\blue [key_name_admin(usr)] made [key_name(M)] into a slime.", TRUE)
-	else
-		alert("Invalid mob")
-
-/client/proc/cmd_admin_monkeyize(var/mob/M in mob_list)
-	set category = "Fun"
-	set name = "Make Monkey"
-
-	if(!ticker)
-		alert("Wait until the game starts")
-		return
-	if(istype(M, /mob/living/carbon/human))
-		var/mob/living/carbon/human/target = M
-		log_admin("[key_name(src)] is attempting to monkeyize [M.key].")
-		spawn(10)
-			target.monkeyize()
-	else
-		alert("Invalid mob")
-
-/client/proc/cmd_admin_changelinginize(var/mob/M in mob_list)
-	set category = "Fun"
-	set name = "Make Changeling"
-
-	if(!ticker)
-		alert("Wait until the game starts")
-		return
-	if(istype(M, /mob/living/carbon/human))
-		log_admin("[key_name(src)] has made [M.key] a changeling.")
-		spawn(10)
-			M.absorbed_dna[M.real_name] = M.dna.Clone()
-			M.make_changeling()
-			if(M.mind)
-				M.mind.special_role = "Changeling"
-	else
-		alert("Invalid mob")
-*/
-/*
-/client/proc/cmd_admin_abominize(var/mob/M in mob_list)
-	set category = null
-	set name = "Make Abomination"
-
-	usr << "Ruby Mode disabled. Command aborted."
-	return
-	if(!ticker)
-		alert("Wait until the game starts.")
-		return
-	if(istype(M, /mob/living/carbon/human))
-		log_admin("[key_name(src)] has made [M.key] an abomination.")
-
-	//	spawn(10)
-	//		M.make_abomination()
-
-*/
-/*
-/client/proc/make_cultist(var/mob/M in mob_list) // -- TLE, modified by Urist
-	set category = "Fun"
-	set name = "Make Cultist"
-	set desc = "Makes target a cultist"
-	if(!cultwords["travel"])
-		runerandom()
-	if(M)
-		if(M.mind in ticker.mode.cult)
-			return
-		else
-			if(alert("Spawn that person a tome?",,"Yes","No")=="Yes")
-				M << "\red You catch a glimpse of the Realm of Nar-Sie, The Geometer of Blood. You now see how flimsy the world is, you see that it should be open to the knowledge of Nar-Sie. A tome, a message from your new master, appears on the ground."
-				new /obj/item/weapon/book/tome(M.loc)
-			else
-				M << "\red You catch a glimpse of the Realm of Nar-Sie, The Geometer of Blood. You now see how flimsy the world is, you see that it should be open to the knowledge of Nar-Sie."
-			var/glimpse=pick("1","2","3","4","5","6","7","8")
-			switch(glimpse)
-				if("1")
-					M << "\red You remembered one thing from the glimpse... [cultwords["travel"]] is travel..."
-				if("2")
-					M << "\red You remembered one thing from the glimpse... [cultwords["blood"]] is blood..."
-				if("3")
-					M << "\red You remembered one thing from the glimpse... [cultwords["join"]] is join..."
-				if("4")
-					M << "\red You remembered one thing from the glimpse... [cultwords["hell"]] is Hell..."
-				if("5")
-					M << "\red You remembered one thing from the glimpse... [cultwords["destroy"]] is destroy..."
-				if("6")
-					M << "\red You remembered one thing from the glimpse... [cultwords["technology"]] is technology..."
-				if("7")
-					M << "\red You remembered one thing from the glimpse... [cultwords["self"]] is self..."
-				if("8")
-					M << "\red You remembered one thing from the glimpse... [cultwords["see"]] is see..."
-
-			if(M.mind)
-				M.mind.special_role = "Cultist"
-				ticker.mode.cult += M.mind
-			src << "Made [M] a cultist."
-*/
-
 //TODO: merge the vievars version into this or something maybe mayhaps
 /client/proc/cmd_debug_del_all()
 	set category = "Debug"
@@ -184,13 +76,14 @@
 		log_admin("[key_name(src)] has deleted all instances of [hsbitem].")
 		message_admins("[key_name_admin(src)] has deleted all instances of [hsbitem].", FALSE)
 
-
+/*
 /client/proc/cmd_debug_make_powernets()
 	set category = "Debug"
 	set name = "Make Powernets"
 	makepowernets()
 	log_admin("[key_name(src)] has remade the powernet. makepowernets() called.")
 	message_admins("[key_name_admin(src)] has remade the powernets. makepowernets() called.", FALSE)
+*/
 /*
 /client/proc/cmd_debug_tog_aliens()
 	set category = "Server"
@@ -212,10 +105,10 @@
 		else
 			var/mob/observer/ghost/ghost = new/mob/observer/ghost(M,1)
 			ghost.ckey = M.ckey
-	message_admins("\blue [key_name_admin(usr)] assumed direct control of [M].", TRUE)
+	message_admins("<span class = 'notice'>[key_name_admin(usr)] assumed direct control of [M].</span>", TRUE)
 	log_admin("[key_name(usr)] assumed direct control of [M].")
-	var/mob/adminmob = src.mob
-	M.ckey = src.ckey
+	var/mob/adminmob = mob
+	M.ckey = ckey
 	if(isghost(adminmob))
 		qdel(adminmob)
 
@@ -263,10 +156,10 @@
 		if(!(A.type in areas_with_light))
 			areas_with_light.Add(A.type)
 
-	for(var/obj/machinery/light_switch/LS in world)
+/*	for(var/obj/structure/light_switch/LS in world)
 		var/area/A = get_area(LS)
 		if(!(A.type in areas_with_LS))
-			areas_with_LS.Add(A.type)
+			areas_with_LS.Add(A.type)*/
 
 	for(var/obj/item/device/radio/intercom/I in world)
 		var/area/A = get_area(I)
@@ -463,7 +356,7 @@
 	M.regenerate_icons()
 
 	log_admin("[key_name(usr)] changed the equipment of [key_name(M)] to [dresscode].")
-	message_admins("\blue [key_name_admin(usr)] changed the equipment of [key_name_admin(M)] to [dresscode]..", TRUE)
+	message_admins("<span class = 'notice'>[key_name_admin(usr)] changed the equipment of [key_name_admin(M)] to [dresscode]..</span>", TRUE)
 	return
 
 /client/proc/check_positions()

@@ -43,7 +43,7 @@
 		else
 			user << "<span class='notice'>There is a thick layer of silicate covering it.</span>"
 
-/obj/structure/window/proc/take_damage(var/damage = FALSE,  var/sound_effect = TRUE)
+/obj/structure/window/proc/take_damage(var/damage = 0,  var/sound_effect = TRUE)
 	var/initialhealth = health
 
 	if(silicate)
@@ -51,7 +51,7 @@
 
 	health = max(0, health - damage)
 
-	if(health <= FALSE)
+	if(health <= 0)
 		shatter()
 	else
 		if(sound_effect)
@@ -77,7 +77,7 @@
 	if (overlays)
 		overlays.Cut()
 
-	var/image/img = image(src.icon, src.icon_state)
+	var/image/img = image(icon, icon_state)
 	img.color = "#ffffff"
 	img.alpha = silicate * 255 / 100
 	overlays += img
@@ -139,7 +139,6 @@
 	else
 		return TRUE
 
-
 /obj/structure/window/CheckExit(atom/movable/O as mob|obj, target as turf)
 	if(istype(O) && O.checkpass(PASSGLASS))
 		return TRUE
@@ -182,15 +181,15 @@
 				attack_generic(H,25)
 				return
 
-		playsound(src.loc, 'sound/effects/glassknock.ogg', 80, TRUE)
+		playsound(loc, 'sound/effects/glassknock.ogg', 80, TRUE)
 		user.do_attack_animation(src)
 		usr.visible_message("<span class='danger'>\The [usr] bangs against \the [src]!</span>",
 							"<span class='danger'>You bang against \the [src]!</span>",
 							"You hear a banging sound.")
 	else
-		playsound(src.loc, 'sound/effects/glassknock.ogg', 80, TRUE)
-		usr.visible_message("[usr.name] knocks on the [src.name].",
-							"You knock on the [src.name].",
+		playsound(loc, 'sound/effects/glassknock.ogg', 80, TRUE)
+		usr.visible_message("[usr.name] knocks on the [name].",
+							"You knock on the [name].",
 							"You hear a knocking sound.")
 	return
 
@@ -257,7 +256,7 @@
 		if(!glasstype)
 			user << "<span class='notice'>You're not sure how to dismantle \the [src] properly.</span>"
 		else
-			playsound(src.loc, 'sound/items/Ratchet.ogg', 75, TRUE)
+			playsound(loc, 'sound/items/Ratchet.ogg', 75, TRUE)
 			visible_message("<span class='notice'>[user] dismantles \the [src].</span>")
 			if(dir == SOUTHWEST)
 				var/obj/item/stack/material/mats = new glasstype(loc)
@@ -396,7 +395,7 @@
 	var/list/dirs = list()
 	if(anchored)
 		for(var/obj/structure/window/W in orange(src,1))
-			if(W.anchored && W.density && W.type == src.type && W.is_fulltile()) //Only counts anchored, not-destroyed fill-tile windows.
+			if(W.anchored && W.density && W.type == type && W.is_fulltile()) //Only counts anchored, not-destroyed fill-tile windows.
 				dirs += get_dir(src, W)
 
 /*	var/list/connections = dirs_to_corner_states(dirs)
@@ -408,15 +407,15 @@
 */
 	return
 
-/obj/structure/window/fire_act(datum/gas_mixture/air, exposed_temperature, exposed_volume)
-	if(exposed_temperature > maximal_heat)
-		hit(damage_per_fire_tick, FALSE)
-	..()
+/obj/structure/window/fire_act(temperature)
+	if (prob((temperature/500) * 70))
+		shatter()
 
 /obj/structure/classic_window_frame
 	desc = "A good old window frame."
 	icon_state = "windownew_frame"
 	layer = MOB_LAYER + 0.01
+	anchored = TRUE
 /*
 /obj/structure/classic_window_frame/Crossed(mover)
 	if (isliving(mover))
@@ -438,9 +437,27 @@
 	damage_per_fire_tick = 5.0
 	maxhealth = 20.0
 	layer = MOB_LAYER + 0.02
+	density = FALSE // so we can touch curtains from any direction
 
 /obj/structure/window/classic/is_full_window()
 	return TRUE
+
+/obj/structure/window/classic/take_damage(damage)
+	if (damage > 12 || (damage > 5 && prob(damage * 5)))
+		shatter()
+	else return
+
+/obj/structure/window/classic/hitby(AM as mob|obj)
+	..()
+	visible_message("<span class='danger'>[src] was hit by [AM].</span>")
+	var/tforce = FALSE
+	if(ismob(AM))
+		tforce = 40
+	else if(isobj(AM))
+		var/obj/item/I = AM
+		tforce = I.throwforce
+	if(reinf) tforce *= 0.25
+	take_damage(tforce)
 
 /obj/structure/window/classic/bullet_act(var/obj/item/projectile/P)
 	if (!P.nodamage)

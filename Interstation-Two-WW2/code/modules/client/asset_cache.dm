@@ -78,10 +78,8 @@ You can set verify to TRUE if you want send() to sleep until the client has the 
 			var/mob/M = client
 			if(M.client)
 				client = M.client
-
 			else
 				return FALSE
-
 		else
 			return FALSE
 
@@ -205,13 +203,13 @@ You can set verify to TRUE if you want send() to sleep until the client has the 
 	var/list/common = list()
 
 	var/list/common_dirs = list(
-		"nano/css/",
-		"nano/images/",
-		"nano/images/status_icons/",
-		"nano/js/"
+		"UI/css/",
+		"UI/images/",
+		"UI/images/status_icons/",
+		"UI/js/"
 	)
 	var/list/uncommon_dirs = list(
-		"nano/templates/"
+		"UI/templates/"
 	)
 
 /datum/asset/nanoui/register()

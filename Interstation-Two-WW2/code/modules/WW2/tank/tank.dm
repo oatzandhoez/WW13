@@ -9,21 +9,29 @@
 	var/horizontal_icon = 'icons/WW2/tank_large_horizontal.dmi'
 	var/vertical_icon = 'icons/WW2/tank_large_vertical.dmi'
 	icon_state = "ger"
-	layer = MOB_LAYER - 0.01
+	layer = MOB_LAYER + 0.20 // above water
 	var/fuel_slot_screwed = TRUE
 	var/fuel_slot_open = FALSE
 	var/fuel = 750
 	var/max_fuel = 750
 	var/next_spam_allowed = -1
-	var/locked = TRUE //tanks need to be unlocked
+	var/locked = TRUE
 	var/heal_damage[2]
 	var/named = FALSE
+	var/obj/item/device/radio/radio = null
+	pixel_x = -32
 
 /obj/tank/New()
 	..()
 	update_bounding_rectangle()
 	heal_damage["weldingtool"] = max_damage/10
 	heal_damage["wrench"] = max_damage/20
+
+/obj/tank/examine(mob/user)
+	user << "<span class = 'info'>That's a tank.</span>"
+	if (examine_desc)
+		user << "<span class = 'red'>[examine_desc]</span>"
+	return TRUE
 
 /obj/tank/attack_hand(var/mob/user as mob)
 
@@ -35,6 +43,12 @@
 		fuel_slot_open = FALSE
 		return TRUE
 	if (!named)
+		if (ishuman(user))
+			var/mob/living/carbon/human/H = user
+			if (!H.original_job)
+				return
+			if (!H.original_job.is_tankuser && !H.original_job.is_officer)
+				return
 		var/str = sanitizeSafe(input(user,"Name tank?","Set Tank Name",""), MAX_NAME_LEN)
 		if (str)
 			set_name(str)
@@ -103,6 +117,7 @@
 			if (do_after(user, 50, src))
 				tank_message("<span class = 'notice'>[user] wrenches in some loose parts on [my_name()]. It looks about [health_percentage()] healthy.</span>")
 				damage = max(damage - heal_damage["wrench"], FALSE)
+				update_damage_status()
 				user.repairing_tank = FALSE
 			else
 				user.repairing_tank = FALSE
@@ -120,6 +135,7 @@
 				tank_message("<span class = 'notice'>[user] repairs some of the damage on [my_name()]. It looks about [health_percentage()] healthy.</span>")
 				playsound(get_turf(src), 'sound/items/Welder2.ogg', rand(75,100))
 				damage = max(damage - heal_damage["weldingtool"], FALSE)
+				update_damage_status()
 				user.repairing_tank = FALSE
 			else
 				user.repairing_tank = FALSE
@@ -156,13 +172,7 @@
 	if (!ishuman(user))
 		return FALSE
 
-	var/mob/living/carbon/human/H = user
-
 	if (locked == FALSE)
-		if (H.is_jew)
-			user << "<span class = 'danger'>You don't know how to use [my_name()].</span>"
-			return FALSE
-
 		if (next_seat() && !accepting_occupant)
 			tank_message("<span class = 'warning'>[user] starts to go in the [next_seat_name()] of [my_name()].</span>")
 			accepting_occupant = TRUE
@@ -171,6 +181,7 @@
 				assign_seat(user)
 				accepting_occupant = FALSE
 				user << "<span class = 'notice'><big>To fire, use SPACE and be in the back seat.</big></span>"
+				user << "<span class = 'notice'><big>To speak to others in this tank, use the prefix ':t'.</big></span>"
 				return TRUE
 			else
 				tank_message("<span class = 'warning'>[user] stops going in [my_name()].</span>")
@@ -182,7 +193,7 @@
 /obj/tank/proc/receive_command_from(var/mob/user, x)
 	if (!isliving(user) || user.stat == UNCONSCIOUS || user.stat == DEAD)
 		return
-	if (user == front_seat())
+	if (user == front_seat() && x != "FIRE")
 		return receive_frontseat_command(x)
 	else if (user == back_seat())
 		return receive_backseat_command(x)

@@ -1,22 +1,17 @@
 //admin verb groups - They can overlap if you so wish. Only one of each verb will exist in the verbs list regardless
 var/list/admin_verbs_default = list(
-	/client/proc/cmd_admin_say,			//admin-only ooc chat,
-	/client/proc/cmd_mod_say,
+	/client/proc/cmd_staff_say,			//admin-only ooc chat
 	/datum/admins/proc/show_player_panel,	//shows an interface for individual players, with various links (links require additional flags,
 	/client/proc/player_panel,
 	/client/proc/deadmin_self,			//destroys our own admin datum so we can play as a regular player,
 	/client/proc/hide_verbs,			//hides all our adminverbs,
 	/client/proc/hide_most_verbs,		//hides all our hideable adminverbs,
 	/client/proc/debug_variables,		//allows us to -see- the variables of any instance in the game. +VAREDIT needed to modify,
-//	/client/proc/check_antagonists,		//shows all antags,
 	/client/proc/cmd_mentor_check_new_players,
-	/client/proc/see_spies,
-	/client/proc/see_jews,
 	/client/proc/see_soldiers,
 	/client/proc/see_bug_reports,
 	/client/proc/see_suggestions,
 	/client/proc/see_world_realtime
-//	/client/proc/deadchat				//toggles deadchat on/off,
 	)
 var/list/admin_verbs_admin = list(
 	/client/proc/add_to_server_whitelist,
@@ -27,16 +22,15 @@ var/list/admin_verbs_admin = list(
 	/client/proc/player_panel_new,		//shows an interface for all players, with links to various panels,
 	/client/proc/invisimin,				//allows our mob to go invisible/visible,
 //	/datum/admins/proc/show_traitor_panel,	//interface which shows a mob's mind, -Removed due to rare practical use. Moved to debug verbs ~Errorage,
-	/datum/admins/proc/show_game_mode,  //Configuration window for the current game mode.,
-	/datum/admins/proc/force_mode_latespawn, //Force the mode to try a latespawn proc,
-	/datum/admins/proc/force_antag_latespawn, //Force a specific template to try a latespawn proc,
+//	/datum/admins/proc/show_game_mode,  //Configuration window for the current game mode.,
+//	/datum/admins/proc/force_mode_latespawn, //Force the mode to try a latespawn proc,
+//	/datum/admins/proc/force_antag_latespawn, //Force a specific template to try a latespawn proc,
 	/datum/admins/proc/toggleenter,		//toggles whether people can join the current game,
 	/datum/admins/proc/toggleguests,	//toggles whether guests can join the current game,
-	/client/proc/colorooc,				//allows us to set a custom colour for everythign we say in ooc,
+//	/client/proc/colorooc,				//allows us to set a custom colour for everythign we say in ooc,
 	/client/proc/admin_ghost,			//allows us to ghost/reenter body at will,
 	/client/proc/toggle_view_range,		//changes how far we can see,
 	/datum/admins/proc/view_txt_log,	//shows the server log (diary) for today,
-	/datum/admins/proc/view_atk_log,	//shows the server combat-log, doesn't do anything presently,
 	/client/proc/cmd_admin_pm_context,	//right-click adminPM interface,
 	/client/proc/cmd_admin_pm_panel,	//admin-pm list,
 	/client/proc/cmd_admin_subtle_message,	//send an message to somebody as a 'voice in their head',
@@ -68,13 +62,15 @@ var/list/admin_verbs_admin = list(
 	///client/proc/check_customitem_activity,
 	/client/proc/allow_character_respawn,    // Allows a ghost to respawn ,
 //	/client/proc/aooc,
+
 	/client/proc/change_human_appearance_admin,	// Allows an admin to change the basic appearance of human-based mobs ,
 	/client/proc/change_human_appearance_self,	// Allows the human-based mob itself change its basic appearance ,
-	/client/proc/change_security_level,
+//	/client/proc/change_security_level,
 	/client/proc/view_chemical_reaction_logs,
 	/client/proc/allow_join_ruforce,
 	/client/proc/allow_join_geforce,
 	/client/proc/show_battle_report,
+	/client/proc/see_battle_report,
 	/client/proc/end_all_grace_periods,
 //	/client/proc/generate_hit_table, // REALLY FUCKING LAGGY WARNING
 	/datum/admins/proc/paralyze_mob,
@@ -82,7 +78,8 @@ var/list/admin_verbs_admin = list(
 	/client/proc/removeHalfEmptyCases,
 	/client/proc/removeAllBlood,
 	/client/proc/toggle_jobs,
-	/client/proc/toggle_subfactions
+	/client/proc/toggle_factions,
+	/client/proc/forcibly_enable_faction
 
 )
 var/list/admin_verbs_ban = list(
@@ -101,23 +98,25 @@ var/list/admin_verbs_fun = list(
 	/client/proc/object_talk,
 	/client/proc/cmd_admin_dress,
 	/client/proc/cmd_admin_gib_self,
+	/client/proc/cmd_admin_crush_self,
 	/client/proc/drop_bomb,
-	/client/proc/everyone_random,
-	/client/proc/cinematic,
+//	/client/proc/everyone_random,
+//	/client/proc/cinematic,
 //	/datum/admins/proc/toggle_aliens,
 	/client/proc/make_sound,
-	/client/proc/toggle_random_events,
+//	/client/proc/toggle_random_events,
 	/client/proc/editappear,
 //	/client/proc/roll_dices,
 	/client/proc/randomize_lobby_music,
 //	/datum/admins/proc/call_supply_drop,
 //	/datum/admins/proc/call_drop_pod
+	/client/proc/show_custom_roundstart_tip
 	)
 
 var/list/admin_verbs_spawn = list(
 //	/datum/admins/proc/spawn_custom_item,
 //	/datum/admins/proc/check_custom_items,
-	/datum/admins/proc/spawn_atom,		// allows us to spawn instances,
+//	/datum/admins/proc/spawn_atom,		// allows us to spawn instances,
 	/client/proc/respawn_character,
 	)
 
@@ -127,19 +126,19 @@ var/list/admin_verbs_server = list(
 	/datum/admins/proc/startnow,
 	/datum/admins/proc/restart,
 	/datum/admins/proc/delay,
-	/datum/admins/proc/toggleaban,
+//	/datum/admins/proc/toggleaban,
 	/client/proc/trigger_roundend,
 	/client/proc/toggle_round_ending,
 	/client/proc/toggle_log_hrefs,
 	/datum/admins/proc/immreboot,
-	/client/proc/everyone_random,
-	/datum/admins/proc/toggleAI,
+//	/client/proc/everyone_random,
+//	/datum/admins/proc/toggleAI,
 	/client/proc/cmd_admin_delete,		// delete an instance/object/mob/etc,
 	/client/proc/cmd_debug_del_all,
 	/datum/admins/proc/adrev,
 	/datum/admins/proc/adspawn,
 	/datum/admins/proc/adjump,
-	/client/proc/toggle_random_events,
+//	/client/proc/toggle_random_events,
 //	/client/proc/check_customitem_activity,
 	/client/proc/nanomapgen_DumpImage
 	)
@@ -149,7 +148,7 @@ var/list/admin_verbs_debug = list(
 	/client/proc/Debug2,
 //	/client/proc/cmd_debug_make_powernets,
 	/client/proc/debug_controller,
-	/client/proc/debug_antagonist_template,
+//	/client/proc/debug_antagonist_template,
 	/client/proc/cmd_debug_mob_lists,
 	/client/proc/cmd_admin_delete,
 	/client/proc/cmd_debug_del_all,
@@ -207,7 +206,6 @@ var/list/admin_verbs_hideable = list(
 	/client/proc/admin_ghost,
 	/client/proc/toggle_view_range,
 	/datum/admins/proc/view_txt_log,
-	/datum/admins/proc/view_atk_log,
 	/client/proc/cmd_admin_subtle_message,
 	/client/proc/cmd_admin_check_contents,
 	/client/proc/admin_call_shuttle,
@@ -220,8 +218,9 @@ var/list/admin_verbs_hideable = list(
 	/client/proc/object_talk,
 	/client/proc/cmd_admin_dress,
 	/client/proc/cmd_admin_gib_self,
+	/client/proc/cmd_admin_crush_self,
 	/client/proc/drop_bomb,
-	/client/proc/cinematic,
+//	/client/proc/cinematic,
 //	/datum/admins/proc/toggle_aliens,
 	/client/proc/make_sound,
 	/client/proc/toggle_random_events,
@@ -243,7 +242,7 @@ var/list/admin_verbs_hideable = list(
 	/client/proc/callproc_target,
 	/client/proc/Debug2,
 	/client/proc/reload_admins,
-	/client/proc/cmd_debug_make_powernets,
+//	/client/proc/cmd_debug_make_powernets,
 	/client/proc/debug_controller,
 	/client/proc/cmd_debug_mob_lists,
 	/client/proc/cmd_debug_del_all,
@@ -293,7 +292,11 @@ var/list/admin_verbs_mod = list(
 	/client/proc/message_partisans,
 	/client/proc/send_german_train,
 	/client/proc/toggle_german_civilian_mode,
-	/client/proc/toggle_soviet_civilian_mode
+	/client/proc/toggle_soviet_civilian_mode,
+	/client/proc/toggle_respawn_delays,
+	/client/proc/open_armory_doors,
+	/client/proc/close_armory_doors,
+	/client/proc/create_crate
 )
 
 var/list/admin_verbs_mentor = list(
@@ -314,7 +317,9 @@ var/list/admin_verbs_host = list(
 	/client/proc/remove_patreon_rewards,
 	/client/proc/toggle_BYOND_hub_visibility,
 	/client/proc/eject_unwhitelisted,
-	/client/proc/toggle_hyperefficiency_mode
+//	/client/proc/toggle_hyperefficiency_mode,
+	/client/proc/toggle_playing,
+	/client/proc/toggle_pingability
 )
 
 /client/proc/add_admin_verbs()
@@ -456,7 +461,7 @@ var/list/admin_verbs_host = list(
 			return
 		if(mob.invisibility == INVISIBILITY_OBSERVER)
 			mob.invisibility = initial(mob.invisibility)
-			mob << "\red <b>Invisimin off. Invisibility reset.</b>"
+			mob << "<span class = 'red'><b>Invisimin off. Invisibility reset.</b></span>"
 			mob.alpha = max(mob.alpha + 100, 255)
 		else
 			mob.invisibility = INVISIBILITY_OBSERVER
@@ -471,9 +476,9 @@ var/list/admin_verbs_host = list(
 	if(holder && mob)
 		visible_in_who = !visible_in_who
 		if (visible_in_who)
-			mob << "\blue You are now <b>visible</b> in Staffwho."
+			mob << "<span class = 'notice'>You are now <b>visible</b> in Staffwho.</span>"
 		else
-			mob << "\blue You are <b>no longer visible</b> in Staffwho."
+			mob << "<span class = 'notice'>You are <b>no longer visible</b> in Staffwho.</span>"
 
 /client/proc/player_panel()
 	set name = "Player Panel"
@@ -588,7 +593,7 @@ var/list/admin_verbs_host = list(
 			var/light_impact_range = input("Light impact range (in tiles):") as num
 			var/flash_range = input("Flash range (in tiles):") as num
 			explosion(epicenter, devastation_range, heavy_impact_range, light_impact_range, flash_range)
-	message_admins("\blue [ckey] creating an admin explosion at [epicenter.loc].")
+	message_admins("<span class = 'notice'>[ckey] creating an admin explosion at [epicenter.loc].</span>")
 /*
 
 /client/proc/give_disease2(mob/T as mob in mob_list) // -- Giacom
@@ -634,15 +639,15 @@ var/list/admin_verbs_host = list(
 		for (var/mob/V in hearers(O))
 			V.show_message(message, 2)
 		log_admin("[key_name(usr)] made [O] at [O.x], [O.y], [O.z]. make a sound")
-		message_admins("\blue [key_name_admin(usr)] made [O] at [O.x], [O.y], [O.z]. make a sound", TRUE)
+		message_admins("<span class = 'notice'>[key_name_admin(usr)] made [O] at [O.x], [O.y], [O.z]. make a sound.</span>", TRUE)
 
 
 /*
 /client/proc/togglebuildmodeself()
 	set name = "Toggle Build Mode Self"
 	set category = "Special Verbs"
-	if(src.mob)
-		togglebuildmode(src.mob)
+	if(mob)
+		togglebuildmode(mob)
 */
 
 /client/proc/object_talk(var/msg as text) // -- TLE
@@ -678,7 +683,6 @@ var/list/admin_verbs_host = list(
 		deadmin_holder.reassociate()
 		log_admin("[src] re-admined themself.")
 		message_admins("[src] re-admined themself.", TRUE)
-		src << "<span class='interface'>You now have the keys to control the planet, or atleast a small space station</span>"
 		verbs -= /client/proc/readmin_self
 
 /client/proc/deadmin_self()
@@ -690,9 +694,7 @@ var/list/admin_verbs_host = list(
 			log_admin("[src] deadmined themself.")
 			message_admins("[src] deadmined themself.", TRUE)
 			deadmin()
-			src << "<span class='interface'>You are now a normal player.</span>"
 			verbs |= /client/proc/readmin_self
-
 
 /client/proc/toggle_log_hrefs()
 	set name = "Toggle href logging"
@@ -793,7 +795,7 @@ var/list/admin_verbs_host = list(
 	var/mob/living/carbon/human/M = input("Select mob.", "Edit Appearance") as null|anything in human_mob_list
 
 	if(!istype(M, /mob/living/carbon/human))
-		usr << "\red You can only do this to humans!"
+		usr << "<span class = 'red'>You can only do this to humans!</span>"
 		return
 	switch(alert("Are you sure you wish to edit this mob's appearance?",,"Yes","No"))
 		if("No")
@@ -876,7 +878,7 @@ var/list/admin_verbs_host = list(
 	T << "<span class='notice'>Move on.</span>"
 
 	log_admin("[key_name(usr)] told [key_name(T)] to man up and deal with it.")
-	message_admins("\blue [key_name_admin(usr)] told [key_name(T)] to man up and deal with it.", TRUE)
+	message_admins("<span class = 'notice'>[key_name_admin(usr)] told [key_name(T)] to man up and deal with it.</span>", TRUE)
 
 /client/proc/global_man_up()
 	set category = "Fun"
@@ -888,4 +890,4 @@ var/list/admin_verbs_host = list(
 		T << 'sound/voice/ManUp1.ogg'
 
 	log_admin("[key_name(usr)] told everyone to man up and deal with it.")
-	message_admins("\blue [key_name_admin(usr)] told everyone to man up and deal with it.", TRUE)
+	message_admins("<span class = 'notice'>[key_name_admin(usr)] told everyone to man up and deal with it.</span>", TRUE)

@@ -36,10 +36,71 @@
 	var/heartbeat = FALSE
 	var/global/list/overlays_cache = null
 
-
+/mob/living/carbon/human/var/next_weather_sound = -1
 /mob/living/carbon/human/Life()
 	set invisibility = FALSE
 	set background = BACKGROUND_ENABLED
+
+	if (client)
+		if (world.time >= next_weather_sound)
+			var/area/A = get_area(src)
+			if (A.weather == WEATHER_RAIN)
+				src << sound('sound/ambience/rain.ogg', channel = 777)
+				next_weather_sound = world.time + 1500
+		else
+			var/area/A = get_area(src)
+			if (A.weather == WEATHER_NONE)
+				src << sound(null, channel = 777)
+				next_weather_sound = world.time
+
+	if (istype(wear_mask, /obj/item/clothing/mask/stone))
+		if (mind && type == /mob/living/carbon/human)
+			invisibility = 101
+			loc = null
+			var/datum/mind/M = mind
+			var/mob/living/carbon/human/vampire/V = new(get_turf(src), FALSE)
+			V.canmove = FALSE
+			var/oldname = name
+			var/oldreal_name = real_name
+			spawn (12)
+				V.name = oldname
+				V.real_name = oldreal_name
+				crush(do_gibs = FALSE)
+
+			M.transfer_to(V)
+			canmove = FALSE
+			var/old_items = list()
+			old_items["[slot_s_store]"] = s_store
+			old_items["[slot_wear_id]"] = wear_id
+			old_items["[slot_belt]"] = belt
+			old_items["[slot_back]"] = back
+		// hand slots don't work, unsure why - Kachnov
+		//	old_items["[slot_l_hand]"] = l_hand
+		//	old_items["[slot_r_hand]"] = r_hand
+			old_items["[slot_l_store]"] = l_store
+			old_items["[slot_r_store]"] = r_store
+
+			for (var/obj/item/clothing/I in contents)
+				var/I_was_equipped = isEquipped(I)
+				drop_from_inventory(I)
+				spawn (15)
+					if (I_was_equipped)
+						V.equip_to_appropriate_slot(I)
+			spawn (20)
+				for (var/slotname in old_items)
+					if (old_items[slotname] != null)
+						V.equip_to_slot_if_possible(old_items[slotname], text2num(slotname))
+			spawn (30)
+				V.canmove = TRUE
+				if (istype(V.wear_mask, /obj/item/clothing/mask/stone/oneuse))
+					var/obj/item/mask = V.wear_mask
+					V.drop_from_inventory(mask)
+					qdel(mask)
+
+			spawn (10)
+				visible_message("<span class = 'danger'>[V] becomes a Vampire!</span>")
+
+			return
 
 	handle_zoom_stuff()
 
@@ -47,10 +108,13 @@
 		return
 
 	if (stat == UNCONSCIOUS || stat == DEAD || lying)
+		layer = MOB_LAYER - 0.01
 		if (istype(back, /obj/item/weapon/storage/backpack/flammenwerfer))
 			var/obj/item/weapon/storage/backpack/flammenwerfer/flamethrower_backpack = back
 			if (flamethrower_backpack.flamethrower && flamethrower_backpack.flamethrower.loc != flamethrower_backpack)
 				flamethrower_backpack.reclaim_flamethrower()
+	else
+		layer = MOB_LAYER
 
 	fire_alert = FALSE //Reset this here, because both breathe() and handle_environment() have a chance to set it.
 
@@ -62,13 +126,20 @@
 
 	var/nutrition_water_loss_multiplier = mob_process.schedule_interval/20
 
-	switch (stat)
-		if (CONSCIOUS) // takes about 1333 ticks to start starving, or ~44 minutes
-			nutrition -= (0.30/getStatCoeff("survival")) * nutrition_water_loss_multiplier
-			water -= (0.30/getStatCoeff("survival")) * nutrition_water_loss_multiplier
-		if (UNCONSCIOUS) // takes over an hour to starve
-			nutrition -= (0.20/getStatCoeff("survival")) * nutrition_water_loss_multiplier
-			water -= (0.20/getStatCoeff("survival")) * nutrition_water_loss_multiplier
+	// hunger, thirst nerfed by 10% due to popular demand. It's still hardmode - Kachnov
+
+	#define HUNGER_THIRST_MULTIPLIER 1.33
+
+	if (has_hunger_and_thirst)
+		switch (stat)
+			if (CONSCIOUS) // takes about 1333 ticks to start starving, or ~44 minutes
+				nutrition -= (0.27/getStatCoeff("survival")) * nutrition_water_loss_multiplier * HUNGER_THIRST_MULTIPLIER
+				water -= (0.27/getStatCoeff("survival")) * nutrition_water_loss_multiplier * HUNGER_THIRST_MULTIPLIER
+			if (UNCONSCIOUS) // takes over an hour to starve
+				nutrition -= (0.18/getStatCoeff("survival")) * nutrition_water_loss_multiplier * HUNGER_THIRST_MULTIPLIER
+				water -= (0.18/getStatCoeff("survival")) * nutrition_water_loss_multiplier * HUNGER_THIRST_MULTIPLIER
+
+	#undef HUNGER_THIRST_MULTIPLIER
 
 	if (stamina == max_stamina-1 && m_intent == "walk")
 		src << "<span class = 'good'>You feel like you can run for a while.</span>"
@@ -79,9 +150,13 @@
 	water = min(water, max_water)
 	water = max(water, -max_water)
 
+	var/oxyloss = getOxyLoss()
+	if (oxyloss <= 20)
+		adjustOxyLoss(-4)
+
 	..()
 
-	stamina = min(stamina + rand(2,3), max_stamina)
+	stamina = min(stamina + round(max_stamina * 0.02), max_stamina)
 
 	if(life_tick%30==15)
 		hud_updateflag = 1022
@@ -90,12 +165,18 @@
 
 	//No need to update all of these procs if the guy is dead.
 	if(stat != DEAD && !in_stasis)
-		//Organs and blood
+		// Organs and blood
 		handle_organs()
+
+		// Stop processing organs that aren't bad
+		for (var/obj/item/organ/external/E in bad_external_organs)
+			if (E.brute_dam == 0 && E.burn_dam == 0)
+				E.wounds.Cut()
+				bad_external_organs -= E
 
 		handle_blood()
 
-		adjust_body_temperature()
+//		adjust_body_temperature()
 		stabilize_body_temperature()
 
 		handle_shock()
@@ -149,7 +230,7 @@
 
 	if (disabilities & EPILEPSY)
 		if ((prob(1) && paralysis < TRUE))
-			src << "\red You have a seizure!"
+			src << "<span class = 'red'>You have a seizure!</span>"
 			for(var/mob/O in viewers(src, null))
 				if(O == src)
 					continue
@@ -268,15 +349,15 @@
 	var/loc_temp = 293
 	var/area/mob_area = get_area(src)
 
+	var/game_season = "SPRING"
 	if (mob_area.location == AREA_OUTSIDE)
 
-		var/game_season = "SPRING"
 		if (ticker.mode.vars.Find("season"))
 			game_season = ticker.mode:season
 
 		switch (game_season)
 			if ("WINTER")
-				loc_temp = 264
+				loc_temp = 264 - 20
 			if ("FALL")
 				loc_temp = 285
 			if ("SUMMER")
@@ -323,23 +404,23 @@
 	for (var/obj/snow/S in get_turf(src))
 		loc_temp -= (S.amount * 20)
 
-	src.loc_temperature = loc_temp
+	loc_temperature = loc_temp
 
 	// todo: wind adjusting effective loc_temp
 
-	if(abs(loc_temp - bodytemperature) < 0.5 && bodytemperature < species.heat_level_1 && bodytemperature > species.cold_level_1)
+	if(abs(loc_temperature - bodytemperature) < 0.5 && bodytemperature < species.heat_level_1 && bodytemperature > species.cold_level_1)
 		return // Temperatures are within normal ranges, fuck all this processing. ~Ccomp
 
 	//Body temperature adjusts depending on surrounding atmosphere based on your thermal protection (convection)
-	var/temp_adj = FALSE
-	if(loc_temp < bodytemperature)			//Place is colder than we are
-		var/thermal_protection = get_cold_protection(loc_temp) //This returns a FALSE - TRUE value, which corresponds to the percentage of protection based on what you're wearing and what you're exposed to.
-		if(thermal_protection < TRUE)
-			temp_adj = (1-thermal_protection) * ((loc_temp - bodytemperature) / BODYTEMP_COLD_DIVISOR)	//this will be negative
-	else if (loc_temp > bodytemperature)			//Place is hotter than we are
-		var/thermal_protection = get_heat_protection(loc_temp) //This returns a FALSE - TRUE value, which corresponds to the percentage of protection based on what you're wearing and what you're exposed to.
-		if(thermal_protection < TRUE)
-			temp_adj = (1-thermal_protection) * ((loc_temp - bodytemperature) / BODYTEMP_HEAT_DIVISOR)
+	var/temp_adj = 0
+	if(loc_temperature < bodytemperature)			//Place is colder than we are
+		var/thermal_protection = get_cold_protection(loc_temperature) //This returns a FALSE - TRUE value, which corresponds to the percentage of protection based on what you're wearing and what you're exposed to.
+		if(thermal_protection < 0 || game_season == "WINTER")
+			temp_adj = (1-thermal_protection) * ((loc_temperature - bodytemperature) / BODYTEMP_COLD_DIVISOR)	//this will be negative
+	else if (loc_temperature > bodytemperature)			//Place is hotter than we are
+		var/thermal_protection = get_heat_protection(loc_temperature) //This returns a FALSE - TRUE value, which corresponds to the percentage of protection based on what you're wearing and what you're exposed to.
+		if(thermal_protection < 0)
+			temp_adj = (1-thermal_protection) * ((loc_temperature - bodytemperature) / BODYTEMP_HEAT_DIVISOR)
 
 	//Use heat transfer as proportional to the gas density. However, we only care about the relative density vs standard 101 kPa/20 C air. Therefore we can use mole ratios
 //	var/relative_density = environment.total_moles / MOLES_CELLSTANDARD
@@ -386,15 +467,15 @@
 	if(status_flags & GODMODE)	return TRUE	//godmode
 
 	return
-
-/mob/living/carbon/human/proc/adjust_body_temperature(current, loc_temp, boost)
+/*
+/mob/living/carbon/human/proc/adjust_body_temperature(current, loc_temp, boost = 0)
 	var/temperature = current
 	var/difference = abs(current-loc_temp)	//get difference
 	var/increments// = difference/10			//find how many increments apart they are
 	if(difference > 50)
-		increments = difference/50
+		increments = difference/25
 	else
-		increments = difference/100
+		increments = difference/50
 	var/change = increments*boost	// Get the amount to change by (x per increment)
 	var/temp_change
 	if(current < loc_temp)
@@ -403,8 +484,7 @@
 		temperature = max(loc_temp, temperature-change)
 	temp_change = (temperature - current)
 	return temp_change
-
-
+*/
 /mob/living/carbon/human/proc/stabilize_body_temperature()
 	if (species.passive_temp_gain) // We produce heat naturally.
 		bodytemperature += species.passive_temp_gain
@@ -415,12 +495,13 @@
 
 	if (abs(body_temperature_difference) < 0.5)
 		return //fuck this precision
+
 	if (on_fire)
 		return //too busy for pesky metabolic regulation
 
 	if(bodytemperature < species.cold_level_1) //260.15 is 310.15 - 50, the temperature where you start to feel effects.
 		if(nutrition >= 2) //If we are very, very cold we'll use up quite a bit of nutriment to heat us up.
-			nutrition -= 0.5
+			nutrition -= 0.10
 		var/recovery_amt = max((body_temperature_difference / BODYTEMP_AUTORECOVERY_DIVISOR), BODYTEMP_AUTORECOVERY_MINIMUM)
 		//world << "Cold. Difference = [body_temperature_difference]. Recovering [recovery_amt]"
 //				log_debug("Cold. Difference = [body_temperature_difference]. Recovering [recovery_amt]")
@@ -432,11 +513,11 @@
 		bodytemperature += recovery_amt
 	else if(bodytemperature > species.heat_level_1) //360.15 is 310.15 + 50, the temperature where you start to feel effects.
 		//We totally need a sweat system cause it totally makes sense...~
-		var/recovery_amt = min((body_temperature_difference / BODYTEMP_AUTORECOVERY_DIVISOR), -BODYTEMP_AUTORECOVERY_MINIMUM)	//We're dealing with negative numbers
+//		var/recovery_amt = min((body_temperature_difference / BODYTEMP_AUTORECOVERY_DIVISOR), -BODYTEMP_AUTORECOVERY_MINIMUM)	//We're dealing with negative numbers
 		//world << "Hot. Difference = [body_temperature_difference]. Recovering [recovery_amt]"
 //				log_debug("Hot. Difference = [body_temperature_difference]. Recovering [recovery_amt]")
+		var/recovery_amt = min(-5, round(body_temperature_difference/10))
 		bodytemperature += recovery_amt
-
 
 //This proc returns a number made up of the flags for body parts which you are protected on. (such as HEAD, UPPER_TORSO, LOWER_TORSO, etc. See setup.dm for the full list)
 /mob/living/carbon/human/proc/get_heat_protection_flags(temperature) //Temperature is the temperature you're being exposed to.
@@ -571,6 +652,8 @@
 			stat = UNCONSCIOUS
 			animate_tail_reset()
 			adjustHalLoss(-3)
+			if(l_hand) unEquip(l_hand)
+			if(r_hand) unEquip(r_hand)
 
 		if(paralysis)
 			AdjustParalysis(-1)
@@ -725,7 +808,7 @@
 			damageoverlay.overlays += I
 
 		//Fire and Brute damage overlay (BSSR)
-		var/hurtdamage = src.getBruteLoss() + src.getFireLoss() + damageoverlaytemp
+		var/hurtdamage = getBruteLoss() + getFireLoss() + damageoverlaytemp
 		damageoverlaytemp = FALSE // We do this so we can detect if someone hits us or not.
 		if(hurtdamage)
 			var/image/I
@@ -894,11 +977,15 @@
 		if (prob(3))
 			src << "<span class = 'warning'>You're getting a bit hungry.</span>"
 
-	if(nutrition < 200)
-		if (prob(4))
+	else if(nutrition < 200 && nutrition >= 100)
+		if (prob(5))
 			src << "<span class = 'warning'>You're pretty hungry.</span>"
 
-	if(nutrition < 20) //Nutrition is below 20 = starvation
+	else if (nutrition < 100 && nutrition >= 20)
+		if (prob(8))
+			src << "<span class = 'danger'>You're getting really hungry!</span>"
+
+	else if (nutrition < 20) //Nutrition is below 20 = starvation
 
 		var/list/hunger_phrases = list(
 			"You feel weak and malnourished. You must find something to eat now!",
@@ -1010,15 +1097,19 @@
 
 /mob/living/carbon/human/proc/handle_dehydration()//Making this it's own proc for my sanity's sake - Matt
 
-	if(water < 300 && water >= 250)
-		if (prob(1))
+	if (water < 300 && water >= 200)
+		if (prob(3))
 			src << "<span class = 'warning'>You're getting a bit thirsty.</span>"
 
-	if(water < 250)
-		if (prob(2))
+	else if (water < 200 && water >= 100)
+		if (prob(5))
 			src << "<span class = 'warning'>You're pretty thirsty.</span>"
 
-	if(water < 20) //Nutrition is below 20 = dehydration
+	else if (water < 100 && water >= 20)
+		if (prob(8))
+			src << "<span class = 'danger'>You're really thirsty.</span>"
+
+	else if (water < 20) //Nutrition is below 20 = dehydration
 
 		var/list/thirst_phrases = list(
 			"You feel weak and malnourished. You must find something to drink now!",
@@ -1443,5 +1534,3 @@
 		return
 	if(XRAY in mutations)
 		sight |= SEE_TURFS|SEE_MOBS|SEE_OBJS
-
-

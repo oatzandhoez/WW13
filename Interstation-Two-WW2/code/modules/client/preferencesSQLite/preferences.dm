@@ -1,4 +1,5 @@
 //This file was auto-corrected by findeclaration.exe on 25.5.2012 20:42:33
+#define GLOBAL_SLOT 99
 
 var/list/preferences_datums = list()
 
@@ -94,7 +95,7 @@ var/list/preferences_datums = list()
 
 	var/current_character_type = "N/A"
 
-	var/current_slot = TRUE
+	var/current_slot = 1
 
 	var/list/preferences_enabled = list("SOUND_MIDI", "SOUND_LOBBY", "SOUND_AMBIENCE",
 		"CHAT_GHOSTEARS", "CHAT_GHOSTSIGHT", "CHAT_GHOSTRADIO", "CHAT_SHOWICONS",
@@ -146,7 +147,14 @@ var/list/preferences_datums = list()
 			remember_preference("ukrainian_name", ukrainian_name)
 			save_preferences(1)
 
+		spawn (1)
+			loadGlobalPreferences()
+			loadGlobalSettings()
+
 		// otherwise, keep using our default values
+
+	for (var/i in 1 to 8)
+		internal_table[num2text(i)] = list()
 
 /datum/preferences/Del()
 	save_preferences(current_slot)
@@ -163,7 +171,16 @@ var/list/preferences_datums = list()
 		close_load_dialog(user)
 		return
 
-	var/dat = "<html><body><center>"
+	var/dat = {"
+	<br>
+	<html>
+	<head>
+	<style>
+	[common_browser_style]
+	</style>
+	</head>
+	<body><center>
+	"}
 
 	if(!IsGuestKey(user.key))
 		dat += "<big><b>"
@@ -180,7 +197,7 @@ var/list/preferences_datums = list()
 	dat += player_setup.content(user)
 
 	dat += "</html></body>"
-	user << browse(dat, "window=preferences;size=635x736")
+	user << browse(dat, "window=preferences;size=980x800")
 
 /datum/preferences/proc/process_link(mob/user, list/href_list)
 	if(!user)	return
@@ -193,6 +210,7 @@ var/list/preferences_datums = list()
 		else
 			user << "<span class='danger'>The forum URL is not set in the server configuration.</span>"
 			return
+
 	ShowChoices(usr)
 	return TRUE
 
@@ -207,11 +225,11 @@ var/list/preferences_datums = list()
 		var/previous_slot = text2num(current_slot)
 		current_slot = text2num(href_list["savetoslot"])
 
-		if (current_slot == FALSE)
-			current_slot = TRUE // if we delete all our slots, still let us save
+		if (current_slot == 0)
+			current_slot = 1 // if we delete all our slots, still let us save
 
-		if (current_slot != FALSE && save_preferences(current_slot, previous_slot))
-			if (internal_table.len > TRUE && current_slot != previous_slot)
+		if (current_slot != 0 && save_preferences(current_slot, previous_slot))
+			if (internal_table.len > 1 && current_slot != previous_slot)
 				usr << "<span class = 'good'>Successfully saved current preferences to slot #[current_slot] (With a new name).</span>"
 			else
 				usr << "<span class = 'good'>Successfully saved current preferences to slot #[current_slot].</span>"
@@ -225,12 +243,16 @@ var/list/preferences_datums = list()
 			return TRUE
 
 	else if(href_list["loadfromslot"])
-		current_slot = text2num(href_list["loadfromslot"])
-		if (current_slot == FALSE)
-			current_slot = TRUE
-		if (current_slot != FALSE)
-			if (load_preferences(current_slot))
+		var/slot = text2num(href_list["loadfromslot"])
+		if (slot == 0)
+			slot = 1
+		if (slot != 0)
+			if (load_preferences(slot))
+				current_slot = slot
 				usr << "<span class = 'good'>Successfully loaded preferences (slot #[current_slot]).</span>"
+				spawn (1)
+					loadGlobalPreferences()
+					loadGlobalSettings()
 			else
 				usr << "<span class = 'bad'>FAILED to load preferences (slot #[current_slot]).</span>"
 		close_load_dialog(usr)
@@ -271,15 +293,8 @@ var/list/preferences_datums = list()
 	if(character.dna)
 		character.dna.real_name = character.real_name
 
-//	character.flavor_text = flavor_text
-
 	character.body_build = get_body_build(gender, body_build)
-/*
-	character.med_record = med_record
-	character.sec_record = sec_record
-	character.gen_record = gen_record
-	character.exploit_record = exploit_record
-*/
+
 	character.gender = gender
 	character.age = age
 	character.b_type = b_type
@@ -304,66 +319,6 @@ var/list/preferences_datums = list()
 
 	character.h_style = h_style
 	character.f_style = f_style
-
-//	character.religion = religion
-
-/*
-	// german
-	character.gender_german = gender_german
-	character.age_german = age_german
-	character.b_type_german = b_type_german
-
-	character.r_eyes_german = r_eyes_german
-	character.g_eyes_german = g_eyes_german
-	character.b_eyes_german = b_eyes_german
-
-	character.r_hair_german = r_hair_german
-	character.g_hair_german = g_hair_german
-	character.b_hair_german = b_hair_german
-
-	character.r_facial_german = r_facial_german
-	character.g_facial_german = g_facial_german
-	character.b_facial_german = b_facial_german
-
-	character.r_skin_german = r_skin_german
-	character.g_skin_german = g_skin_german
-	character.b_skin_german = b_skin_german
-
-	character.s_tone_german = s_tone_german
-
-	character.h_style_german = h_style_german
-	character.f_style_german = f_style_german
-
-	character.religion_german = religion_german
-
-	// russian
-	character.gender_russian = gender_russian
-	character.age_russian = age_russian
-	character.b_type_russian = b_type_russian
-
-	character.r_eyes_russian = r_eyes_russian
-	character.g_eyes_russian = g_eyes_russian
-	character.b_eyes_russian = b_eyes_russian
-
-	character.r_hair_russian = r_hair_russian
-	character.g_hair_russian = g_hair_russian
-	character.b_hair_russian = b_hair_russian
-
-	character.r_facial_russian = r_facial_russian
-	character.g_facial_russian = g_facial_russian
-	character.b_facial_russian = b_facial_russian
-
-	character.r_skin_russian = r_skin_russian
-	character.g_skin_russian = g_skin_russian
-	character.b_skin_russian = b_skin_russian
-
-	character.s_tone_russian = s_tone_russian
-
-	character.h_style_russian = h_style_russian
-	character.f_style_russian = f_style_russian
-
-	character.religion_russian = religion_russian
-*/
 	// Destroy/cyborgize organs
 
 	for(var/name in organ_data)
@@ -394,14 +349,6 @@ var/list/preferences_datums = list()
 					I.robotize()
 
 	character.all_underwear.Cut()
-/*
-	for(var/underwear_category_name in all_underwear)
-		var/datum/category_group/underwear/underwear_category = global_underwear.categories_by_name[underwear_category_name]
-		if(underwear_category)
-			var/underwear_item_name = all_underwear[underwear_category_name]
-			character.all_underwear[underwear_category_name] = underwear_category.items_by_name[underwear_item_name]
-		else
-			all_underwear -= underwear_category_name*/
 
 	if(backbag > 4 || backbag < TRUE)
 		backbag = TRUE //Same as above
@@ -418,7 +365,7 @@ var/list/preferences_datums = list()
 	dat += "<tt><center>"
 
 	dat += "<b>Select a character slot to load from</b><hr>"
-	for (var/i in TRUE to config.character_slots)
+	for (var/i in 1 to config.character_slots)
 		if (preferences_exist(i))
 			dat += "<a href='?src=\ref[src];loadfromslot=[i]'>[i]. [get_DB_preference_value("real_name", i)]</a><br>"
 		else
@@ -438,7 +385,7 @@ var/list/preferences_datums = list()
 	dat += "<tt><center>"
 
 	dat += "<b>Select a character slot to save to</b><hr>"
-	for (var/i in TRUE to config.character_slots)
+	for (var/i in 1 to config.character_slots)
 		if (preferences_exist(i))
 			dat += "<a href='?src=\ref[src];savetoslot=[i]'>[i]. [get_DB_preference_value("real_name", i)]</a><br>"
 		else
@@ -458,7 +405,7 @@ var/list/preferences_datums = list()
 	dat += "<tt><center>"
 
 	dat += "<b>Select a character save to delete</b><hr>"
-	for (var/i in TRUE to config.character_slots)
+	for (var/i in 1 to config.character_slots)
 		if (preferences_exist(i))
 			dat += "<a href='?src=\ref[src];delslot=[i]'>[i]. [get_DB_preference_value("real_name", i)]</a><br>"
 		else
@@ -470,6 +417,113 @@ var/list/preferences_datums = list()
 
 /datum/preferences/proc/close_del_dialog(mob/user)
 	user << browse(null, "window=del_dialog")
+
+
+/proc/globalprefsanitize(str)
+	if (islist(str))
+		return ""
+	return str
+
+// global preferences handling
+/datum/preferences/proc/loadGlobalPreferences()
+	var/list/tables = database.execute("SELECT prefs FROM preferences WHERE ckey = '[client_ckey]' AND slot = 'glob1';")
+	if (!islist(tables) || isemptylist(tables))
+		return
+	var/prefstring = tables["prefs"]
+//	log_debug(prefstring)
+	if (length(prefstring))
+		var/list/keyvals_list = splittext(prefstring, "&")
+		for (var/keyval in keyvals_list)
+			var/keyval_pair = splittext(keyval, "=")
+			var/key = keyval_pair[1]
+			var/val = keyval_pair[2]
+			if (isnum(text2num(val)))
+				val = text2num(val)
+			if (val != vars[key])
+				if (vars[key])
+					vars[key] = val
+/*
+	for (var/mob/M in player_list)
+		if (M.client && M.client.ckey == client_ckey)
+			ShowChoices(M)*/
+
+/datum/preferences/proc/saveGlobalPreferences()
+	var/prefstring = ""
+
+	prefstring += "ooccolor=[globalprefsanitize(ooccolor)]&"
+	prefstring += "be_special_role=[globalprefsanitize(be_special_role)]&"
+	prefstring += "UI_style=[globalprefsanitize(UI_style)]&"
+	prefstring += "UI_useborder=[globalprefsanitize(UI_useborder)]&"
+	prefstring += "UI_style_color=[globalprefsanitize(UI_style_color)]&"
+	prefstring += "UI_style_alpha=[globalprefsanitize(UI_style_alpha)]"
+
+	var/list/prefs_exist_check = database.execute("SELECT * FROM preferences WHERE ckey = '[client_ckey]' AND slot = 'glob1';")
+	if (islist(prefs_exist_check) && !isemptylist(prefs_exist_check))
+		database.execute("UPDATE preferences SET prefs = '[prefstring]' WHERE ckey = '[client_ckey]' AND slot = 'glob1';")
+	else
+		database.execute("INSERT INTO preferences (ckey, slot, prefs) VALUES ('[client_ckey]', 'glob1', '[prefstring]');")
+
+// global settings handling
+#define ONLY_LOAD_DISABLED_SETTINGS
+/datum/preferences/proc/loadGlobalSettings()
+	if (!client)
+		return
+	// enabled
+	var/list/tables = database.execute("SELECT prefs FROM preferences WHERE ckey = '[client_ckey]' AND slot = 'glob2_enabled';")
+
+	#ifndef ONLY_LOAD_DISABLED_SETTINGS
+	if (islist(tables) && !isemptylist(tables))
+		var/prefstring = tables["prefs"]
+		if (length(prefstring))
+			var/list/vals_list = splittext(prefstring, "&")
+			for (var/val in vals_list)
+				if (isnum(text2num(val)))
+					val = text2num(val)
+				client.set_preference(val, TRUE)
+	#else
+	for (var/pref in preferences_enabled)
+		client.set_preference(pref, TRUE)
+	#endif
+	// disabled
+	tables = database.execute("SELECT prefs FROM preferences WHERE ckey = '[client_ckey]' AND slot = 'glob2_disabled';")
+	if (islist(tables) && !isemptylist(tables))
+		var/prefstring = tables["prefs"]
+		if (length(prefstring))
+			var/list/vals_list = splittext(prefstring, "&")
+			for (var/val in vals_list)
+				if (isnum(text2num(val)))
+					val = text2num(val)
+				client.set_preference(val, FALSE)
+/*
+	for (var/mob/M in player_list)
+		if (M.client && M.client.ckey == client_ckey)
+			ShowChoices(M)*/
+
+/datum/preferences/proc/saveGlobalSettings()
+	var/prefstring = ""
+	for (var/v in 1 to preferences_enabled.len)
+		prefstring += preferences_enabled[v]
+		if (v != preferences_enabled.len)
+			prefstring += "&"
+	if (prefstring)
+		var/list/prefs_exist_check = database.execute("SELECT * FROM preferences WHERE ckey = '[client_ckey]' AND slot = 'glob2_enabled';")
+		if (islist(prefs_exist_check) && !isemptylist(prefs_exist_check))
+			database.execute("UPDATE preferences SET prefs = '[prefstring]' WHERE ckey = '[client_ckey]' AND slot = 'glob2_enabled';")
+		else
+			database.execute("INSERT INTO preferences (ckey, slot, prefs) VALUES ('[client_ckey]', 'glob2_enabled', '[prefstring]');")
+
+	prefstring = ""
+	for (var/v in 1 to preferences_disabled.len)
+		prefstring += preferences_disabled[v]
+		if (v != preferences_disabled.len)
+			prefstring += "&"
+	if (prefstring)
+		var/list/prefs_exist_check = database.execute("SELECT * FROM preferences WHERE ckey = '[client_ckey]' AND slot = 'glob2_disabled';")
+		if (islist(prefs_exist_check) && !isemptylist(prefs_exist_check))
+			database.execute("UPDATE preferences SET prefs = '[prefstring]' WHERE ckey = '[client_ckey]' AND slot = 'glob2_disabled';")
+		else
+			database.execute("INSERT INTO preferences (ckey, slot, prefs) VALUES ('[client_ckey]', 'glob2_disabled', '[prefstring]');")
+#undef ONLY_LOAD_DISABLED_SETTINGS
 
 /client/proc/is_preference_enabled(var/preference)
 
@@ -503,7 +557,11 @@ var/list/preferences_datums = list()
 	if(.)
 		cp.toggled(mob, enabled)
 
-	prefs.save_preferences(prefs.current_slot)
+	for (var/client/C in clients)
+		if (C.ckey == prefs.client_ckey)
+			C.onload_preferences(preference)
+
+	prefs.saveGlobalSettings()
 
 /mob/proc/is_preference_enabled(var/preference)
 	if(!client)
@@ -519,10 +577,15 @@ var/list/preferences_datums = list()
 
 	return client.set_preference(preference, set_preference)
 
-/client/proc/onload_preferences()
-	var/datum/client_preference/cp = get_client_preference_by_type(/datum/client_preference/play_lobby_music)
-	if (isnewplayer(mob))
-		if (is_preference_enabled(cp.key))
-			mob << sound(ticker.login_music, repeat = TRUE, wait = FALSE, volume = 85, channel = TRUE)
-		else
-			mob << sound(null, repeat = FALSE, wait = FALSE, volume = 85, channel = TRUE)
+/client/var/initially_loaded_preferences = FALSE
+/client/proc/onload_preferences(var/preference)
+	if (initially_loaded_preferences)
+		if (preference == "SOUND_LOBBY")
+			var/datum/client_preference/cp = get_client_preference_by_type(/datum/client_preference/play_lobby_music)
+			if (isnewplayer(mob))
+				if (is_preference_enabled(cp.key))
+					mob << sound(ticker.login_music, repeat = TRUE, wait = FALSE, volume = 50, channel = TRUE)
+				else
+					mob << sound(null, repeat = FALSE, wait = FALSE, volume = 50, channel = TRUE)
+	else
+		initially_loaded_preferences = TRUE

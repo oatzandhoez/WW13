@@ -44,6 +44,11 @@ WW 2 WEAPONS MAGS N AMMO
 	caliber = "a792x57"
 	projectile_type = /obj/item/projectile/bullet/rifle/a792x57
 
+/obj/item/ammo_casing/a792x57_weaker
+	desc = "A 7.92x57mm bullet casing."
+	caliber = "a792x57"
+	projectile_type = /obj/item/projectile/bullet/rifle/a792x57_weaker
+
 /obj/item/ammo_casing/a762x25
 	desc = "A 7.62x25mm bullet casing."
 	caliber = "a762x25"
@@ -53,6 +58,48 @@ WW 2 WEAPONS MAGS N AMMO
 	desc = "A 9mm parabellum bullet casing."
 	caliber = "a9mm_para"
 	projectile_type = /obj/item/projectile/bullet/rifle/a9_parabellum
+
+/obj/item/ammo_casing/a9_parabellum_luger
+	desc = "A 9mm parabellum bullet casing."
+	caliber = "a9mm_para_luger"
+	projectile_type = /obj/item/projectile/bullet/rifle/a9_parabellum_luger
+
+/obj/item/ammo_casing/c45
+	desc = "A .45 bullet casing."
+	caliber = ".45"
+	projectile_type = /obj/item/projectile/bullet/rifle/a9_parabellum_luger
+
+/obj/item/ammo_casing/c762mm_tokarev
+	desc = "A 7.62mm pistol bullet casing."
+	caliber = "7.62mm"
+	projectile_type = /obj/item/projectile/bullet/rifle/c762mm_tokarev
+
+/obj/item/ammo_casing/c763x25mm_mauser
+	desc = "A 7.63x25mm pistol bullet casing."
+	caliber = "7.63x25mm"
+	projectile_type = /obj/item/projectile/bullet/rifle/c763x25mm_mauser
+
+/obj/item/ammo_casing/c9x19mm_stenmk3
+	desc = "A 9x19mm bullet casing."
+	caliber = "9x19mm"
+	projectile_type = /obj/item/projectile/bullet/rifle/c9x19mm_stenmk3
+
+/obj/item/ammo_casing/c762x38mmR
+	desc = "A 7.62x38mmR bullet casing."
+	caliber = "7.62x38mmR"
+	projectile_type = /obj/item/projectile/bullet/rifle/c762x38mmR
+
+/obj/item/ammo_casing/c762x25mm_pps
+	desc = "A 7.62x25mm bullet casing."
+	caliber = "7.62x25mm"
+	projectile_type = /obj/item/projectile/bullet/rifle/c762x25mm_pps
+
+
+/obj/item/ammo_casing/c792x57_fg42
+	desc = "A 7.92x57mm bullet casing."
+	caliber = "7.92x57mm"
+	projectile_type = /obj/item/projectile/bullet/rifle/c792x57_fg42
+
 /*
 /obj/item/ammo_casing/svt
 	desc = "A SVT bullet casing."
@@ -123,6 +170,9 @@ WW 2 WEAPONS MAGS N AMMO
 
 /obj/item/ammo_casing/rocket/yuge
 	projectile_type = /obj/item/projectile/bullet/rifle/missile/yuge
+
+/obj/item/ammo_casing/rocket/yuge/lessyuge
+	projectile_type = /obj/item/projectile/bullet/rifle/missile/yuge/lessyuge
 
 /obj/item/ammo_casing/rocket/tank
 	projectile_type = /obj/item/projectile/bullet/rifle/missile/tank

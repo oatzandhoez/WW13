@@ -19,18 +19,18 @@
 		reagents = R
 		R.my_atom = src
 		if (!possible_transfer_amounts)
-			src.verbs -= /obj/structure/reagent_dispensers/verb/set_APTFT
+			verbs -= /obj/structure/reagent_dispensers/verb/set_APTFT
 		..()
 
 	examine(mob/user)
 		if(!..(user, 2))
 			return
-		user << "\blue It contains:"
+		user << "<span class = 'notice'>It contains:</span>"
 		if(reagents && reagents.reagent_list.len)
 			for(var/datum/reagent/R in reagents.reagent_list)
-				user << "\blue [R.volume] units of [R.name]"
+				user << "<span class = 'notice'>[R.volume] units of [R.name]</span>"
 		else
-			user << "\blue Nothing."
+			user << "<span class = 'notice'>Nothing.</span>"
 
 	verb/set_APTFT() //set amount_per_transfer_from_this
 		set name = "Set transfer amount"
@@ -47,12 +47,12 @@
 				return
 			if(2.0)
 				if (prob(50))
-					new /obj/effect/effect/water(src.loc)
+					new /obj/effect/effect/water(loc)
 					qdel(src)
 					return
 			if(3.0)
 				if (prob(5))
-					new /obj/effect/effect/water(src.loc)
+					new /obj/effect/effect/water(loc)
 					qdel(src)
 					return
 			else
@@ -107,7 +107,7 @@
 	if(!..(user, 2))
 		return
 	if (modded)
-		user << "\red Fuel faucet is wrenched open, leaking the fuel!"
+		user << "<span class = 'red'>The fuel faucet is wrenched open, leaking the fuel!</span>"
 	if(rig)
 		user << "<span class='notice'>There is some kind of device rigged to the tank.</span>"
 
@@ -121,7 +121,7 @@
 			overlays = new/list()
 
 /obj/structure/reagent_dispensers/fueltank/attackby(obj/item/weapon/W as obj, mob/user as mob)
-	src.add_fingerprint(user)
+	add_fingerprint(user)
 	if (istype(W,/obj/item/weapon/wrench))
 		user.visible_message("[user] wrenches [src]'s faucet [modded ? "closed" : "open"].", \
 			"You wrench [src]'s faucet [modded ? "closed" : "open"]")
@@ -136,7 +136,7 @@
 			return ..()
 		user.visible_message("\The [user] begins rigging [W] to \the [src].", "You begin rigging [W] to \the [src]")
 		if(do_after(user, 20, src))
-			user.visible_message("<span class='notice'>The [user] rigs [W] to \the [src].", "\blue  You rig [W] to \the [src].</span>")
+			user.visible_message("<span class='notice'>The [user] rigs [W] to \the [src].", "<span class = 'notice'> You rig [W] to \the [src].</span>")
 
 			var/obj/item/device/assembly_holder/H = W
 			if (istype(H.a_left,/obj/item/device/assembly/igniter) || istype(H.a_right,/obj/item/device/assembly/igniter))
@@ -176,7 +176,7 @@
 		explosion(loc,-1,1,2,1)
 	if (src) qdel(src)
 
-/obj/structure/reagent_dispensers/fueltank/fire_act(datum/gas_mixture/air, temperature, volume)
+/obj/structure/reagent_dispensers/fueltank/fire_act(temperature)
 	if (modded)
 		explode()
 	else if (temperature > T0C+500)
@@ -193,7 +193,7 @@
 
 	amount = min(amount, reagents.total_volume)
 	reagents.remove_reagent("fuel",amount)
-	new /obj/effect/decal/cleanable/liquid_fuel(src.loc, amount,1)
+	new /obj/effect/decal/cleanable/liquid_fuel(loc, amount,1)
 
 /obj/structure/reagent_dispensers/peppertank
 	name = "Pepper Spray Refiller"
@@ -222,7 +222,7 @@
 
 /obj/structure/reagent_dispensers/water_cooler/attackby(obj/item/weapon/W as obj, mob/user as mob)
 	if (istype(W,/obj/item/weapon/wrench))
-		src.add_fingerprint(user)
+		add_fingerprint(user)
 		if(anchored)
 			user.visible_message("\The [user] begins unsecuring \the [src] from the floor.", "You start unsecuring \the [src] from the floor.")
 		else

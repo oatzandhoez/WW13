@@ -1,6 +1,9 @@
 var/list/gamemode_cache = list()
 
 /datum/configuration
+
+	var/global_config_path = null
+
 	var/server_name = null				// server name (for world name / status)
 	var/server_suffix = FALSE				// generate numeric suffix based on server port
 
@@ -61,7 +64,6 @@ var/list/gamemode_cache = list()
 	var/allow_random_events = FALSE			// enables random events mid-round when set to TRUE
 	var/allow_ai = TRUE					// allow ai job
 	var/hostedby = null
-	var/respawn_delay = 30
 	var/guest_jobban = TRUE
 	var/usewhitelist = FALSE
 	var/allow_testing_staff = FALSE
@@ -164,6 +166,10 @@ var/list/gamemode_cache = list()
 
 	var/ghosts_can_possess_animals = FALSE
 
+	var/no_respawn_delays = FALSE
+
+	var/max_expected_players = 50 // determines autobalance
+
 	// hub stuff
 
 	var/hub = FALSE
@@ -183,15 +189,10 @@ var/list/gamemode_cache = list()
 	var/german_train_cars_soldier = TRUE
 	var/german_train_cars_conductor = TRUE
 
-	//DEBUG
-
-	var/debug = FALSE
-
 	//WW2
 
 	var/lighting_is_rustic = FALSE
 	var/machinery_does_not_use_power = FALSE
-
 	var/paratrooper_drop_time = 3000
 
 	//WW2 donor shit
@@ -210,6 +211,19 @@ var/list/gamemode_cache = list()
 	var/ww13_hub_hostedby
 	var/ww13_hub_postinfo
 
+	// misc
+	var/resource_website = null
+
+	// dumb memes
+	var/allow_dabbing = FALSE
+
+	// seasons and weather
+	var/list/allowed_seasons = list(1)
+	var/list/allowed_weather = list(1)
+
+	var/list/slog = list()
+	var/list/wlog = list()
+
 /datum/configuration/New()
 	var/list/L = typesof(/datum/game_mode) - /datum/game_mode
 	for (var/T in L)
@@ -220,87 +234,12 @@ var/list/gamemode_cache = list()
 			gamemode_cache[M.config_tag] = M // So we don't instantiate them repeatedly.
 			if(!(M.config_tag in modes))		// ensure each mode is added only once
 				log_misc("Adding game mode [M.name] ([M.config_tag]) to configuration.")
-				src.modes += M.config_tag
-				src.mode_names[M.config_tag] = M.name
-				src.probabilities[M.config_tag] = M.probability
+				modes += M.config_tag
+				mode_names[M.config_tag] = M.name
+				probabilities[M.config_tag] = M.probability
 				if (M.votable)
-					src.votable_modes += M.config_tag
-	src.votable_modes += "secret"
-
-	/* this doesn't have to happen compile time unlike, for example, #DEBUG, therefore it is better.
-	 * I can't conditionally compile with it, but I don't absolutely need to - Kachnov */
-	if (fexists("config/debug.txt"))
-		debug = TRUE
-
-	var/fstring = "config/donors/job_specific_custom_loadout.txt"
-
-	if (fexists(fstring))
-		var/list/strings = file2list(fstring)
-		for (var/string in strings)
-			if (dd_hasprefix(string, "#"))
-				continue
-			var/list/split_string = splittext(string, ";")
-			var/ckey = split_string[1] // who gets it
-			var/job = split_string[2] // for what job title
-			var/list/items = list() // and what do they get
-			if (split_string.len == 3)
-				items += split_string[3]
-			else
-				for (var/i in 3 to split_string.len)
-					items += split_string[i]
-
-			job_specific_custom_loadouts[job] = list()
-			job_specific_custom_loadouts[job][ckey] = items
-
-	fstring = "config/donors/role_preference.txt"
-
-	if (fexists(fstring))
-		var/list/strings = file2list(fstring)
-		for (var/string in strings)
-			if (dd_hasprefix(string, "#"))
-				continue
-			people_with_role_preference += string
-
-	fstring = "config/donors/untermenschen.txt"
-
-	if (fexists(fstring))
-		var/list/strings = file2list(fstring)
-		for (var/string in strings)
-			if (dd_hasprefix(string, "#"))
-				continue
-			untermenschen += string
-
-/datum/configuration/proc/donor_item2real_item(var/item)
-	switch (item)
-		if ("kar_ammo")
-			return new/obj/item/ammo_magazine/kar98k
-		if ("mosin_ammo")
-			return new/obj/item/ammo_magazine/mosin
-
-/datum/configuration/proc/give_donor_benefits(var/client/client)
-
-	// process custom items: extra ammo, etc
-
-	var/list/stuff = list()
-	for (var/datum/job/j in job_master.occupations)
-		if (job_specific_custom_loadouts[j.title])
-			if (job_specific_custom_loadouts[j.title][client.ckey])
-				var/list/donor_items = job_specific_custom_loadouts[j.title][client.ckey]
-				for (var/item in TRUE to donor_items.len)
-					stuff += donor_item2real_item(item)
-
-	client.donor_spawn_stuff = stuff // I guess they'll just have these objects
-	// floating in the void until we "spawn" them
-
-	// see if they have role preference
-
-	if (people_with_role_preference.Find(client.ckey))
-		client.role_preference = TRUE
-
-	if (untermenschen.Find(client.ckey))
-		client.untermensch = TRUE
-
-
+					votable_modes += M.config_tag
+	votable_modes += "secret"
 
 /datum/configuration/proc/load(filename, type = "config") //the type can also be game_options, in which case it uses a different switch. not making it separate to not copypaste code - Urist
 
@@ -331,8 +270,33 @@ var/list/gamemode_cache = list()
 		if(type == "config")
 			switch (name)
 
+				if ("no_respawn_delays")
+					no_respawn_delays = text2num(value)
+
+				if ("max_expected_players")
+					max_expected_players = text2num(value)
+
+				if ("global_config_path")
+					if (list("null", "Null", "NULL", "nil", "Nil", "NILL").Find(value))
+						config.global_config_path = null
+					else
+						config.global_config_path = value
+
+				if ("resource_website")
+					if (!list("null", "Null", "NULL", "nil", "Nil", "NILL").Find(value))
+						config.resource_website = value
+					else
+						config.resource_website = null
+				// allows the global_config to override us with YES/NO
 				if ("hub")
-					config.hub = TRUE
+					if (!value || !list("yes", "Yes", "YES", "no", "No", "NO").Find(value))
+						config.hub = TRUE
+					else
+						switch (lowertext(value))
+							if ("yes")
+								config.hub = TRUE
+							if ("no")
+								config.hub = FALSE
 				if ("jojoreference")
 					config.jojoreference = TRUE
 				if ("testing_port")
@@ -476,9 +440,6 @@ var/list/gamemode_cache = list()
 				if ("allow_ai")
 					config.allow_ai = TRUE
 
-				if ("respawn_delay")
-					config.respawn_delay = text2num(value)
-
 				if ("server_name")
 					config.server_name = value
 
@@ -544,7 +505,14 @@ var/list/gamemode_cache = list()
 					config.abandon_allowed = FALSE
 
 				if ("usewhitelist")
-					config.usewhitelist = TRUE
+					if (!value || !list("yes", "Yes", "YES", "no", "No", "NO").Find(value))
+						config.usewhitelist = TRUE
+					else
+						switch (lowertext(value))
+							if ("yes")
+								config.usewhitelist = TRUE
+							if ("no")
+								config.usewhitelist = FALSE
 
 				if ("allow_testing_staff")
 					config.allow_testing_staff = TRUE
@@ -667,6 +635,40 @@ var/list/gamemode_cache = list()
 
 				if ("round_end_countdown")
 					config.round_end_countdown = text2num(value)
+
+				if ("allow_dabbing")
+					config.allow_dabbing = TRUE
+
+				if ("enabled_seasons")
+					if (value)
+						var/list/seasons = splittext(value, ",")
+						slog = seasons.Copy()
+						for (var/v in 1 to seasons.len)
+							seasons[v] = uppertext(ckey(seasons[v]))
+						if (seasons[1] == "ALL")
+							allowed_seasons = list(1)
+						else if (seasons[1] == "NONE")
+							allowed_seasons = list(0)
+						else
+							allowed_seasons.Cut()
+							for (var/season in seasons)
+								allowed_seasons += season
+
+
+				if ("enabled_weather")
+					if (value)
+						var/list/weathers = splittext(value, ",")
+						wlog = weathers.Copy()
+						for (var/v in 1 to weathers.len)
+							weathers[v] = uppertext(ckey(weathers[v]))
+						if (weathers[1] == "ALL")
+							allowed_weather = list(1)
+						else if (weathers[1] == "NONE")
+							allowed_weather = list(0)
+						else
+							allowed_weather.Cut()
+							for (var/weather in weathers)
+								allowed_weather += weather
 
 				else
 					log_misc("Unknown setting in configuration: '[name]'")

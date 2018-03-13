@@ -1,16 +1,21 @@
-// ww2 specific channels
+#define MAX_SUPPLYDROP_CRATES 20
 
+// DEFAULT frequency: unused
 var/const/DEFAULT_FREQ = 1000
 
-var/const/RU_BASE_FREQ = 1001
-var/const/RU_COMM_FREQ = 1002
-var/const/RU_SUPPLY_FREQ = 1003
+// SOVIET
+var/const/SO_BASE_FREQ = 1001
+var/const/SO_COMM_FREQ = 1002
+var/const/SO_SUPPLY_FREQ = 1003
 
+// GERMAN
 var/const/DE_BASE_FREQ = 1004
 var/const/DE_COMM_FREQ = 1005
 var/const/DE_SUPPLY_FREQ = 1006
+var/const/SS_FREQ = 1007 // SS
 
-var/const/UK_FREQ = 1007
+// UKRAINIAN
+var/const/UK_FREQ = 1008
 
 /proc/radio_sanitize_frequency(freq)
 	return text2num("[freq].0")
@@ -21,18 +26,20 @@ var/const/UK_FREQ = 1007
 	switch (constant)
 		if (DEFAULT_FREQ)
 			return "DEFAULT"
-		if (RU_BASE_FREQ)
-			return "Russian Base"
-		if (RU_COMM_FREQ)
-			return "Russian Command"
-		if (RU_SUPPLY_FREQ)
-			return "Russian Supply"
+		if (SO_BASE_FREQ)
+			return "Soviet Base"
+		if (SO_COMM_FREQ)
+			return "Soviet Command"
+		if (SO_SUPPLY_FREQ)
+			return "Soviet Supply"
 		if (DE_BASE_FREQ)
 			return "German Base"
 		if (DE_COMM_FREQ)
 			return "German Command"
 		if (DE_SUPPLY_FREQ)
 			return "German Supply"
+		if (SS_FREQ)
+			return "SS"
 		if (UK_FREQ)
 			return "Partisans"
 
@@ -41,247 +48,103 @@ var/const/UK_FREQ = 1007
 		constant = text2num(constant)
 	switch (constant)
 		if (DEFAULT_FREQ)
-			return "secradio"
-		if (RU_BASE_FREQ)
-			return "secradio"
-		if (RU_COMM_FREQ)
-			return "comradio"
-		if (RU_SUPPLY_FREQ)
-			return "supradio"
+			return "redradio"
+		if (SO_BASE_FREQ)
+			return "redradio"
+		if (SO_COMM_FREQ)
+			return "blueradio"
+		if (SO_SUPPLY_FREQ)
+			return "brownradio"
 		if (DE_BASE_FREQ)
-			return "secradio"
+			return "redradio"
 		if (DE_COMM_FREQ)
-			return "comradio"
+			return "blueradio"
 		if (DE_SUPPLY_FREQ)
-			return "supradio"
+			return "brownradio"
+		if (SS_FREQ)
+			return "SSradio"
 		if (UK_FREQ)
-			return "secradio"
+			return "redradio"
 
 // channel = access
 var/global/list/default_german_channels = list(
-	num2text(DE_COMM_FREQ),
 	num2text(DE_BASE_FREQ),
 	num2text(DE_SUPPLY_FREQ)
 )
 
-var/global/list/default_russian_channels = list(
-	num2text(RU_COMM_FREQ),
-	num2text(RU_BASE_FREQ),
-	num2text(RU_SUPPLY_FREQ)
+var/global/list/command_german_channels = list(
+	num2text(DE_BASE_FREQ),
+	num2text(DE_SUPPLY_FREQ),
+	num2text(DE_COMM_FREQ)
+)
+
+var/global/list/SS_german_channels = list(
+	num2text(DE_BASE_FREQ),
+	num2text(DE_SUPPLY_FREQ),
+	num2text(SS_FREQ)
+)
+
+var/global/list/SS_command_german_channels = list(
+	num2text(DE_BASE_FREQ),
+	num2text(DE_SUPPLY_FREQ),
+	num2text(DE_COMM_FREQ),
+	num2text(SS_FREQ)
+)
+
+var/global/list/default_soviet_channels = list(
+	num2text(SO_BASE_FREQ),
+	num2text(SO_SUPPLY_FREQ)
+)
+
+var/global/list/command_soviet_channels = list(
+	num2text(SO_BASE_FREQ),
+	num2text(SO_SUPPLY_FREQ),
+	num2text(SO_COMM_FREQ)
 )
 
 var/global/list/default_ukrainian_channels = list(
 	num2text(UK_FREQ)
 )
 
+var/global/list/all_channels = default_german_channels | command_german_channels | SS_german_channels | SS_command_german_channels | default_soviet_channels | command_soviet_channels | default_ukrainian_channels
+
 
 /obj/item/device/radio
 	icon = 'icons/obj/radio.dmi'
 	name = "station bounced radio"
-	desc = "A communication device. You can speak through it with ; or :b when it's on your back, and :l or :r when its in your hand."
+	desc = "A portable communication device. You can speak through it with ':b' when it's in your suit storage slot, and ':l' or ':r' when its in your hand. ';' speaks with the first radio available on your person."
 	suffix = "\[3\]"
 	icon_state = "walkietalkie"
 	item_state = "walkietalkie"
 
 	var/on = TRUE // FALSE for off
-//	var/last_transmission
 	var/frequency = DEFAULT_FREQ
-//	var/traitor_frequency = FALSE //tune to frequency to unlock traitor supplies
 	var/canhear_range = 3 // the range which mobs can hear this radio from
 	var/datum/wires/radio/wires = null
-//	var/b_stat = FALSE
-	var/broadcasting = FALSE
+	var/broadcasting = TRUE
 	var/listening = TRUE
 	var/list/channels = list() //see communications.dm for full list. First channel is a "default" for :h
 	var/list/listening_on_channel = list()
-//	var/subspace_transmission = FALSE
-//	var/syndie = FALSE//Holder to see if it's a syndicate encrypted radio
 	flags = CONDUCT
-	slot_flags = SLOT_BELT
+	slot_flags = SLOT_BACK
 	throw_speed = 2
 	throw_range = 9
 	w_class = 2
 	matter = list("glass" = 25,DEFAULT_WALL_MATERIAL = 75)
-//	var/const/FREQ_LISTENING = TRUE
 	var/list/internal_channels
 	var/last_tick = -1
 	var/datum/nanoui/UI
 	var/speech_sound = null
-//	var/freerange = TRUE
 	var/last_broadcast = -1
 	var/notyetmoved = TRUE // shitty hack to prevent radio piles from broadcasting
 	var/is_supply_radio = FALSE
-	var/supply_points = 350
-
-	var/static/list/german_supply_crate_types = list(
-
-		// AMMO AND MISC.
-		"Flammenwerfer Fuel Tanks" = /obj/structure/closet/crate/flammenwerfer_fueltanks,
-		"Vehicle Fuel Tanks" = /obj/structure/closet/crate/vehicle_fueltanks,
-		"Maxim Belts" = /obj/structure/closet/crate/maximbelt,
-		"Guaze" = /obj/structure/closet/crate/gauze,
-		"Luger Ammo" = /obj/structure/closet/crate/lugerammo,
-		"Kar Ammo" = /obj/structure/closet/crate/kar98kammo,
-		"Mp40 Ammo" = /obj/structure/closet/crate/mp40kammo,
-		"Mg34 Ammo" = /obj/structure/closet/crate/mg34ammo,
-		"Mp43 Ammo" = /obj/structure/closet/crate/mp43ammo,
-		"PTRD Ammo" = /obj/structure/closet/crate/ptrdammo,
-		"Mines Ammo" = /obj/structure/closet/crate/bettymines,
-		"Grenades" = /obj/structure/closet/crate/german_grenade,
-		"Panzerfausts" = /obj/structure/closet/crate/panzerfaust,
-		"Smoke Grenades" = /obj/structure/closet/crate/german_smoke_grenade, // too lazy to fix this typo rn
-		"Sandbags" = /obj/structure/closet/crate/sandbags,
-		"Flaregun Ammo" = /obj/structure/closet/crate/flares_ammo,
-		"Flares" = /obj/structure/closet/crate/flares,
-		"Bayonet" = /obj/structure/closet/crate/bayonets,
-		"Solid Rations" = /obj/structure/closet/crate/rations/german_solids,
-		"Liquid Rations" = /obj/structure/closet/crate/rations/german_liquids,
-		"Dessert Rations" = /obj/structure/closet/crate/rations/german_desserts,
-		"Water Rations" = /obj/structure/closet/crate/rations/water,
-		"Alcohol Rations" = /obj/structure/closet/crate/rations/german_alcohol,
-
-		// MATERIALS
-		"Wood Planks" = /obj/structure/closet/crate/wood,
-		"Steel Sheets" = /obj/structure/closet/crate/steel,
-		"Iron Ingots" = /obj/structure/closet/crate/iron,
-
-		// GUNS & ARTILLERY
-		"PTRD" = /obj/item/weapon/gun/projectile/heavysniper/ptrd,
-		"Flammenwerfer" = /obj/item/weapon/storage/backpack/flammenwerfer,
-		"7,5 cm FK 18 Artillery Piece" = /obj/machinery/artillery,
-		"Luger Crate" = /obj/structure/closet/crate/lugers,
-
-		// ARTILLERY AMMO
-		"Artillery Ballistic Shells Crate" = /obj/structure/closet/crate/artillery,
-		"Artillery Gas Shells Crate" = /obj/structure/closet/crate/artillery_gas,
-
-		// CLOSETS
-		"Tool Closet" = /obj/structure/closet/toolcloset,
-
-		// MINES
-		"Betty Mines Crate" = /obj/structure/closet/crate/bettymines,
-
-		// ANIMAL CRATES
-		"German Shepherd Crate" = /obj/structure/largecrate/animal/dog/german,
-
-		// MEDICAL STUFF
-		"Medical Crate" = /obj/structure/closet/crate/medical
-	)
-
-	var/static/list/soviet_supply_crate_types = list(
-
-		// AMMO AND MISC.
-		"Vehicle Fuel Tanks" = /obj/structure/closet/crate/vehicle_fueltanks,
-		"Maxim Belts" = /obj/structure/closet/crate/maximbelt,
-		"Bint" = /obj/structure/closet/crate/bint,
-		".45 Ammo" = /obj/structure/closet/crate/c45ammo,
-		"Mosin Ammo" = /obj/structure/closet/crate/mosinammo,
-		"PPSH Ammo" = /obj/structure/closet/crate/ppshammo,
-		"DP Ammo" = /obj/structure/closet/crate/dpammo,
-		"PTRD Ammo" = /obj/structure/closet/crate/ptrdammo,
-		"Mines Ammo" = /obj/structure/closet/crate/bettymines,
-		"Grenades" = /obj/structure/closet/crate/soviet_grenade,
-		"Smoke Grenades" = /obj/structure/closet/crate/soviet_smoke_grenade, // too lazy to fix this typo rn
-		"Sandbags" = /obj/structure/closet/crate/sandbags,
-		"Flaregun Ammo" = /obj/structure/closet/crate/flares_ammo,
-		"Flares" = /obj/structure/closet/crate/flares,
-		"Bayonet" = /obj/structure/closet/crate/bayonets,
-		"Solid Rations" = /obj/structure/closet/crate/rations/soviet_solids,
-		"Liquid Rations" = /obj/structure/closet/crate/rations/soviet_liquids,
-		"Dessert Rations" = /obj/structure/closet/crate/rations/soviet_desserts,
-		"Water Rations" = /obj/structure/closet/crate/rations/water,
-		"Alcohol Rations" = /obj/structure/closet/crate/rations/soviet_alcohol,
-
-		// MATERIALS
-		"Wood Planks" = /obj/structure/closet/crate/wood,
-		"Steel Sheets" = /obj/structure/closet/crate/steel,
-		"Iron Ingots" = /obj/structure/closet/crate/iron,
-
-		// GUNS & ARTILLERY
-		"PTRD" = /obj/item/weapon/gun/projectile/heavysniper/ptrd,
-
-		// CLOSETS
-		"Tool Closet" = /obj/structure/closet/toolcloset,
-
-		// MINES
-		"Betty Mines Crate" = /obj/structure/closet/crate/bettymines,
-
-		// ANIMAL CRATES
-		"Samoyed Crate" = /obj/structure/largecrate/animal/dog/soviet,
-
-		// MEDICAL STUFF
-		"Medical Crate" = /obj/structure/closet/crate/medical
-
-	)
-
-	var/static/list/supply_crate_costs = list(
-
-		// AMMO AND MISC.
-		"Flammenwerfer Fuel Tanks" = 50,
-		"Vehicle Fuel Tanks" = 75,
-		"Maxim Belts" = 40,
-		"Guaze" = 35,
-		"Bint" = 30,
-		"Luger Ammo" = 30,
-		"Kar Ammo" = 35,
-		"Mp40 Ammo" = 40,
-		"Mg34 Ammo" = 40,
-		"Mp43 Ammo" = 40,
-		"PTRD Ammo" = 100,
-
-		".45 Ammo" = 30,
-		"Mosin Ammo" = 35,
-		"PPSH Ammo" = 50,
-		"DP Ammo" = 50,
-
-		"Mines Ammo" = 50,
-		"Grenades" = 65,
-		"Panzerfausts" = 60,
-		"Smoke Grenades" = 55, // too lazy to fix this typo rn
-		"Sandbags" = 20,
-		"Flaregun Ammo" = 15,
-		"Flares" = 10,
-		"Bayonet" = 10,
-		"Solid Rations" = 80,
-		"Liquid Rations" = 80,
-		"Dessert Rations" = 160,
-		"Water Rations" = 50,
-		"Alcohol Rations" = 75,
-
-		// MATERIALS
-		"Wood Planks" = 75,
-		"Steel Sheets" = 100,
-		"Iron Ingots" = 125,
-
-		// GUNS & ARTILLERY
-		"PTRD" = 200,
-		"Flammenwerfer" = 250,
-		"7,5 cm FK 18 Artillery Piece" = 300,
-		"Luger Crate" = 400,
-
-		// ARTILLERY AMMO
-		"Artillery Ballistic Shells Crate" = 100,
-		"Artillery Gas Shells Crate" = 200,
-
-		// CLOSETS
-		"Tool Closet" = 50,
-
-		// MINES
-		"Betty Mines Crate" = 200,
-
-		// ANIMAL CRATES
-		"German Shepherd Crate" = 150,
-		"Samoyed Crate" = 150,
-
-		// MEDICAL STUFF
-		"Medical Crate" = 75
-
-	)
 
 	var/faction = null
 
 /obj/item/device/radio/New()
 	..()
+
+	// channels added before this is called
 	for (var/channel in internal_channels)
 		listening_on_channel[radio_freq2name(channel)] = TRUE
 
@@ -291,23 +154,31 @@ var/global/list/default_ukrainian_channels = list(
 	if (istype(src, /obj/item/device/radio/intercom) && !istype(src, /obj/item/device/radio/intercom/loudspeaker))
 		notyetmoved = FALSE
 		if (loc)
-			setup_announcement_system("Supplydrop Announcement System", (faction == GERMAN ? DE_SUPPLY_FREQ : RU_SUPPLY_FREQ))
-			setup_announcement_system("Reinforcements Announcement System", (faction == GERMAN ? DE_BASE_FREQ : RU_BASE_FREQ))
-			setup_announcement_system("High Command Announcement System", (faction == GERMAN ? DE_BASE_FREQ : RU_BASE_FREQ))
-			setup_announcement_system("Arrivals Announcement System", (faction == GERMAN ? DE_BASE_FREQ : RU_BASE_FREQ))
+			setup_announcement_system("Arrivals Announcement System", (faction == GERMAN ? DE_BASE_FREQ : SO_BASE_FREQ))
+			setup_announcement_system("Supplydrop Announcement System", (faction == GERMAN ? DE_SUPPLY_FREQ : SO_SUPPLY_FREQ))
+			setup_announcement_system("Supply Train Announcement System", (faction == GERMAN ? DE_SUPPLY_FREQ : SO_SUPPLY_FREQ))
+			setup_announcement_system("Reinforcements Announcement System", (faction == GERMAN ? DE_BASE_FREQ : SO_BASE_FREQ))
+			setup_announcement_system("High Command Announcement System", (faction == GERMAN ? DE_BASE_FREQ : SO_BASE_FREQ))
 			switch (faction)
 				if (GERMAN)
+					setup_announcement_system("SS Announcement System", SS_FREQ)
 					main_radios[GERMAN] = src
 				if (SOVIET)
 					main_radios[SOVIET] = src
 
 	spawn (100)
 		if (map)
-			if (map.uses_supply_train)
+			if (map.uses_supply_train && faction == GERMAN)
 				is_supply_radio = FALSE
 
 	if (locate(/obj/effect/landmark/train/german_supplytrain_start) in world)
 		is_supply_radio = FALSE
+
+	// channels added after this is called
+	// necessary for subtypes that want to override channels of their supertypes
+	spawn (5)
+		for (var/channel in internal_channels)
+			listening_on_channel[radio_freq2name(channel)] = TRUE
 
 /obj/item/device/radio/Move()
 	..()
@@ -361,7 +232,7 @@ var/global/list/default_ukrainian_channels = list(
 
 	// supply stuff - Kachnov
 	data["is_supply_radio"] = is_supply_radio
-	data["supply_points"] = supply_points
+	data["supply_points"] = supply_points[faction]
 
 	var/list/supply_crate_objects = list()
 	switch (faction)
@@ -384,8 +255,9 @@ var/global/list/default_ukrainian_channels = list(
 
 	ui = nanomanager.try_update_ui(user, src, ui_key, ui, data, force_open)
 	if(!ui)
-		ui = new(user, src, ui_key, "radio_basic.tmpl", "[name]", 400, 430)
+		ui = new(user, src, ui_key, "radio.tmpl", "[name]", 400, 430)
 		ui.set_initial_data(data)
+		ui.auto_update_content = TRUE
 		ui.open()
 
 /* Hearing radios, less stupid and telecomms free edition - Kachnov */
@@ -394,19 +266,28 @@ var/global/list/default_ukrainian_channels = list(
 
 	if (!locate(/obj/item/device/radio) in range(1, src))
 		return
+
 	if (stat != CONSCIOUS)
 		return
 
 	var/list/used_radio_turfs = list()
 	var/list/used_radios = list()
+	var/list/possible_radio_locations = range(1, src)
+	if (istype(loc, /obj/tank))
+		possible_radio_locations += contents
 
-	for (var/obj/item/device/radio/radio in range(1, src))
-		if (used_radio_turfs.Find(get_turf(radio)))
+	for (var/obj/item/device/radio/radio in possible_radio_locations)
+		if (!used_radio_turfs.Find(radio.faction))
+			used_radio_turfs[radio.faction] = list()
+		if (used_radio_turfs[radio.faction].Find(get_turf(radio)))
 			continue
 		if (used_radios.Find(radio))
 			continue
 		if (radio.notyetmoved)
 			continue
+		if (!istype(radio, /obj/item/device/radio/intercom))
+			if (!istype(radio.loc, /mob))
+				continue
 		if (!radio.on)
 			continue
 		if (radio == s_store)
@@ -417,32 +298,43 @@ var/global/list/default_ukrainian_channels = list(
 			else
 				continue
 		else if (radio == l_hand)
-			if (!dd_hasprefix(message, ":l"))
-				continue
-			else
+			if (dd_hasprefix(message, ":l"))
 				message = copytext(message, 3)
+			else if (dd_hasprefix(message, ";"))
+				message = copytext(message, 2)
+			else
+				continue
 		else if (radio == r_hand)
-			if (!dd_hasprefix(message, ":r"))
-				continue
-			else
+			if (dd_hasprefix(message, ":r"))
 				message = copytext(message, 3)
+			else if (dd_hasprefix(message, ";"))
+				message = copytext(message, 2)
+			else
+				continue
 		else if (istype(radio.loc, /turf) && !radio.broadcasting)
 			continue
 
 		message = capitalize(trim_left(message))
 
-		if (!istype(loc, /obj/tank))
-			used_radio_turfs += get_turf(radio)
+		if (!loc || !loc.loc || !istype(loc.loc, /obj/tank))
+			used_radio_turfs[radio.faction] += get_turf(radio)
 
 		used_radios += radio
 
 		spawn (5)
 			if (!stuttering || stuttering < 4)
+			//	log_debug("4")
 				radio.broadcast(rhtml_encode(message), src, FALSE)
 			else
+			//	log_debug("5")
 				radio.broadcast(rhtml_encode(message), src, TRUE)
 
-/obj/item/device/radio/proc/broadcast(var/msg, var/mob/living/carbon/human/speaker, var/hardtohear = FALSE)
+/obj/item/device/radio/proc/broadcast(var/msg, var/mob/living/carbon/human/speaker, var/hardtohear = FALSE, var/needs_loc = TRUE)
+
+	if (!loc && needs_loc)
+		return
+
+	hardtohear = FALSE // wip
 
 	// ignore emotes.
 	if (dd_hasprefix(msg, "*"))
@@ -465,21 +357,30 @@ var/global/list/default_ukrainian_channels = list(
 		if (hearer.stat == CONSCIOUS)
 			var/list/radios = list()
 			for (var/obj/item/device/radio/radio in view(world.view, hearer))
-				radios |= radio
+				if (radio.broadcasting)
+					radios |= radio
 			for (var/obj/item/device/radio/radio in hearer.contents)
 				radios |= radio
 			for (var/obj/item/device/radio/radio in radios)
-				if (used_radio_turfs.Find(get_turf(radio)))
+				if (!loc && radio == src)
+					continue
+				if (!used_radio_turfs.Find(radio.faction))
+					used_radio_turfs[radio.faction] = list()
+				if (used_radio_turfs[radio.faction].Find(get_turf(radio)))
 					continue
 				if (used_radios.Find(radio))
 					continue
 				if (radio.notyetmoved)
 					continue
+				if (!istype(radio, /obj/item/device/radio/intercom))
+					if (!istype(radio.loc, /mob))
+						continue
 				if (!radio.on)
 					continue
 				if (!radio.listening)
 					continue
-				used_radio_turfs += get_turf(radio)
+				if (!radio.loc || !radio.loc.loc || !istype(radio.loc.loc, /obj/tank))
+					used_radio_turfs[radio.faction] += get_turf(radio)
 				used_radios += radio
 				if (radio.listening_on_channel[radio_freq2name(frequency)])
 					hearer.hear_radio(msg, speaker.sayverb, speaker.default_language, speaker, src, hardtohear)
@@ -507,30 +408,33 @@ var/global/list/default_ukrainian_channels = list(
 /obj/item/device/radio/proc/post_broadcast()
 	last_broadcast = world.time + 5
 
+/obj/item/device/radio/intercom
+	broadcasting = FALSE
+	desc = "A stationary radio device, used for long-distance communication and supply requisition."
+
 /obj/item/device/radio/intercom/a7b
 	name = "A-7-B"
 	icon_state = "a7b"
 	item_state = "a7b"
-	frequency = RU_BASE_FREQ
+	frequency = SO_BASE_FREQ
 	anchored = TRUE
 	canhear_range = 1
 	speech_sound = 'sound/effects/roger_beep.ogg'
 	is_supply_radio = TRUE
 	faction = SOVIET
-	supply_points = 500 // soviets get more supplies
 
 /obj/item/device/radio/intercom/a7b/New()
-	internal_channels = default_russian_channels.Copy()
 	..()
+	internal_channels = command_soviet_channels.Copy()
 
 /obj/item/device/radio/intercom/a7b/process()
 	if(world.time - last_tick > 30 || last_tick == -1)
 		last_tick = world.time
 
-		if(!src.loc)
+		if(!loc)
 			on = FALSE
 		else
-			var/area/A = src.loc.loc
+			var/area/A = loc.loc
 			if(!A || !isarea(A))
 				on = FALSE
 			else
@@ -545,15 +449,21 @@ var/global/list/default_ukrainian_channels = list(
 	name = "RBS1"
 	icon_state = "rbs1"
 	item_state = "rbs1"
-	frequency = RU_COMM_FREQ
+	frequency = SO_BASE_FREQ
 	canhear_range = 1
 	w_class = 5
 	speech_sound = 'sound/effects/roger_beep.ogg'
 	faction = SOVIET
 
+/obj/item/device/radio/rbs/command
+
 /obj/item/device/radio/rbs/New()
-	internal_channels = default_russian_channels.Copy()
 	..()
+	internal_channels = default_soviet_channels.Copy()
+
+/obj/item/device/radio/rbs/command/New()
+	..()
+	internal_channels = command_soviet_channels.Copy()
 
 /obj/item/device/radio/intercom/fu2
 	name = "Torn.Fu.d2"
@@ -565,20 +475,19 @@ var/global/list/default_ukrainian_channels = list(
 	speech_sound = 'sound/effects/roger_beep2.ogg'
 	is_supply_radio = TRUE
 	faction = GERMAN
-	supply_points = 400
 
 /obj/item/device/radio/intercom/fu2/New()
-	internal_channels = default_german_channels.Copy()
 	..()
+	internal_channels = command_german_channels.Copy()
 
 /obj/item/device/radio/intercom/fu2/process()
 	if(world.time - last_tick > 30 || last_tick == -1)
 		last_tick = world.time
 
-		if(!src.loc)
+		if(!loc)
 			on = FALSE
 		else
-			var/area/A = src.loc.loc
+			var/area/A = loc.loc
 			if(!A || !isarea(A))
 				on = FALSE
 			else
@@ -595,15 +504,40 @@ var/global/list/default_ukrainian_channels = list(
 	name = "Feldfu.f"
 	icon_state = "feldfu"
 	item_state = "feldfu"
-	frequency = DE_COMM_FREQ
+	frequency = DE_BASE_FREQ
 	canhear_range = 1
 	w_class = 4
 	speech_sound = 'sound/effects/roger_beep2.ogg'
 	faction = GERMAN
 
+/obj/item/device/radio/feldfu/command
+
+/obj/item/device/radio/feldfu/SS
+	frequency = SS_FREQ
+
+/obj/item/device/radio/feldfu/SS/command
+
+/obj/item/device/radio/feldfu/announcer
+
 /obj/item/device/radio/feldfu/New()
-	internal_channels = default_german_channels.Copy()
 	..()
+	internal_channels = default_german_channels.Copy()
+
+/obj/item/device/radio/feldfu/command/New()
+	..()
+	internal_channels = command_german_channels.Copy()
+
+/obj/item/device/radio/feldfu/SS/New()
+	..()
+	internal_channels = SS_german_channels.Copy()
+
+/obj/item/device/radio/feldfu/SS/command/New()
+	..()
+	internal_channels = SS_command_german_channels.Copy()
+
+/obj/item/device/radio/feldfu/announcer/New()
+	..()
+	internal_channels = all_channels.Copy()
 
 // partisan clone of german radios. Doesn't inherit from the feldfu for
 // callback meme reasons
@@ -619,8 +553,8 @@ var/global/list/default_ukrainian_channels = list(
 	faction = PARTISAN
 
 /obj/item/device/radio/partisan/New()
-	internal_channels = default_ukrainian_channels.Copy()
 	..()
+	internal_channels = default_ukrainian_channels.Copy()
 
 // radio topic stuff
 
@@ -653,8 +587,16 @@ var/global/list/default_ukrainian_channels = list(
 		switch (faction)
 			if (GERMAN)
 				choices = german_supply_crate_types | soviet_supply_crate_types
+				// crash prevention + balance - Kachnov
+				if (supplydrop_processing_objects_german.len >= MAX_SUPPLYDROP_CRATES)
+					usr << "<span class = 'danger'>There are too many items already arriving! Please wait before ordering more.</span>"
+					return
 			if (SOVIET)
+				// crash prevention + balance - Kachnov
 				choices = soviet_supply_crate_types | soviet_supply_crate_types
+				if (supplydrop_processing_objects_soviet.len >= MAX_SUPPLYDROP_CRATES)
+					usr << "<span class = 'danger'>There are too many items already arriving! Please wait before ordering more.</span>"
+					return
 		purchase(item, choices[item], points)
 
 	for (var/channel in internal_channels)
@@ -666,13 +608,16 @@ var/global/list/default_ukrainian_channels = list(
 	playsound(loc, 'sound/machines/machine_switch.ogg', 100, TRUE)
 
 /obj/item/device/radio/proc/purchase(var/itemname, var/path, var/pointcost = FALSE)
-	if (locate(/obj/effect/landmark/train/german_supplytrain_start) in world)
+
+	if (supply_points[faction] <= pointcost)
 		return
-	if (supply_points <= pointcost)
-		return
+
 	announce("[itemname] has been purchased and will arrive soon.", "Supplydrop Announcement System")
-	supply_points -= pointcost
-	supplydrop_process.add(path, faction)
+	supply_points[faction] -= pointcost
+
+	// sanity checking due to crashing, not sure it will help - Kachnov
+	if (ispath(path) && list(GERMAN, SOVIET).Find(faction))
+		supplydrop_process.add("[path]", faction)
 
 // shitcode copied from the german supplytrain system - Kachnov
 /obj/item/device/radio
@@ -682,12 +627,14 @@ var/global/list/default_ukrainian_channels = list(
 /obj/item/device/radio/proc/setup_announcement_system(aname, channel)
 
 	// our personal radio. Yes, even though we're a radio. Works better this way.
-	announcers[aname] = new /obj/item/device/radio
+	announcers[aname] = new /obj/item/device/radio/feldfu/announcer
 	var/obj/item/device/radio/announcer = announcers[aname]
 	announcer.broadcasting = TRUE
 	announcer.faction = faction
 	announcer.frequency = channel
 	announcer.speech_sound = speech_sound
+	announcer.icon = icon
+	announcer.icon_state = icon_state
 
 	// hackish code because radios need a mob, with a language, to announce
 	mobs[aname] = new/mob/living/carbon/human
@@ -708,6 +655,7 @@ var/global/list/default_ukrainian_channels = list(
 	H.default_language = H.languages[1]
 
 /obj/item/device/radio/proc/announce(msg, _announcer)
+
 	var/obj/item/device/radio/intercom/fu2/announcer = null
 	var/mob/living/carbon/human/mob = null
 
@@ -717,6 +665,6 @@ var/global/list/default_ukrainian_channels = list(
 	announcer = announcers[_announcer]
 	mob = mobs[_announcer]
 
-	announcer.broadcast(msg, mob)
+	announcer.broadcast(msg, mob, needs_loc = FALSE)
 
 	return TRUE

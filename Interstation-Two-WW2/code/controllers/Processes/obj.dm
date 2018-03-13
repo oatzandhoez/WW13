@@ -29,10 +29,10 @@ var/datum/controller/process/obj/obj_process = null
 /datum/controller/process/obj/doWork()
 
 	for(last_object in processing_objects)
-		var/datum/O = last_object
+		var/obj/O = last_object
 		if(isnull(O.gcDestroyed))
 			try
-				O:process()
+				O.process()
 			catch(var/exception/e)
 				catchException(e, O)
 			SCHECK
@@ -65,7 +65,6 @@ var/datum/controller/process/obj/obj_process = null
 				else
 					catchBadType(O)
 					nonvital_list -= O
-
 
 /datum/controller/process/obj/proc/add_nonvital_object(var/obj/o)
 	var/list/nonvital_list = null

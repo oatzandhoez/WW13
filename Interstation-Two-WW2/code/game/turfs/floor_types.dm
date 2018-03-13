@@ -136,11 +136,11 @@
 			return
 		else
 			R.use(2)
-			user << "<span class='notice'>You start connecting [R.name]s to [src.name], creating catwalk ...</span>"
+			user << "<span class='notice'>You start connecting [R.name]s to [name], creating catwalk ...</span>"
 			if(do_after(user,50))
-				src.alpha = FALSE
-				var/obj/structure/catwalk/CT = new /obj/structure/catwalk(src.loc)
-				src.contents += CT
+				alpha = FALSE
+				var/obj/structure/catwalk/CT = new /obj/structure/catwalk(loc)
+				contents += CT
 			return
 	return
 
@@ -235,7 +235,7 @@
 	if(!user)
 		return
 	if(istype(C, /obj/item/weapon/wrench))
-		user << "\blue Removing rods..."
+		user << "<span class = 'notice'>Removing rods...</span>"
 		playsound(src, 'sound/items/Ratchet.ogg', 80, TRUE)
 		if(do_after(user, 30))
 			PoolOrNew(/obj/item/stack/rods, list(loc, 2))
@@ -447,6 +447,16 @@
 	icon_state = "seashallow"
 	move_delay = 3
 
+/turf/floor/plating/beach/water/get_move_delay()
+	if (locate(/obj/structure/catwalk) in contents)
+		return 0
+	return move_delay
+
+/turf/floor/plating/beach/water/sewage
+	name = "Sewage Water"
+	move_delay = 3
+	color = "#94B21C"
+
 /turf/floor/plating/beach/water/proc/Extinguish(var/mob/living/L)
 	if (istype(L))
 		L.ExtinguishMob()
@@ -458,7 +468,16 @@
 /turf/floor/plating/beach/water/New()
 	..()
 	if (!istype(src, /turf/floor/plating/beach/water/ice))
-		overlays += image("icon"='icons/misc/beach.dmi',"icon_state"="water5","layer"=MOB_LAYER+0.1)
+		if (!istype(src, /turf/floor/plating/beach/water/sewage))
+			overlays += image("icon"='icons/misc/beach.dmi',"icon_state"="water5","layer"=layer+0.1)
+		else
+			var/image/I = image("icon"='icons/misc/beach.dmi',"icon_state"="water5","layer"=layer+0.1)
+			I.color = color
+			I.alpha = 155
+			overlays += I
+			alpha = 155
+			I = image("icon"='icons/misc/beach.dmi',"icon_state"="plating","layer"=layer-0.1)
+			underlays += I
 
 /turf/floor/plating/beach/water/ice
 	name = "Ice"

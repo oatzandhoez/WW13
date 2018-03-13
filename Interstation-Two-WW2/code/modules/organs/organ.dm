@@ -54,7 +54,7 @@ var/list/organ_cache = list()
 	if(!max_damage)
 		max_damage = min_broken_damage * 2
 	if(istype(holder))
-		src.owner = holder
+		owner = holder
 		species = all_species["Human"]
 		if(holder.dna)
 			dna = holder.dna.Clone()
@@ -146,7 +146,7 @@ var/list/organ_cache = list()
 
 /obj/item/organ/proc/handle_germ_effects()
 	//** Handle the effects of infections
-	var/antibiotics = owner.reagents.get_reagent_amount("spaceacillin")
+	var/antibiotics = owner.reagents.get_reagent_amount("penicillin")
 
 	if (germ_level > FALSE && germ_level < INFECTION_LEVEL_ONE/2 && prob(30))
 		germ_level--
@@ -209,7 +209,7 @@ var/list/organ_cache = list()
 /obj/item/organ/proc/handle_antibiotics()
 	var/antibiotics = FALSE
 	if(owner)
-		antibiotics = owner.reagents.get_reagent_amount("spaceacillin")
+		antibiotics = owner.reagents.get_reagent_amount("penicillin")
 
 	if (!germ_level || antibiotics < 5)
 		return
@@ -236,10 +236,10 @@ var/list/organ_cache = list()
 //Note: external organs have their own version of this proc
 /obj/item/organ/proc/take_damage(amount, var/silent=0)
 
-	if(src.status & ORGAN_ROBOT)
-		src.damage = between(0, src.damage + (amount * 0.8), max_damage)
+	if(status & ORGAN_ROBOT)
+		damage = between(0, damage + (amount * 0.8), max_damage)
 	else
-		src.damage = between(0, src.damage + amount, max_damage)
+		damage = between(0, damage + amount, max_damage)
 
 		//only show this if the organ is not robotic
 		if(owner && parent_organ && amount > FALSE)
@@ -252,16 +252,16 @@ var/list/organ_cache = list()
 
 /obj/item/organ/proc/robotize() //Being used to make robutt hearts, etc
 	robotic = 2
-	src.status &= ~ORGAN_BROKEN
-	src.status &= ~ORGAN_BLEEDING
-	src.status &= ~ORGAN_SPLINTED
-	src.status &= ~ORGAN_CUT_AWAY
-	src.status |= ORGAN_ROBOT
-	src.status |= ORGAN_ASSISTED
+	status &= ~ORGAN_BROKEN
+	status &= ~ORGAN_BLEEDING
+	status &= ~ORGAN_SPLINTED
+	status &= ~ORGAN_CUT_AWAY
+	status |= ORGAN_ROBOT
+	status |= ORGAN_ASSISTED
 
 /obj/item/organ/proc/mechassist() //Used to add things like pacemakers, etc
 	robotize()
-	src.status &= ~ORGAN_ROBOT
+	status &= ~ORGAN_ROBOT
 	robotic = TRUE
 	min_bruised_damage = 15
 	min_broken_damage = 35
@@ -345,7 +345,7 @@ var/list/organ_cache = list()
 	if(robotic)
 		return
 
-	user << "\blue You take an experimental bite out of \the [src]."
+	user << "<span class = 'notice'>You take an experimental bite out of \the [src].</span>"
 	var/datum/reagent/blood/B = locate(/datum/reagent/blood) in reagents.reagent_list
 	blood_splatter(src,B,1)
 

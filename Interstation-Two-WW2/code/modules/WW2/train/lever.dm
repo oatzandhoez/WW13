@@ -13,8 +13,8 @@
 
 /obj/train_lever/attack_hand(var/mob/user as mob)
 	if (user && istype(user, /mob/living/carbon/human))
-		if (world.time - roundstart_time < 6000)
-			user << "<span class = 'danger'>10 minutes or more must elapse before you can leave!</span>"
+		if (world.realtime - roundstart_time < 9000)
+			user << "<span class = 'danger'>15 or more minutes must elapse before you can leave!</span>"
 			return
 		function(user)
 
@@ -91,6 +91,7 @@
 				if ("Push Forwards")
 					train_controller.stop_moving_slow()
 					visible_message("<span class = 'danger'>[user] pushes the train lever forward, stopping the train.</span>")
+		playsound(get_turf(src), 'sound/effects/lever.ogg', 100, TRUE)
 
 /obj/train_lever/german
 	faction = GERMAN

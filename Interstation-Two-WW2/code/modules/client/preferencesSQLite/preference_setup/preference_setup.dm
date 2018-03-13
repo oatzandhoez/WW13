@@ -39,8 +39,8 @@
 	var/datum/preferences/preferences
 	var/datum/category_group/player_setup_category/selected_category = null
 
-/datum/category_collection/player_setup_collection/New(var/datum/preferences/preferences)
-	src.preferences = preferences
+/datum/category_collection/player_setup_collection/New(var/datum/preferences/_preferences)
+	preferences = _preferences
 	..()
 	selected_category = categories[1]
 
@@ -242,7 +242,6 @@
 	for (var/varname in pref.vars)
 		pref_initial_vars[varname] = initial(pref.vars[varname])
 
-
 //	for (var/x in pref_initial_vars)
 //		world << "1. [x] = [pref_initial_vars[x]]"
 
@@ -251,19 +250,23 @@
 		pref_mob.client.prefs.ShowChoices(usr)
 
 	update_setup()
-//	world << "test #1"
 
-	for (var/varname in pref_initial_vars)
-		var/variable = pref.vars[varname]
-		if (isdatum(variable) || isclient(variable))
-			continue // prevent infinite loops on VV
-		if (islist(variable)) // todo
-			continue
-		if (pref_initial_vars[varname] != variable) // variable changed!
-			pref.remember_preference(varname, variable)
-		else if (pref_initial_vars[varname] == variable) // variable set back to default!
-			pref.unremember_preference(varname)
-		//	world << "test #2: [varname] = [pref.vars[varname]]"
+	if (istype(src, /datum/category_item/player_setup_item/player_global))
+		pref.saveGlobalPreferences()
+	else
+	//	world << "test #1"
+
+		for (var/varname in pref_initial_vars)
+			var/variable = pref.vars[varname]
+			if (isdatum(variable) || isclient(variable))
+				continue // prevent infinite loops on VV
+			if (islist(variable)) // todo
+				continue
+			if (pref_initial_vars[varname] != variable) // variable changed!
+				pref.remember_preference(varname, variable)
+			else if (pref_initial_vars[varname] == variable) // variable set back to default!
+				pref.forget_preference(varname)
+			//	world << "test #2: [varname] = [pref.vars[varname]]"
 
 /datum/category_item/player_setup_item/CanUseTopic(var/mob/user)
 	return TRUE

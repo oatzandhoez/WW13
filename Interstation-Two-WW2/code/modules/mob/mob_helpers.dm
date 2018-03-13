@@ -33,7 +33,7 @@ proc/iscuffed(A)
 		if(C.handcuffed)
 			return TRUE
 	return FALSE
-
+/*
 proc/hassensorlevel(A, var/level)
 	var/mob/living/carbon/human/H = A
 	if(istype(H) && istype(H.w_uniform, /obj/item/clothing/under))
@@ -47,7 +47,7 @@ proc/getsensorlevel(A)
 		var/obj/item/clothing/under/U = H.w_uniform
 		return U.sensor_mode
 	return SUIT_SENSOR_OFF
-
+*/
 
 /proc/is_admin(var/mob/user)
 	return check_rights(R_ADMIN, FALSE, user) != FALSE
@@ -71,89 +71,96 @@ proc/getsensorlevel(A)
 /* since head shots are usually instant kills, they've been heavily nerfed.
  * Although they're still almost guaranteed at point-blank range. */
 
-/* - kachnov */
+/* - Kachnov */
+
+#define GUARANTEED_CHANCE 100
+#define HIGH_CHANCE 80
+#define MEDIUM_CHANCE 50
+#define LOWER_CHANCE 33
+#define LOW_CHANCE 20
 
 var/list/global/hit_chances = list(
 
-	// FALSE to TRUE tile away
+	// 0 to 1 tiles away
 	"pointblankrange" = list(
-		"head" = 95,
-		"chest" = 99,
-		"groin" = 98,
-		"l_leg" = 98,
-		"r_leg" = 98,
-		"l_arm" = 98,
-		"r_arm" = 98,
-		"l_hand" = 98,
-		"r_hand" = 98,
-		"l_foot" = 98,
-		"r_foot" = 98,
-		"default" = 99),
+		"head" = GUARANTEED_CHANCE,
+		"chest" = GUARANTEED_CHANCE,
+		"groin" = GUARANTEED_CHANCE,
+		"l_leg" = GUARANTEED_CHANCE,
+		"r_leg" = GUARANTEED_CHANCE,
+		"l_arm" = GUARANTEED_CHANCE,
+		"r_arm" = GUARANTEED_CHANCE,
+		"l_hand" = GUARANTEED_CHANCE,
+		"r_hand" = GUARANTEED_CHANCE,
+		"l_foot" = GUARANTEED_CHANCE,
+		"r_foot" = GUARANTEED_CHANCE),
 
 	// 2 to 3 tiles away
 	"shortrange" = list(
-		"head" = 30,
-		"chest" = 66,
-		"groin" = 45,
-		"l_leg" = 55,
-		"r_leg" = 55,
-		"l_arm" = 55,
-		"r_arm" = 55,
-		"l_hand" = 40,
-		"r_hand" = 40,
-		"l_foot" = 40,
-		"r_foot" = 40,
-		"default" = 66),
+		"head" = MEDIUM_CHANCE,
+		"chest" = HIGH_CHANCE,
+		"groin" = MEDIUM_CHANCE,
+		"l_leg" = MEDIUM_CHANCE,
+		"r_leg" = MEDIUM_CHANCE,
+		"l_arm" = MEDIUM_CHANCE,
+		"r_arm" = MEDIUM_CHANCE,
+		"l_hand" = MEDIUM_CHANCE,
+		"r_hand" = MEDIUM_CHANCE,
+		"l_foot" = MEDIUM_CHANCE,
+		"r_foot" = MEDIUM_CHANCE),
 
 	// 4 to 6 tiles away
 	"medrange" = list(
-		"head" = 10,
-		"chest" = 33,
-		"groin" = 25,
-		"l_leg" = 30,
-		"r_leg" = 30,
-		"l_arm" = 30,
-		"r_arm" = 30,
-		"l_hand" = 20,
-		"r_hand" = 20,
-		"l_foot" = 20,
-		"r_foot" = 20,
-		"default" = 33),
+		"head" = LOWER_CHANCE,
+		"chest" = MEDIUM_CHANCE,
+		"groin" = MEDIUM_CHANCE,
+		"l_leg" = MEDIUM_CHANCE,
+		"r_leg" = MEDIUM_CHANCE,
+		"l_arm" = MEDIUM_CHANCE,
+		"r_arm" = MEDIUM_CHANCE,
+		"l_hand" = LOWER_CHANCE,
+		"r_hand" = LOWER_CHANCE,
+		"l_foot" = LOWER_CHANCE,
+		"r_foot" = LOWER_CHANCE),
 
 	// 7 to INFINITY tiles away
 	"longrange" = list(
-		"head" = 5,
-		"chest" = 20,
-		"groin" = 15,
-		"l_leg" = 17,
-		"r_leg" = 17,
-		"l_arm" = 17,
-		"r_arm" = 17,
-		"l_hand" = 13,
-		"r_hand" = 13,
-		"l_foot" = 13,
-		"r_foot" = 13,
-		"default" = 20),
+		"head" = LOW_CHANCE,
+		"chest" = MEDIUM_CHANCE - 10,
+		"groin" = LOWER_CHANCE,
+		"l_leg" = LOWER_CHANCE,
+		"r_leg" = LOWER_CHANCE,
+		"l_arm" = LOWER_CHANCE,
+		"r_arm" = LOWER_CHANCE,
+		"l_hand" = LOW_CHANCE,
+		"r_hand" = LOW_CHANCE,
+		"l_foot" = LOW_CHANCE,
+		"r_foot" = LOW_CHANCE),
 )
 
 /proc/get_miss_chance(var/zone, var/distance, var/accuracy, var/miss_modifier)
-	. = FALSE
+
+
+	. = 0
 	zone = check_zone(zone)
+
+	var/hit_chance = max(hit_chances["pointblankrange"][zone], 7 + accuracy)
+
 	switch (distance)
 		if (0)
-			. = 100 - hit_chances["pointblankrange"][zone]
+			hit_chance = max(hit_chances["pointblankrange"][zone], 7 + accuracy)
 		if (1 to 3)
-			. =  100 - hit_chances["shortrange"][zone]
+			hit_chance = max(hit_chances["shortrange"][zone], 7 + accuracy)
 		if (5 to 6)
-			. =  100 - hit_chances["medrange"][zone]
+			hit_chance = max(hit_chances["medrange"][zone], 7 + accuracy)
 		if (7 to INFINITY)
-			. =  100 - hit_chances["longrange"][zone]
+			hit_chance = max(hit_chances["longrange"][zone], 7 + accuracy)
 
+	. = 100 - hit_chance
 	. += miss_modifier
-	. -= (accuracy*6)
+	. -= (accuracy*7)
 	. = max(., 0)
 
-//	log_debug("MC: [.]")
 
 //Used to weight organs when an organ is hit randomly (i.e. not a directed, aimed attack).
 //Also used to weight the protection value that armour provides for covering that body part when calculating protection from full-body effects.
@@ -225,6 +232,7 @@ var/list/global/organ_rel_size = list(
 
 	if(prob(miss_chance))
 		return null
+
 	return zone
 
 
@@ -387,10 +395,10 @@ It's fairly easy to fix if dealing with single letters but not so much with comp
 
 
 /mob/proc/abiotic(var/full_body = FALSE)
-	if(full_body && ((src.l_hand && !( src.l_hand.abstract )) || (src.r_hand && !( src.r_hand.abstract )) || (src.back || src.wear_mask)))
+	if(full_body && ((l_hand && !( l_hand.abstract )) || (r_hand && !( r_hand.abstract )) || (back || wear_mask)))
 		return TRUE
 
-	if((src.l_hand && !( src.l_hand.abstract )) || (src.r_hand && !( src.r_hand.abstract )))
+	if((l_hand && !( l_hand.abstract )) || (r_hand && !( r_hand.abstract )))
 		return TRUE
 
 	return FALSE

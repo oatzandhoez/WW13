@@ -54,6 +54,8 @@ var/list/department_radio_keys = list(
 	  ":z" = "Entertainment",".z" = "Entertainment",
 )
 
+var/list/radio_prefixes = list(";", ":b", ":l", ":r", ":t",
+	":B", ":L", ":R", ":T")
 
 var/list/channel_to_radio_key = new
 proc/get_radio_key_from_channel(var/channel)
@@ -79,6 +81,13 @@ proc/get_radio_key_from_channel(var/channel)
 	return FALSE
 
 /mob/living/proc/handle_speech_problems(var/message, var/verb)
+
+	var/prefix = ""
+	for (var/rp in radio_prefixes)
+		if (dd_hasprefix(message, rp))
+			prefix = copytext(message, 1, lentext(rp)+1)
+			message = copytext(message, lentext(rp)+1, lentext(message)+1)
+
 	var/list/returns[3]
 	var/speech_problem_flag = FALSE
 
@@ -99,7 +108,7 @@ proc/get_radio_key_from_channel(var/channel)
 		message = lisp(message, lisp)
 		speech_problem_flag = TRUE
 
-	returns[1] = message
+	returns[1] = prefix + message
 	returns[2] = verb
 	returns[3] = speech_problem_flag
 	return returns
@@ -127,7 +136,7 @@ proc/get_radio_key_from_channel(var/channel)
 /mob/living/say(var/message, var/datum/language/speaking = null, var/verb="says", var/alt_name="", var/alt_message=null)
 	if(client)
 		if(client.prefs.muted & MUTE_IC)
-			src << "\red You cannot speak in IC (Muted)."
+			src << "<span class = 'red'>You cannot speak in IC (Muted).</span>"
 			return
 
 	if(stat)
@@ -202,7 +211,7 @@ proc/get_radio_key_from_channel(var/channel)
 	if (speaking)
 		if (speaking.flags & NONVERBAL)
 			if (prob(30))
-				src.custom_emote(1, "[pick(speaking.signlang_verb)].")
+				custom_emote(1, "[pick(speaking.signlang_verb)].")
 
 		if (speaking.flags & SIGNLANG)
 			return say_signlang(message, pick(speaking.signlang_verb), speaking)

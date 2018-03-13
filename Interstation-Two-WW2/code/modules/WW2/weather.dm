@@ -9,6 +9,20 @@
 	if (weather == _weather && !bypass_same_weather_check)
 		return
 
+	if (map && !map.valid_weather_types.Find(_weather) && _weather != WEATHER_NONE)
+		return
+
+	if (config)
+		if (config.allowed_weather && config.allowed_weather.len)
+			switch (config.allowed_weather[1])
+				if (0)
+					return
+				if (1)
+					// pass
+				else
+					if (!config.allowed_weather.Find(weather_const2text(_weather)) && _weather != WEATHER_NONE)
+						return
+
 	var/old_weather = weather
 
 	weather = _weather
@@ -89,6 +103,17 @@
 							if (turfs_made_snowy >= rand(20*SNOW_GATHERING_RATE,30*SNOW_GATHERING_RATE))
 								break
 	else if (weather == WEATHER_RAIN)
+
+		// delete cleanable decals that are outside
+		var/deleted = 0
+		for (var/obj/effect/decal/cleanable/C in world)
+			var/area/A = get_area(C)
+			if (A.weather == WEATHER_RAIN)
+				qdel(C)
+				++deleted
+				if (deleted >= 100)
+					break
+/* // for performance reasons, mudiness is no longer handled here - Kachnov
 		// randomize the areas we make muddy
 		var/list_of_areas = shuffle(all_areas)
 		for (var/area/A in list_of_areas)
@@ -110,11 +135,7 @@
 							F.muddy = TRUE
 							spawn (rand(15000,25000))
 								if (weather != WEATHER_RAIN)
-									F.muddy = FALSE
-
-					if (prob(75))
-						for (var/obj/effect/decal/cleanable/C in F)
-							qdel(C)
+									F.muddy = FALSE*/
 
 /proc/modify_weather_somehow()
 	if (weather == WEATHER_NONE)
@@ -140,7 +161,7 @@
 		switch (ticker.mode:season)
 			if ("WINTER")
 				possibilities += WEATHER_SNOW
-			if ("SPRING", "SUMMER")
+			if ("SPRING")
 				possibilities += WEATHER_RAIN
 
 	possibilities -= non_possibilities

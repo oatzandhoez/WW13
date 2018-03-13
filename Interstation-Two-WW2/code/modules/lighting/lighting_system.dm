@@ -27,7 +27,7 @@ var/max_lighting_z = TRUE // no lighting in the sky anymore
 		if (locate(/obj/train_track) in T)
 			continue
 
-		for(var/i = TRUE to 4)
+		for(var/i = 1 to 4)
 			if(T.corners[i]) // Already have a corner on this direction.
 				continue
 
@@ -63,7 +63,7 @@ var/created_lighting_corners_and_overlays = FALSE
 
 	spawn (1)
 		var/max_v = 120
-		for (var/v in TRUE to max_v)
+		for (var/v in 1 to max_v)
 			var/iterations_per_loop = ceil(turfs.len/max_v)
 			for (var/vv in TRUE+(iterations_per_loop*(v-1)) to iterations_per_loop*v)
 				if (turfs.len >= vv && turfs[vv])
@@ -75,6 +75,7 @@ var/created_lighting_corners_and_overlays = FALSE
 								if (!a.dynamic_lighting)
 									if (!istype(a, /area/prishtina/soviet/bunker) && !istype(a, /area/prishtina/soviet/bunker_entrance) && !istype(a, /area/prishtina/void))
 										t.adjust_lighting_overlay_to_daylight()
+
 						else
 							// You have to do this instead of deleting t.lighting_overlay.
 							for (var/atom/movable/lighting_overlay/LO in t.contents)
@@ -83,6 +84,11 @@ var/created_lighting_corners_and_overlays = FALSE
 							t.color = rgb(TOD_2_rgb, TOD_2_rgb, TOD_2_rgb)
 							for (var/obj/train_track/TT in t.contents)
 								TT.color = t.color
+
+					// regardless of whether or not we use dynamic lighting here
+					// we still need to change the TOD to prevent Vampire dusting
+					for (var/atom/movable/lighting_overlay/LO in t.contents)
+						LO.TOD = time_of_day
 
 			sleep(1)
 
@@ -95,4 +101,7 @@ var/created_lighting_corners_and_overlays = FALSE
 
 	if (announce)
 		spawn (130)
-			world << "<font size=3><span class = 'notice'>It's <b>[lowertext(capitalize(time_of_day))]</b>.</span></font>"
+			for (var/mob/M in player_list)
+				var/area/M_area = get_area(M)
+				if (M_area.location == AREA_OUTSIDE || M_area.z == 1 || istype(M, /mob/observer) || istype(M, /mob/new_player))
+					M << "<font size=3><span class = 'notice'>It's <b>[lowertext(capitalize(time_of_day))]</b>.</span></font>"

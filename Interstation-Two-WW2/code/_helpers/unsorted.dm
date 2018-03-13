@@ -7,6 +7,10 @@
 //Checks if all high bits in req_mask are set in bitfield
 #define BIT_TEST_ALL(bitfield, req_mask) ((~(bitfield) & (req_mask)) == FALSE)
 
+// get rid of vars causing warnings
+/proc/pass(arg1, arg2, arg3, arg4, arg5)
+	return TRUE
+
 //Inverts the colour of an HTML string
 /proc/invertHTML(HTMLstring)
 
@@ -629,7 +633,7 @@ proc/GaussRandRound(var/sigma,var/roundto)
 
 	if(!A || !src) return FALSE
 
-	var/list/turfs_src = get_area_turfs(src.type)
+	var/list/turfs_src = get_area_turfs(type)
 	var/list/turfs_trg = get_area_turfs(A.type)
 
 	var/src_min_x = FALSE
@@ -783,7 +787,7 @@ proc/DuplicateObject(obj/original, var/perfectcopy = FALSE , var/sameloc = FALSE
 
 	if(!A || !src) return FALSE
 
-	var/list/turfs_src = get_area_turfs(src.type)
+	var/list/turfs_src = get_area_turfs(type)
 	var/list/turfs_trg = get_area_turfs(A.type)
 
 	var/src_min_x = FALSE
@@ -1059,12 +1063,6 @@ proc/is_hot(obj/item/W as obj)
 	if (O.edge) return TRUE
 	return FALSE
 
-//Whether or not the given item counts as cutting with an edge in terms of removing limbs
-/proc/has_edge(obj/O as obj)
-	if (!O) return FALSE
-	if (O.edge) return TRUE
-	return FALSE
-
 //Returns TRUE if the given item is capable of popping things like balloons, inflatable barriers, or cutting police tape.
 /proc/can_puncture(obj/item/W as obj)		// For the record, WHAT THE HELL IS THIS METHOD OF DOING IT?
 	if(!W) return FALSE
@@ -1092,10 +1090,14 @@ proc/is_hot(obj/item/W as obj)
 
 //check if mob is lying down on something we can operate him on.
 /proc/can_operate(mob/living/carbon/M)
-	return (M.lying && \
-	locate(/obj/machinery/optable, M.loc) || \
-	(locate(/obj/structure/bed/roller, M.loc) && prob(75)) || \
-	(locate(/obj/structure/table/, M.loc) && prob(66)))
+	var/M_turf = get_turf(M)
+	for (var/obj/structure/optable/O in M_turf)
+		return TRUE
+	for (var/obj/structure/bed/B in M_turf)
+		return prob(95)
+	for (var/obj/structure/table/T in M_turf)
+		return prob(90)
+	return prob(85)
 
 /proc/reverse_direction(var/dir)
 	switch(dir)

@@ -43,6 +43,15 @@ turf/proc/hotspot_expose(exposed_temperature, exposed_volume, soh = FALSE)
 		if (fire)
 			fire.Burn(L, 0.33) // sucks to die by trying to walk out of fire
 
+var/list/fire_pool = list()
+/proc/unpool_new_fire(location)
+	if (fire_pool.len)
+		var/obj/fire/F = pick(fire_pool)
+		fire_pool -= F
+		F.loc = location
+		return .
+	return new /obj/fire (location)
+
 /turf/create_fire(fl, temp, spread = TRUE)
 
 	if(fire)
@@ -50,20 +59,35 @@ turf/proc/hotspot_expose(exposed_temperature, exposed_volume, soh = FALSE)
 		fire.temperature = max(temp, fire.temperature)
 		return TRUE
 
-	fire = new(src, fl)
+//	if (temp > 500)
+//		log_debug(temp)
+
+	fire = unpool_new_fire(src)
 
 	if (!spread)
 		fire.nospread = TRUE
 
 	fire.temperature = temp
 
+	//if (fire.temperature > 500)
+	//	log_debug(fire.temperature)
+
+	fire.setup(src, fl)
+
 	var/obj/effect/decal/cleanable/liquid_fuel/fuel = locate() in src
 
 	if (fuel)
-
 		fire.time_limit += rand(10,20)
 
+	spawn (1)
+		spawn (fire.time_limit)
+			if (fire) // somehow
+				qdel(fire)
+
 	return fire
+
+var/obj/burning_overlay_obj = null
+var/obj/burning_overlay_turf = null
 
 /obj/fire
 
@@ -78,7 +102,7 @@ turf/proc/hotspot_expose(exposed_temperature, exposed_volume, soh = FALSE)
 	layer = MOB_LAYER + 0.01 // above train pseudoturfs, stairs, and now MOBs
 
 	var/firelevel = TRUE
-	var/default_damage = 2
+	var/default_damage = 5
 	var/spread_range = TRUE
 	var/spread_prob = 10
 	var/spread_fuel_prob = 80
@@ -93,6 +117,22 @@ turf/proc/hotspot_expose(exposed_temperature, exposed_volume, soh = FALSE)
 
 /obj/fire/process()
 	. = TRUE
+
+	if (!burning_overlay_obj)
+		burning_overlay_obj = new
+		var/icon/I = icon(icon, "fire2")
+		I.Scale(48,96)
+		burning_overlay_obj.icon = I
+		burning_overlay_obj.pixel_y = -32
+		burning_overlay_obj.pixel_x = -8
+		burning_overlay_obj.layer = 5 // below smoke
+
+	if (!burning_overlay_turf)
+		burning_overlay_turf = new
+		var/icon/I = icon(icon, "burning")
+		burning_overlay_turf.icon = I
+		burning_overlay_turf.layer = 5 // below smoke
+		burning_overlay_turf.color = fire_color(500)
 
 	var/turf/my_tile = loc
 
@@ -112,38 +152,46 @@ turf/proc/hotspot_expose(exposed_temperature, exposed_volume, soh = FALSE)
 		icon_state = "1"
 		set_light(3, TRUE)
 
-	for(var/mob/m in my_tile)
+	for (var/mob/m in my_tile)
 		Burn(m)
 
-	for (var/obj/structure/window/W in my_tile)
-		if (!istype(W, /obj/structure/window/sandbag))
-			if (prob((temperature/default_temperature) * 70))
-				W.shatter()
+	var/list/fire_act_on = list()
+	for (var/turf/T in range(my_tile, 1))
+		fire_act_on += T
+		fire_act_on += T.contents
 
-	for (var/obj/structure/grille/G in my_tile)
-		if (prob((temperature/default_temperature) * 30))
-			G.visible_message("<span class = 'warning'>[G] melts.</span>")
-			G.health = FALSE
-			G.healthcheck()
+	for (var/atom/a in fire_act_on)
 
-	for (var/obj/snow/S in my_tile)
-		if (prob(25))
-			S.visible_message("<span class = 'warning'>The snow melts.</span>")
-			qdel(S)
+		if (ismob(a))
+			continue
 
-	for (var/obj/structure/wild/W in my_tile)
-		if (istype(W, /obj/structure/wild/tree))
-			if (prob(15))
-				W.visible_message("<span class = 'warning'>[W] collapses.</span>")
-				qdel(W)
-		else
-			if (prob(35))
-				W.visible_message("<span class = 'warning'>[W] is burned away.</span>")
-				qdel(W)
-	//loc.fire_act(air_contents, air_contents.temperature, air_contents.volume)
+		a.fire_act(temperature)
 
-//	for(var/atom/A in loc)
-	//	A.fire_act(air_contents, air_contents.temperature, air_contents.volume)
+		// handle flammable objects
+
+		if (a.density)
+
+			var/a_is_flammable = FALSE
+			if (list(/obj/structure/table/wood, /turf/wall/wood, /obj/structure/closet/cabinet, /obj/structure/barricade, /obj/structure/bed/chair/wood, /obj/structure/bookcase, /obj/structure/curtain, /obj/structure/classic_window_frame).Find(a.type))
+				a_is_flammable = TRUE
+			if (!a_is_flammable)
+				if (a.vars.Find("material"))
+					if (istype(a:material, /material/wood))
+						a_is_flammable = TRUE
+
+			if (a_is_flammable && !a.overlays.Find(burning_overlay_obj) && !a.overlays.Find(burning_overlay_turf))
+
+				if (istype(a, /obj))
+					a.overlays |= burning_overlay_obj
+					burning_objs += a
+
+				else if (istype(a, /turf))
+					a.overlays |= burning_overlay_turf
+					burning_turfs += a
+
+	for (var/obj/tank/T in my_tile)
+		T.damage += T.x_percent_of_max_damage(1.0 * (temperature/default_temperature))
+		T.update_damage_status()
 
 	//spread
 
@@ -185,11 +233,9 @@ turf/proc/hotspot_expose(exposed_temperature, exposed_volume, soh = FALSE)
 	++ticks
 
 	if (ticks > time_limit)
+		qdeleted()
 
-		qdel (src)
-
-/obj/fire/New(newLoc,fl)
-	..()
+/obj/fire/proc/setup(newLoc,fl)
 
 	if(!istype(loc, /turf))
 		qdel(src)
@@ -204,13 +250,16 @@ turf/proc/hotspot_expose(exposed_temperature, exposed_volume, soh = FALSE)
 
 	processing_objects += src
 
-	spawn (200)
-		if (src)
-			qdel(src) // crappy workaround because fire won't process aaa
-
-	for (var/obj/fire/F in get_turf(src))
-		if (F != src)
-			qdel(F)
+/obj/fire/qdeleted()
+	if (fire_pool.Find(src))
+		loc = null
+		return
+	color = initial(color)
+	set_light(0)
+	processing_objects -= src
+	RemoveFire()
+	loc = null
+	fire_pool |= src
 
 /obj/fire/proc/fire_color(var/env_temperature)
 	//var/temperature = max(4000*sqrt(firelevel/vsc.fire_firelevel_multiplier), env_temperature)

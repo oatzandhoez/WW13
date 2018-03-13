@@ -17,7 +17,7 @@
 
 	//non-verbal languages are garbled if you can't see the speaker. Yes, this includes if they are inside a closet.
 	if (language && (language.flags & NONVERBAL))
-		if (!speaker || (src.sdisabilities & BLIND || src.blinded) || !(speaker in view(src)))
+		if (!speaker || (sdisabilities & BLIND || blinded) || !(speaker in view(src)))
 			message = stars(message)
 
 	if(!(language && (language.flags & INNATE))) // skip understanding checks for INNATE languages
@@ -63,9 +63,18 @@
 			on_hear_say("<span class='game say'><span class='name'>[speaker_name]</span>[alt_name] [track][language.format_message(message, verb)]</span>")
 		else
 			on_hear_say("<span class='game say'><span class='name'>[speaker_name]</span>[alt_name] [track][verb], <span class='message'><span class='body'>\"[message]\"</span></span></span>")
-		if (speech_sound && (get_dist(speaker, src) <= world.view && src.z == speaker.z))
+		if (speech_sound && (get_dist(speaker, src) <= world.view && z == speaker.z))
 			var/turf/source = speaker? get_turf(speaker) : get_turf(src)
-			src.playsound_local(source, speech_sound, sound_vol, TRUE)
+			playsound_local(source, speech_sound, sound_vol, TRUE)
+
+	if (ishuman(src))
+		var/mob/living/carbon/human/H = src
+		if (!H.languages.Find(language))
+			var/lname = capitalize(language.name)
+			H.partial_languages[lname] += 1
+			if (H.partial_languages[lname] > rand(100,150))
+				H.add_language(language)
+				H << "<span class = 'info'>You've learned how to speak [language.name] from hearing it so much.</span>"
 
 /mob/proc/on_hear_say(var/message)
 	src << message
@@ -74,6 +83,9 @@
 
 	if(!client)
 		return
+
+	if (speaker && language && speaker.languages.len && language != speaker.languages[1])
+		verb = "[verb] in <span class = 'info'>[language.name]</span>"
 
 	message = capitalize(message)
 
@@ -88,7 +100,7 @@
 
 	//non-verbal languages are garbled if you can't see the speaker. Yes, this includes if they are inside a closet.
 	if (language && (language.flags & NONVERBAL))
-		if (!speaker || (src.sdisabilities & BLIND || src.blinded) || !(speaker in view(src)))
+		if (!speaker || (sdisabilities & BLIND || blinded) || !(speaker in view(src)))
 			message = stars(message)
 
 	if(!(language && (language.flags & INNATE))) // skip understanding checks for INNATE languages
@@ -113,11 +125,7 @@
 	if(istype(speaker, /mob/living/carbon/human))
 		var/mob/living/carbon/human/H = speaker
 		if(H.voice)
-			speaker_name = H.voice
-	/*	for(var/datum/data/record/G in data_core.general)
-			if(G.fields["name"] == speaker_name)
-				speaker_name = H.rank_prefix_name(speaker_name)
-				break*/
+			speaker_name = H.rank_prefix_name(H.GetVoice()) // H.voice
 
 		if(H.age && H.gender)//If they have an age and gender
 			var/ageAndGender
@@ -146,11 +154,11 @@
 
 	if(sdisabilities & DEAF || ear_deaf)
 		if(prob(20))
-			src << "<span class='warning'>You feel your headset vibrate but can hear nothing from it!</span>"
+			src << "<span class='warning'>You feel your radio vibrate but can hear nothing from it!</span>"
 	else
 		var/fontsize = 2
 
-		if (speaker.original_job.is_officer)
+		if (speaker.original_job.is_officer || istype(speaker.original_job, /datum/job/german/trainsystem))
 			fontsize = 3
 
 		var/full_message = "<font size = [fontsize]><b><span class = [source.span_class()]>[source.bracketed_name()] [speaker_name] [message]</span></font>"
@@ -172,16 +180,16 @@
 		return
 
 	if(say_understands(speaker, language))
-		message = "<B>[src]</B> [verb], \"[message]\""
+		message = "<b>[src]</b> [verb], \"[message]\""
 	else
-		message = "<B>[src]</B> [verb]."
+		message = "<b>[src]</b> [verb]."
 
-	if(src.status_flags & PASSEMOTES)
-		for(var/obj/item/weapon/holder/H in src.contents)
+	if(status_flags & PASSEMOTES)
+		for(var/obj/item/weapon/holder/H in contents)
 			H.show_message(message)
-		for(var/mob/living/M in src.contents)
+		for(var/mob/living/M in contents)
 			M.show_message(message)
-	src.show_message(message)
+	show_message(message)
 
 /mob/proc/hear_sleep(var/message)
 	var/heard = ""

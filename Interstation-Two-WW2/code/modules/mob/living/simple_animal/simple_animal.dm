@@ -71,8 +71,8 @@
 	verbs -= /mob/verb/observe
 
 /mob/living/simple_animal/Login()
-	if(src && src.client)
-		src.client.screen = null
+	if(src && client)
+		client.screen = null
 	..()
 
 /mob/living/simple_animal/Life()
@@ -103,7 +103,7 @@
 
 	//Movement
 	if(!client && !stop_automated_movement && wander && !anchored)
-		if(isturf(src.loc) && !resting && !buckled && canmove)		//This is so it only moves if it's not inside a closet, gentics machine, etc.
+		if(isturf(loc) && !resting && !buckled && canmove)		//This is so it only moves if it's not inside a closet, gentics machine, etc.
 			turns_since_move++
 			if(turns_since_move >= turns_per_move)
 				if(!(stop_automated_movement_when_pulled && pulledby)) //Soma animals don't move when pulled
@@ -151,7 +151,7 @@
 	//Atmos
 	var/atmos_suitable = TRUE
 
-	var/atom/A = src.loc
+	var/atom/A = loc
 
 	if(istype(A,/turf))
 		var/turf/T = A
@@ -233,10 +233,10 @@
 
 		if(I_HELP)
 			if (health > FALSE)
-				M.visible_message("\blue [M] [response_help] \the [src].")
+				M.visible_message("<span class = 'notice'>[M] [response_help] \the [src].</span>")
 
 		if(I_DISARM)
-			M.visible_message("\blue [M] [response_disarm] \the [src].")
+			M.visible_message("<span class = 'notice'>[M] [response_disarm] \the [src].</span>")
 			M.do_attack_animation(src)
 			playsound(get_turf(M), 'sound/weapons/punchmiss.ogg', 50, TRUE, -1)
 			//TODO: Push the mob away or something
@@ -255,12 +255,12 @@
 			G.affecting = src
 			LAssailant = M
 
-			M.visible_message("\red [M] has grabbed [src] passively!")
+			M.visible_message("<span class = 'red'>[M] has grabbed [src] passively!</span>")
 			M.do_attack_animation(src)
 
 		if(I_HURT)
-			adjustBruteLoss(harm_intent_damage)
-			M.visible_message("\red [M] [response_harm] \the [src].")
+			adjustBruteLoss(harm_intent_damage*M.getStatCoeff("strength"))
+			M.visible_message("<span class = 'red'>[M] [response_harm] \the [src].</span>")
 			M.do_attack_animation(src)
 			playsound(get_turf(M), "punch", 50, TRUE, -1)
 
@@ -288,15 +288,18 @@
 			visible_message("<span class='notice'>[user] gently taps [src] with \the [O].</span>")
 		else
 			O.attack(src, user, user.targeted_organ)
-	else if (!istype(O, /obj/item/weapon/reagent_containers) && user.a_intent == I_HURT)
-		user.visible_message("<span class = 'notice'>[user] starts to butcher [src].</span>")
-		if (do_after(user, 30, src))
-			user.visible_message("<span class = 'notice'>[user] butchers [src] into a few meat slabs.</span>")
-			for (var/v in TRUE to rand(5,7))
-				var/obj/item/weapon/reagent_containers/food/snacks/meat/meat = new/obj/item/weapon/reagent_containers/food/snacks/meat(get_turf(src))
-				meat.name = "[name] meatsteak"
-			crush()
-			qdel(src)
+	else if (O.sharp)
+		if (!istype(O, /obj/item/weapon/reagent_containers) && user.a_intent == I_HURT && stat == DEAD)
+			user.visible_message("<span class = 'notice'>[user] starts to butcher [src].</span>")
+			if (do_after(user, 30, src))
+				user.visible_message("<span class = 'notice'>[user] butchers [src] into a few meat slabs.</span>")
+				for (var/v in TRUE to rand(5,7))
+					var/obj/item/weapon/reagent_containers/food/snacks/meat/meat = new/obj/item/weapon/reagent_containers/food/snacks/meat(get_turf(src))
+					meat.name = "[name] meatsteak"
+				crush()
+				qdel(src)
+		else
+			O.attack(src, user, user.targeted_organ)
 
 /mob/living/simple_animal/hit_with_weapon(obj/item/O, mob/living/user, var/effective_force, var/hit_zone)
 
@@ -382,7 +385,7 @@
 	if(meat_type && actual_meat_amount>0 && (stat == DEAD))
 		for(var/i=0;i<actual_meat_amount;i++)
 			var/obj/item/meat = new meat_type(get_turf(src))
-			meat.name = "[src.name] [meat.name]"
+			meat.name = "[name] [meat.name]"
 		if(issmall(src))
 			user.visible_message("<span class='danger'>[user] chops up \the [src]!</span>")
 			new/obj/effect/decal/cleanable/blood/splatter(get_turf(src))

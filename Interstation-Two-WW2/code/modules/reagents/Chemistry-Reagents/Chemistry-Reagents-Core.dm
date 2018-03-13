@@ -75,8 +75,8 @@
 	color = "#0050F0"
 
 /datum/reagent/antibodies/affect_blood(var/mob/living/carbon/M, var/alien, var/removed)
-	if(src.data)
-		M.antibodies |= src.data["antibodies"]
+	if(data)
+		M.antibodies |= data["antibodies"]
 	..()
 
 #define WATER_LATENT_HEAT 19000 // How much heat is removed when applied to a hot turf, in J/unit (19000 makes 120 u of water roughly equivalent to 4L)
@@ -114,10 +114,11 @@
 		T.wet_floor(1)
 
 /datum/reagent/water/touch_obj(var/obj/O)
+/*
 	if(istype(O, /obj/item/weapon/reagent_containers/food/snacks/monkeycube))
 		var/obj/item/weapon/reagent_containers/food/snacks/monkeycube/cube = O
 		if(!cube.wrapped)
-			cube.Expand()
+			cube.Expand()*/
 
 /datum/reagent/water/touch_mob(var/mob/living/L, var/amount)
 	if(istype(L))

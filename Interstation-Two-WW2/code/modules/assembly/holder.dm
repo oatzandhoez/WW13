@@ -58,7 +58,7 @@
 /*		if(O:Attach_Holder())
 			special_assembly = O
 			update_icon()
-			src.name = "[a_left.name] [a_right.name] [special_assembly.name] assembly"
+			name = "[a_left.name] [a_right.name] [special_assembly.name] assembly"
 */
 		return
 
@@ -70,7 +70,7 @@
 			for(var/O in a_left.attached_overlays)
 				overlays += "[O]_l"
 		if(a_right)
-			src.overlays += "[a_right.icon_state]_right"
+			overlays += "[a_right.icon_state]_right"
 			for(var/O in a_right.attached_overlays)
 				overlays += "[O]_r"
 		if(master)
@@ -79,15 +79,15 @@
 /*		if(special_assembly)
 			special_assembly.update_icon()
 			if(special_assembly:small_icon_state)
-				src.overlays += special_assembly:small_icon_state
+				overlays += special_assembly:small_icon_state
 				for(var/O in special_assembly:small_icon_state_overlays)
-					src.overlays += O
+					overlays += O
 */
 
 	examine(mob/user)
 		..(user)
-		if ((in_range(src, user) || src.loc == user))
-			if (src.secured)
+		if ((in_range(src, user) || loc == user))
+			if (secured)
 				user << "\The [src] is ready!"
 			else
 				user << "\The [src] can be attached!"
@@ -146,15 +146,15 @@
 	attackby(obj/item/weapon/W as obj, mob/user as mob)
 		if(isscrewdriver(W))
 			if(!a_left || !a_right)
-				user << "\red BUG:Assembly part missing, please report this!"
+				user << "<span class = 'red'>BUG: Assembly part missing, please report this!</span>"
 				return
 			a_left.toggle_secure()
 			a_right.toggle_secure()
 			secured = !secured
 			if(secured)
-				user << "\blue \The [src] is ready!"
+				user << "<span class = 'notice'>\The [src] is ready!</span>"
 			else
-				user << "\blue \The [src] can now be taken apart!"
+				user << "<span class = 'notice'>\The [src] can now be taken apart!</span>"
 			update_icon()
 			return
 		else if(W.IsSpecialAssembly())
@@ -165,10 +165,10 @@
 
 
 	attack_self(mob/user as mob)
-		src.add_fingerprint(user)
-		if(src.secured)
+		add_fingerprint(user)
+		if(secured)
 			if(!a_left || !a_right)
-				user << "\red Assembly part missing!"
+				user << "<span class = 'red'>Assembly part missing!</span>"
 				return
 			if(istype(a_left,a_right.type))//If they are the same type it causes issues due to window code
 				switch(alert("Which side would you like to use?",,"Left","Right"))

@@ -12,15 +12,15 @@
 //	origin_tech = list(TECH_COMBAT = 8, TECH_MATERIAL = 5)
 	fire_sound = 'sound/effects/bang.ogg'
 
-	release_force = 15
-	throw_distance = 30
+	release_force = 3
+	throw_distance = 10
 	var/max_rockets = TRUE
 	var/list/rockets = new/list()
 
 /obj/item/weapon/gun/launcher/rocket/examine(mob/user)
 	if(!..(user, 2))
 		return
-	user << "\blue [rockets.len] / [max_rockets] rockets."
+	user << "<span class = 'notice'>[rockets.len] / [max_rockets] rockets.</span>"
 
 /obj/item/weapon/gun/launcher/rocket/attackby(obj/item/I as obj, mob/user as mob)
 	if (..()) // handle attachments
@@ -31,10 +31,10 @@
 			user.drop_item()
 			I.loc = src
 			rockets += I
-			user << "\blue You put the rocket in [src]."
-			user << "\blue [rockets.len] / [max_rockets] rockets."
+			user << "<span class = 'notice'>You put the rocket in [src].</span>"
+			user << "<span class = 'notice'>[rockets.len] / [max_rockets] rockets.</span>"
 		else
-			usr << "\red [src] cannot hold more rockets."
+			usr << "<span class = 'red'>[src] cannot hold more rockets.</span>"
 
 /obj/item/weapon/gun/launcher/rocket/consume_next_projectile()
 	if(rockets.len)

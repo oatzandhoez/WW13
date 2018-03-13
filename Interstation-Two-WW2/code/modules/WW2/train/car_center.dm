@@ -172,9 +172,9 @@
 				var/x_offset = t.x - min_x
 				var/y_offset = max_y - t.y
 				var/z = TRUE
-				var/obj/train_pseudoturf/tpt = new/obj/train_pseudoturf(locate(src.x + x_offset,src.y - y_offset,z), t)
+				var/obj/train_pseudoturf/tpt = new/obj/train_pseudoturf(locate(x + x_offset,y - y_offset,z), t)
 				tpt.master = src
-				tpt.controller = src.master
+				tpt.controller = master
 				forwards_pseudoturfs += tpt
 	..()
 
@@ -190,9 +190,9 @@
 				var/x_offset = t.x - min_x
 				var/y_offset = max_y - t.y
 				var/z = TRUE
-				var/obj/train_pseudoturf/tpt = new/obj/train_pseudoturf(locate(src.x + x_offset,src.y - y_offset,z), t)
+				var/obj/train_pseudoturf/tpt = new/obj/train_pseudoturf(locate(x + x_offset,y - y_offset,z), t)
 				tpt.master = src
-				tpt.controller = src.master
+				tpt.controller = master
 				forwards_pseudoturfs += tpt
 		if ("storage")
 			var/area/a = locate(/area/prishtina/train/german/cabin/storage)
@@ -202,9 +202,9 @@
 				var/x_offset = t.x - min_x
 				var/y_offset = max_y - t.y
 				var/z = TRUE
-				var/obj/train_pseudoturf/tpt = new/obj/train_pseudoturf(locate(src.x + x_offset,src.y - y_offset,z), t)
+				var/obj/train_pseudoturf/tpt = new/obj/train_pseudoturf(locate(x + x_offset,y - y_offset,z), t)
 				tpt.master = src
-				tpt.controller = src.master
+				tpt.controller = master
 				forwards_pseudoturfs += tpt
 		if ("soldier")
 			var/area/a = locate(/area/prishtina/train/german/cabin/soldier)
@@ -214,9 +214,9 @@
 				var/x_offset = t.x - min_x
 				var/y_offset = max_y - t.y
 				var/z = TRUE
-				var/obj/train_pseudoturf/tpt = new/obj/train_pseudoturf(locate(src.x + x_offset,src.y - y_offset,z), t)
+				var/obj/train_pseudoturf/tpt = new/obj/train_pseudoturf(locate(x + x_offset,y - y_offset,z), t)
 				tpt.master = src
-				tpt.controller = src.master
+				tpt.controller = master
 				forwards_pseudoturfs += tpt
 		if ("conductor")
 			var/area/a = locate(/area/prishtina/train/german/cabin/conductor)
@@ -226,9 +226,9 @@
 				var/x_offset = t.x - min_x
 				var/y_offset = max_y - t.y
 				var/z = TRUE
-				var/obj/train_pseudoturf/tpt = new/obj/train_pseudoturf(locate(src.x + x_offset,src.y - y_offset,z), t)
+				var/obj/train_pseudoturf/tpt = new/obj/train_pseudoturf(locate(x + x_offset,y - y_offset,z), t)
 				tpt.master = src
-				tpt.controller = src.master
+				tpt.controller = master
 				forwards_pseudoturfs += tpt
 				last_x_offset = x_offset
 				last_y_offset = y_offset
@@ -249,12 +249,18 @@
 	loc = _loc
 	master = _master
 
+	train_car_centers += src
+
 /obj/train_car_center/german/New(_loc, _master)
 	..(_loc, _master)
+
+	german_main_train_car_centers += src
 
 /obj/train_car_center/germansupply/New(_loc, _master)
 	..(_loc, _master)
 	Graft("horizontal-storage")
+
+	german_supply_train_car_centers += src
 
 /obj/train_car_center/german/officer/New(_loc, _master)
 	..(_loc, _master)

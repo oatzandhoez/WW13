@@ -1,5 +1,11 @@
-/mob/living/carbon/human/examine(mob/user)
-	user.visible_message("<small>[user] looks at [src].</small>")
+/mob/living/carbon/human/var/list/next_look_at = list()
+/mob/living/carbon/human/examine(var/mob/user)
+
+	if (ishuman(user))
+		var/mob/living/carbon/human/H = user
+		if (!H.next_look_at.Find(getRoundUID(TRUE)) || H.next_look_at[getRoundUID(TRUE)] <= world.time)
+			H.visible_message("<small>[H] looks at [src].</small>")
+			H.next_look_at[getRoundUID(TRUE)] = world.time + 100
 
 	var/skipgloves = FALSE
 	var/skipsuitstorage = FALSE
@@ -39,7 +45,7 @@
 		// Just in case someone VVs the gender to something strange. It'll runtime anyway when it hits usages, better to CRASH() now with a helpful message.
 		CRASH("Gender datum was null; key was '[(skipjumpsuit && skipface) ? PLURAL : gender]'")
 
-	msg += "<EM>[src.name]</EM>"
+	msg += "<EM>[name]</EM>"
 	if(species.name != "Human")
 		msg += ", a <b><font color='[species.flesh_color]'>[species.name]</font></b>"
 	msg += "!\n"
@@ -178,7 +184,7 @@
 	//Jitters
 	if(is_jittery)
 		if(jitteriness >= 300)
-			msg += "<span class='warning'><B>[T.He] [T.is] convulsing violently!</B></span>\n"
+			msg += "<span class='warning'><b>[T.He] [T.is] convulsing violently!</b></span>\n"
 		else if(jitteriness >= 200)
 			msg += "<span class='warning'>[T.He] [T.is] extremely jittery.</span>\n"
 		else if(jitteriness >= 100)
@@ -196,9 +202,9 @@
 	var/distance = get_dist(usr,src)
 	if(isghost(usr) || usr.stat == DEAD) // ghosts can see anything
 		distance = TRUE
-	if (src.stat)
+	if (stat)
 		msg += "<span class='warning'>[T.He] [T.is]n't responding to anything around [T.him] and seems to be asleep.</span>\n"
-		if((stat == DEAD || src.losebreath) && distance <= 3)
+		if((stat == DEAD || losebreath) && distance <= 3)
 			msg += "<span class='warning'>[T.He] [T.does] not appear to be breathing.</span>\n"
 
 	if(fire_stacks)
@@ -392,17 +398,9 @@
 
 					// make partisans show up as civs
 					var/team = original_job.base_type_flag()
-					if (team == PARTISAN)
-						team = CIVILIAN
 
-					msg += "<br><i>He's a <b>[capitalize(lowertext(original_job.base_type_flag()))]</b>.</i>"
-
-				if (istype(original_job, /datum/job/german))
-					if (is_jew && !wear_mask)
-						msg += "<br><big>Mein gott, it's a jew!</big>"
-				if (istype(original_job, /datum/job/soviet) || istype(original_job, /datum/job/partisan))
-					if (is_jew && !wear_mask)
-						msg += "<br><big>Oy blin, it's a jew!</big>"
+					if (team != PILLARMEN)
+						msg += "<br><i>[T.He] [T.is] a <b>[capitalize(lowertext(team))]</b>.</i>"
 
 				if (original_job.base_type_flag() == H.original_job.base_type_flag() && (original_job.base_type_flag() == SOVIET || original_job.base_type_flag() == GERMAN))
 					if (isleader(src, H))
@@ -414,6 +412,12 @@
 
 		else if (isobserver(user))
 			msg += "<br><i>[T.He] [T.is] a [original_job.title].</i>"
+
+		else if (ishuman(user) && user == src)
+			var/mob/living/carbon/human/H = user
+			if (H.original_job)
+				msg += "<br><i>You are a <b>[H.original_job.title]</b>.</i>"
+
 
 	for (var/v in TRUE to embedded.len)
 		msg += "<a href='?src=\ref[user];remove_embedded=[v]'>Remove [embedded[v]]</a>"

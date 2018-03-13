@@ -18,6 +18,8 @@
 
 	var/needs_update = FALSE
 
+	var/TOD = "Midday"
+
 /atom/movable/lighting_overlay/pre_bullet_act(var/obj/item/projectile/P)
 	return FALSE
 
@@ -42,7 +44,7 @@
 
 		T.luminosity = TRUE
 
-	lighting_update_overlays -= src;
+	lighting_update_overlays -= src
 
 	..()
 
@@ -57,7 +59,7 @@
 
 		qdel(src)
 
-	var/list/L = src.color:Copy() // For some dumb reason BYOND won't allow me to use [] on a colour matrix directly.
+	var/list/L = copylist(color)
 	var/anylums = FALSE
 
 	for(var/datum/lighting_corner/C in T.corners)
@@ -87,5 +89,5 @@
 		L[i + TRUE]   = C.getLumG() * .
 		L[i + 2]   = C.getLumB() * .
 
-	src.color  = L
+	color  = L
 	luminosity = (anylums > FALSE)

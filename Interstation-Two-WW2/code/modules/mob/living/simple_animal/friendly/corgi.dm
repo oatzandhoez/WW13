@@ -63,13 +63,13 @@
 				step_to(src,movement_target,1)
 
 				if(movement_target)		//Not redundant due to sleeps, Item can be gone in 6 decisecomds
-					if (movement_target.loc.x < src.x)
+					if (movement_target.loc.x < x)
 						set_dir(WEST)
-					else if (movement_target.loc.x > src.x)
+					else if (movement_target.loc.x > x)
 						set_dir(EAST)
-					else if (movement_target.loc.y < src.y)
+					else if (movement_target.loc.y < y)
 						set_dir(SOUTH)
-					else if (movement_target.loc.y > src.y)
+					else if (movement_target.loc.y > y)
 						set_dir(NORTH)
 					else
 						set_dir(SOUTH)
@@ -124,7 +124,7 @@
 //pupplies cannot wear anything.
 /mob/living/simple_animal/corgi/puppy/Topic(href, href_list)
 	if(href_list["remove_inv"] || href_list["add_inv"])
-		usr << "\red You can't fit this on [src]"
+		usr << "<span class = 'red'>You can't fit this on [src].</span>"
 		return
 	..()
 
@@ -147,7 +147,7 @@
 //Lisa already has a cute bow!
 /mob/living/simple_animal/corgi/Lisa/Topic(href, href_list)
 	if(href_list["remove_inv"] || href_list["add_inv"])
-		usr << "\red [src] already has a cute bow!"
+		usr << "<span class = 'red'>[src] already has a cute bow!</span>"
 		return
 	..()
 

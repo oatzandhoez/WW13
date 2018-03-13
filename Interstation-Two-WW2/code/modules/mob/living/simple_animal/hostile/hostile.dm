@@ -34,7 +34,7 @@
 
 		if(isliving(A))
 			var/mob/living/L = A
-			if(L.faction == src.faction && !attack_same)
+			if(L.faction == faction && !attack_same)
 				continue
 			else if(L in friends)
 				continue
@@ -132,23 +132,23 @@
 
 /mob/living/simple_animal/hostile/proc/OpenFire(target_mob)
 	var/target = target_mob
-	visible_message("\red <b>[src]</b> fires at [target]!", TRUE)
+	visible_message("<span class = 'red'><b>[src]</b> fires at [target]!</span>", TRUE)
 
 	if(rapid)
 		spawn(1)
-			Shoot(target, src.loc, src)
+			Shoot(target, loc, src)
 			if(casingtype)
 				new casingtype(get_turf(src))
 		spawn(4)
-			Shoot(target, src.loc, src)
+			Shoot(target, loc, src)
 			if(casingtype)
 				new casingtype(get_turf(src))
 		spawn(6)
-			Shoot(target, src.loc, src)
+			Shoot(target, loc, src)
 			if(casingtype)
 				new casingtype(get_turf(src))
 	else
-		Shoot(target, src.loc, src)
+		Shoot(target, loc, src)
 		if(casingtype)
 			new casingtype
 
@@ -188,7 +188,7 @@
 			enroute = TRUE
 			stop_automated_movement = TRUE
 			spawn()
-				if(!src.stat)
+				if(!stat)
 					horde()
 
 		if(get_dist(src, shuttletarget) <= 2)		//The monster reached the escape hallway
@@ -204,5 +204,5 @@
 	FindTarget()
 	if(!target_mob || enroute)
 		spawn(10)
-			if(!src.stat)
+			if(!stat)
 				horde()

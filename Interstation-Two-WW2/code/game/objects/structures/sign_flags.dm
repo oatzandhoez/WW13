@@ -3,10 +3,10 @@
 
 /obj/structure/sign/flag/attack_hand(mob/user as mob)
 	if(!ripped)
-		playsound(src.loc, 'sound/items/poster_ripped.ogg', 100, TRUE)
+		playsound(loc, 'sound/items/poster_ripped.ogg', 100, TRUE)
 		for(var/i = FALSE to 3)
 			if(do_after(user, 10))
-				playsound(src.loc, 'sound/items/poster_ripped.ogg', 100, TRUE)
+				playsound(loc, 'sound/items/poster_ripped.ogg', 100, TRUE)
 			else
 				return
 		visible_message("<span class='warning'>[user] rips [src]!</span>" )
@@ -42,6 +42,7 @@
 	desc = "A low quality carpet dangling on the wall."
 	icon = 'icons/obj/decals_wide.dmi'
 	icon_state = "carpet"
+	layer = OBJ_LAYER - 0.1
 
 /obj/structure/sign/wide/loc_name_sign
 	name = "Slatino sign"

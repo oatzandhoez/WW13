@@ -11,11 +11,11 @@
 	var/fleshcolor //Used for gibbed humans.
 	var/bloodcolor //Used for gibbed humans.
 
-	New(location, var/fleshcolor, var/bloodcolor)
+	New(location, var/_fleshcolor, var/_bloodcolor)
 		..()
 
-		if(fleshcolor) src.fleshcolor = fleshcolor
-		if(bloodcolor) src.bloodcolor = bloodcolor
+		if(fleshcolor) fleshcolor = _fleshcolor
+		if(bloodcolor) bloodcolor = _bloodcolor
 		Gib(loc)
 
 	proc/Gib(atom/location)

@@ -24,10 +24,10 @@
 		icon_state = "[initial(icon_state)]-b"
 	else
 		icon_state = initial(icon_state)
-
+/*
 /obj/structure/grille/Bumped(atom/user)
 	if(ismob(user)) shock(user, 70)
-
+*/
 /obj/structure/grille/attack_hand(mob/user as mob)
 
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
@@ -42,8 +42,8 @@
 			attack_message = "mangles"
 			damage_dealt = 5
 
-	if(shock(user, 70))
-		return
+	/*if(shock(user, 70))
+		return*/
 
 	if(HULK in user.mutations)
 		damage_dealt += 5
@@ -93,22 +93,20 @@
 		. = PROJECTILE_CONTINUE
 		damage = between(0, (damage - Proj.damage)*(Proj.damage_type == BRUTE? 0.4 : TRUE), 10) //if the bullet passes through then the grille avoids most of the damage
 
-	src.health -= damage*0.2
+	health -= damage*0.2
 	spawn(0) healthcheck() //spawn to make sure we return properly if the grille is deleted
 
 /obj/structure/grille/attackby(obj/item/weapon/W as obj, mob/user as mob)
 	if(iswirecutter(W))
-		if(!shock(user, 100))
-			playsound(loc, 'sound/items/Wirecutter.ogg', 100, TRUE)
-			PoolOrNew(/obj/item/stack/rods, list(get_turf(src), destroyed ? TRUE : 2))
-			qdel(src)
+		playsound(loc, 'sound/items/Wirecutter.ogg', 100, TRUE)
+		PoolOrNew(/obj/item/stack/rods, list(get_turf(src), destroyed ? TRUE : 2))
+		qdel(src)
 	else if((isscrewdriver(W)) && (istype(loc, /turf) || anchored))
-		if(!shock(user, 90))
-			playsound(loc, 'sound/items/Screwdriver.ogg', 100, TRUE)
-			anchored = !anchored
-			user.visible_message("<span class='notice'>[user] [anchored ? "fastens" : "unfastens"] the grille.</span>", \
-								 "<span class='notice'>You have [anchored ? "fastened the grille to" : "unfastened the grill from"] the floor.</span>")
-			return
+		playsound(loc, 'sound/items/Screwdriver.ogg', 100, TRUE)
+		anchored = !anchored
+		user.visible_message("<span class='notice'>[user] [anchored ? "fastens" : "unfastens"] the grille.</span>", \
+							 "<span class='notice'>You have [anchored ? "fastened the grille to" : "unfastened the grill from"] the floor.</span>")
+		return
 
 //window placing begin //TODO CONVERT PROPERLY TO MATERIAL DATUM
 	else if(istype(W,/obj/item/stack/material))
@@ -153,7 +151,7 @@
 		return
 //window placing end
 
-	else if(!(W.flags & CONDUCT) || !shock(user, 70))
+	else if(!(W.flags & CONDUCT)/* || !shock(user, 70)*/)
 		user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 		user.do_attack_animation(src)
 		playsound(loc, 'sound/effects/grillehit.ogg', 80, TRUE)
@@ -184,7 +182,7 @@
 
 // shock user with probability prb (if all connections & power are working)
 // returns TRUE if shocked, FALSE otherwise
-
+/*
 /obj/structure/grille/proc/shock(mob/user as mob, prb)
 
 	if(!anchored || destroyed)		// anchored/destroyed grilles are never connected
@@ -207,13 +205,12 @@
 		else
 			return FALSE
 	return FALSE
-
-/obj/structure/grille/fire_act(datum/gas_mixture/air, exposed_temperature, exposed_volume)
-	if(!destroyed)
-		if(exposed_temperature > T0C + 1500)
-			health -= TRUE
-			healthcheck()
-	..()
+*/
+/obj/structure/grille/fire_act(temperature)
+	if (prob((temperature/500) * 30))
+		visible_message("<span class = 'warning'>[src] melts.</span>")
+		health = 0
+		healthcheck()
 
 /obj/structure/grille/attack_generic(var/mob/user, var/damage, var/attack_verb)
 	visible_message("<span class='danger'>[user] [attack_verb] the [src]!</span>")

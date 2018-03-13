@@ -108,6 +108,33 @@
 	icon_state = "barbwire_stack"
 	default_type = "barbedwire"
 
+/obj/item/stack/material/rope
+	name = "Rope"
+	icon_state = "rope"
+	default_type = "rope"
+	anchored = TRUE
+
+/obj/item/stack/material/rope/attackby(var/obj/item/W, var/mob/M)
+	if (anchored)
+		return FALSE
+	else
+		return ..()
+
+/obj/item/stack/material/rope/attack_hand(var/mob/M)
+	if (ishuman(M))
+		var/mob/living/carbon/human/H = M
+		if (H.hand && H.l_hand && H.l_hand.type == /obj/item/stack/material/rope)
+			return
+		else if (!H.hand && H.r_hand && H.r_hand.type == /obj/item/stack/material/rope)
+			return
+		var/obj/rope = new /obj/item/stack/material/rope
+		rope.anchored = FALSE
+		if (H.put_in_any_hand_if_possible(rope, prioritize_active_hand = TRUE))
+			--amount
+			visible_message("<span class = 'warning'>[H] takes a coil of rope from the pile of rope.</span>")
+			if (amount < 1)
+				qdel(src)
+
 /obj/item/stack/material/uranium
 	name = "uranium"
 	icon_state = "sheet-uranium"
@@ -173,6 +200,7 @@
 	name = "wooden plank"
 	icon_state = "sheet-wood"
 	default_type = "wood"
+	dropsound = 'sound/effects/drop_wood.ogg'
 
 /obj/item/stack/material/cloth
 	name = "cloth"
@@ -194,6 +222,7 @@
 	name = "glass"
 	icon_state = "sheet-glass"
 	default_type = "glass"
+	dropsound = 'sound/effects/drop_glass.ogg'
 
 /obj/item/stack/material/glass/reinforced
 	name = "reinforced glass"

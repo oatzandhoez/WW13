@@ -7,6 +7,7 @@
 	item_state = "mosin" //placeholder
 	w_class = 4
 	force = 10
+	throwforce = 20
 	max_shells = 5
 	slot_flags = SLOT_BACK
 //	origin_tech = "combat=4;materials=2;syndicate=8"
@@ -47,7 +48,7 @@
 	bolt_open = !bolt_open
 	if(bolt_open)
 		if(chambered)
-			playsound(src.loc, 'sound/weapons/bolt_open.ogg', 50, TRUE)
+			playsound(loc, 'sound/weapons/bolt_open.ogg', 50, TRUE)
 			user << "<span class='notice'>You work the bolt open, ejecting [chambered]!</span>"
 			chambered.loc = get_turf(src)
 			loaded -= chambered
@@ -57,10 +58,10 @@
 					check_bolt_lock++
 					user << "<span class='notice'>The bolt is locked!</span>"
 		else
-			playsound(src.loc, 'sound/weapons/bolt_open.ogg', 50, TRUE)
+			playsound(loc, 'sound/weapons/bolt_open.ogg', 50, TRUE)
 			user << "<span class='notice'>You work the bolt open.</span>"
 	else
-		playsound(src.loc, 'sound/weapons/bolt_close.ogg', 50, TRUE)
+		playsound(loc, 'sound/weapons/bolt_close.ogg', 50, TRUE)
 		user << "<span class='notice'>You work the bolt closed.</span>"
 		bolt_open = FALSE
 	add_fingerprint(user)

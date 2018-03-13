@@ -1,6 +1,11 @@
 /datum/job
 	var/default_language = "Common"
 	var/list/additional_languages = list() // "Name" = probability between TRUE-100
+	var/SL_check_independent = FALSE // we're important, so we can spawn even if SLs are needed
+
+/datum/job/pillarman
+	default_language = "German"
+	additional_languages = list("Russian" = 100, "Ukrainian" = 100)
 
 /datum/job/german
 	default_language = "German"
@@ -12,7 +17,11 @@
 
 /datum/job/partisan
 	default_language = "Ukrainian"
-	additional_languages = list("German" = 50, "Russian" = 50)
+	additional_languages = list("German" = 50, "Russian" = 75)
+
+/datum/job/partisan/civilian
+	default_language = "Ukrainian"
+	additional_languages = list("German" = 50, "Russian" = 75)
 
 /datum/job/update_character(var/mob/living/carbon/human/H)
 	. = ..()
@@ -28,7 +37,7 @@
 			if (prob(probability))
 				H.add_language(language_name, FALSE)
 				H.show_message("<b>You know the [language_name] language!</b>")
-
+/*
 	for (var/datum/language/L in H.languages)
 		if (istype(L, /datum/language/common))
-			H.languages -= L
+			H.languages -= L*/

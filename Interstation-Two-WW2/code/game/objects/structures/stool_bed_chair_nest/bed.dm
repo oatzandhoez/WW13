@@ -90,7 +90,7 @@
 
 /obj/structure/bed/attackby(obj/item/weapon/W as obj, mob/user as mob)
 	if(istype(W, /obj/item/weapon/wrench))
-		playsound(src.loc, 'sound/items/Ratchet.ogg', 50, TRUE)
+		playsound(loc, 'sound/items/Ratchet.ogg', 50, TRUE)
 		dismantle()
 		qdel(src)
 	else if(istype(W,/obj/item/stack))
@@ -113,9 +113,9 @@
 			user << "You cannot pad \the [src] with that."
 			return
 		C.use(1)
-		if(!istype(src.loc, /turf))
+		if(!istype(loc, /turf))
 			user.drop_from_inventory(src)
-			src.loc = get_turf(src)
+			loc = get_turf(src)
 		user << "You add padding to \the [src]."
 		add_padding(padding_type)
 		return
@@ -186,6 +186,7 @@
 	icon = 'icons/obj/rollerbed.dmi'
 	icon_state = "down"
 	anchored = FALSE
+	var/next_sound = -1
 
 /obj/structure/bed/roller/update_icon()
 	return // Doesn't care about material or anything else.
@@ -197,71 +198,30 @@
 		if(buckled_mob)
 			user_unbuckle_mob(user)
 		else
-			visible_message("[user] collapses \the [src.name].")
+			visible_message("[user] collapses \the [name].")
 			new/obj/item/roller(get_turf(src))
 			spawn(0)
 				qdel(src)
 		return
 	..()
 
-/obj/item/roller
-	name = "roller bed"
-	desc = "A collapsed roller bed that can be carried around."
-	icon = 'icons/obj/rollerbed.dmi'
-	icon_state = "folded"
-	w_class = 4.0 // Can't be put in backpacks. Oh well.
-
-/obj/item/roller/attack_self(mob/user)
-		var/obj/structure/bed/roller/R = new /obj/structure/bed/roller(user.loc)
-		R.add_fingerprint(user)
-		qdel(src)
-
-/obj/item/roller/attackby(obj/item/weapon/W as obj, mob/user as mob)
-
-	if(istype(W,/obj/item/roller_holder))
-		var/obj/item/roller_holder/RH = W
-		if(!RH.held)
-			user << "<span class='notice'>You collect the roller bed.</span>"
-			src.loc = RH
-			RH.held = src
-			return
-
-	..()
-
-/obj/item/roller_holder
-	name = "roller bed rack"
-	desc = "A rack for carrying a collapsed roller bed."
-	icon = 'icons/obj/rollerbed.dmi'
-	icon_state = "folded"
-	var/obj/item/roller/held
-
-/obj/item/roller_holder/New()
-	..()
-	held = new /obj/item/roller(src)
-
-/obj/item/roller_holder/attack_self(mob/user as mob)
-
-	if(!held)
-		user << "<span class='notice'>The rack is empty.</span>"
-		return
-
-	user << "<span class='notice'>You deploy the roller bed.</span>"
-	var/obj/structure/bed/roller/R = new /obj/structure/bed/roller(user.loc)
-	R.add_fingerprint(user)
-	qdel(held)
-	held = null
-
-
 /obj/structure/bed/roller/Move(var/turf/newloc)
 
 	if (buckled_mob && map.check_prishtina_block(buckled_mob, newloc))
 		return FALSE
 
+	var/oloc = loc
+
 	..(newloc)
+
+	if (oloc != loc)
+		if (world.time > next_sound)
+			playsound(get_turf(src), 'sound/effects/rollermove.ogg', 75, TRUE)
+			next_sound = world.time + 10
 
 	if(buckled_mob)
 		if(buckled_mob.buckled == src)
-			buckled_mob.loc = src.loc
+			buckled_mob.loc = loc
 		else
 			buckled_mob = null
 
@@ -289,8 +249,55 @@
 	if((over_object == usr && (in_range(src, usr) || usr.contents.Find(src))))
 		if(!ishuman(usr))	return
 		if(buckled_mob)	return FALSE
-		visible_message("[usr] collapses \the [src.name].")
+		visible_message("[usr] collapses \the [name].")
 		new/obj/item/roller(get_turf(src))
 		spawn(0)
 			qdel(src)
 		return
+
+/obj/item/roller
+	name = "roller bed"
+	desc = "A collapsed roller bed that can be carried around."
+	icon = 'icons/obj/rollerbed.dmi'
+	icon_state = "folded"
+	w_class = 4.0 // Can't be put in backpacks. Oh well.
+
+/obj/item/roller/attack_self(mob/user)
+		var/obj/structure/bed/roller/R = new /obj/structure/bed/roller(user.loc)
+		R.add_fingerprint(user)
+		qdel(src)
+
+/obj/item/roller/attackby(obj/item/weapon/W as obj, mob/user as mob)
+
+	if(istype(W,/obj/item/roller_holder))
+		var/obj/item/roller_holder/RH = W
+		if(!RH.held)
+			user << "<span class='notice'>You collect the roller bed.</span>"
+			loc = RH
+			RH.held = src
+			return
+
+	..()
+
+/obj/item/roller_holder
+	name = "roller bed rack"
+	desc = "A rack for carrying a collapsed roller bed."
+	icon = 'icons/obj/rollerbed.dmi'
+	icon_state = "folded"
+	var/obj/item/roller/held
+
+/obj/item/roller_holder/New()
+	..()
+	held = new /obj/item/roller(src)
+
+/obj/item/roller_holder/attack_self(mob/user as mob)
+
+	if(!held)
+		user << "<span class='notice'>The rack is empty.</span>"
+		return
+
+	user << "<span class='notice'>You deploy the roller bed.</span>"
+	var/obj/structure/bed/roller/R = new /obj/structure/bed/roller(user.loc)
+	R.add_fingerprint(user)
+	qdel(held)
+	held = null

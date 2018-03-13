@@ -13,6 +13,9 @@
 	nothrow = TRUE
 	var/fueltank = TRUE
 	var/obj/item/weapon/storage/backpack/flammenwerfer/backpack = null
+	var/rwidth = 7
+	var/rheight = 1
+	var/max_total_range = 8
 
 /obj/item/weapon/flamethrower/flammenwerfer/nothrow_special_check()
 	return nodrop_special_check()
@@ -73,7 +76,7 @@
 	operating = TRUE
 	playsound(my_turf, 'sound/weapons/flamethrower.ogg', 100, TRUE)
 
-	var/blocking_turfs = list()
+	var/list/blocking_turfs = list()
 
 	for(var/turf/T in turflist)
 
@@ -82,10 +85,10 @@
 
 		switch (my_mob.dir)
 			if (EAST, WEST, NORTHEAST, NORTHWEST, SOUTHEAST, SOUTHWEST)
-				if (abs(my_turf.x - T.x) > 5 || abs(my_turf.y - T.y) > 3)
+				if (abs(my_turf.x - T.x) > rwidth || abs(my_turf.y - T.y) > rheight)
 					continue
 			if (NORTH, SOUTH)
-				if (abs(my_turf.x - T.x) > 3 || abs(my_turf.y - T.y) > 5)
+				if (abs(my_turf.x - T.x) > rheight || abs(my_turf.y - T.y) > rwidth)
 					continue
 
 		// higher temperature = less missed turfs
@@ -94,6 +97,13 @@
 
 		if(T.density)
 			blocking_turfs += T
+		else
+			for (var/obj/structure/S in T.contents)
+				if (S.density && !S.low && !S.throwpass)
+					blocking_turfs += T
+					break
+
+		if (blocking_turfs.Find(T))
 			continue
 
 		for (var/turf/TT in blocking_turfs)
@@ -136,7 +146,13 @@
 	if(!ptank)
 		user << "<span class='notice'>Attach a plasma tank first!</span>"
 		return
-	var/dat = text("<TT><B>Das Flammenwerfer (<a href='?src=\ref[src];light=1'>[lit ? "<font color='red'>Lit</font>" : "Unlit"]</a>)</B><BR>\n Fullness: [fullness_percentage()]%<BR>\nAmount to throw: <A HREF='?src=\ref[src];amount=-100'>-</A> <A HREF='?src=\ref[src];amount=-10'>-</A> <A HREF='?src=\ref[src];amount=-1'>-</A> [throw_amount] <A HREF='?src=\ref[src];amount=1'>+</A> <A HREF='?src=\ref[src];amount=10'>+</A> <A HREF='?src=\ref[src];amount=100'>+</A><BR>\n - <A HREF='?src=\ref[src];close=1'>Close</A></TT>")
+	var/dat = text({"<TT><b>Das Flammenwerfer (<a href='?src=\ref[src];light=1'>[lit ? "<font color='red'>Lit</font>" : "Unlit"]</a>)</b><BR>\n
+	Fullness: [fullness_percentage()]%<BR>\n
+	Amount to throw: <A HREF='?src=\ref[src];amount=-100'>-</A> <A HREF='?src=\ref[src];amount=-10'>-</A> <A HREF='?src=\ref[src];amount=-1'>-</A> [throw_amount] <A HREF='?src=\ref[src];amount=1'>+</A> <A HREF='?src=\ref[src];amount=10'>+</A> <A HREF='?src=\ref[src];amount=100'>+</A><BR>\n
+	Fire Width ([rwidth]): <A HREF='?src=\ref[src];rwidth=-1'>-</A> <A HREF='?src=\ref[src];rwidth=+1'>+</A>
+	Fire Height ([rheight]): <A HREF='?src=\ref[src];rheight=-1'>-</A> <A HREF='?src=\ref[src];rheight=+1'>+</A>
+	<br>
+	<A HREF='?src=\ref[src];close=1'>Close</A></TT>"})
 	user << browse(dat, "window=flamethrower;size=600x300")
 	onclose(user, "flamethrower")
 	return
@@ -160,6 +176,20 @@
 	if(href_list["amount"])
 		throw_amount = throw_amount + text2num(href_list["amount"])
 		throw_amount = max(50, min(5000, throw_amount))
+	if(href_list["rwidth"])
+		var/mod = text2num(href_list["rwidth"])
+		if (rwidth + mod + rheight > max_total_range)
+			usr << "<span class = 'danger'>To increase the width of the fire any more, you have to decrease the height of the fire.</span>"
+			return
+		rwidth = rwidth + mod
+		rwidth = Clamp(rwidth, 1, 7)
+	if(href_list["rheight"])
+		var/mod = text2num(href_list["rheight"])
+		if (rheight + mod + rwidth > max_total_range)
+			usr << "<span class = 'danger'>To increase the height of the fire any more, you have to decrease the width of the fire.</span>"
+			return
+		rheight = rheight + mod
+		rheight = Clamp(rheight, 1, 3)
 
 	// refresh
 	for(var/mob/M in viewers(1, loc))
@@ -179,12 +209,17 @@
 /obj/item/weapon/flamethrower/flammenwerfer/proc/get_heat_coeff()
 	. = 1.0
 	. += ((throw_amount-100)/100)/3
-	. = max(., 3.0) // don't get too hot
-	. += ((throw_amount-100)/100)/50 // give us a bit of extra heat if we're super high
+	. = min(., 3.0) // don't get too hot
+	. += ((throw_amount-100)/100)/20 // give us a bit of extra heat if we're super high
+	// for example, 200 throw amount = 1.38x
+	// 500 = 2.53x
+	// 700 = 3.3x
+	// 1500 = 3.7x
 
 /obj/item/weapon/flamethrower/flammenwerfer/ignite_turf(turf/target, flamedir)
 	var/throw_coeff = get_heat_coeff()
 	var/dist_coeff = 1.0
+
 	switch (get_dist(get_turf(src), target))
 		if (0 to 5)
 			dist_coeff = 1.00
@@ -193,16 +228,16 @@
 		if (10 to INFINITY)
 			dist_coeff = 1.00
 
-	var/time_limit = pick(2,3)
-	var/extra_temp = FALSE
+	var/time_limit = pick(20,30,40)
+
+	var/extra_temp = 0
+
 	for (var/obj/fire/F in get_turf(src))
 		extra_temp += ((F.temperature / 100) * rand(15,25))
-		time_limit += 2
+		time_limit += 20
 		qdel(F)
 
-	var/obj/fire/F = target.create_fire(5, (rand(250,300) * throw_coeff * dist_coeff) + extra_temp, FALSE)
+	var/temperature = (rand(250,300) * throw_coeff * dist_coeff) + extra_temp
+//	log_debug("1: [temperature];[throw_coeff];[dist_coeff];[extra_temp]")
+	var/obj/fire/F = target.create_fire(5, temperature, FALSE)
 	F.time_limit = time_limit
-
-	spawn (rand(120*throw_coeff, 150*throw_coeff))
-		for (var/obj/fire/fire in target)
-			qdel(fire) // shitty workaround #2

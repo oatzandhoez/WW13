@@ -69,6 +69,7 @@
 	name = "ladder"
 	desc = "A ladder.  You can climb it up and down."
 	icon_state = "ladderdown"
+	layer = 2.99 // below crates
 
 /obj/structure/multiz/ladder/find_target()
 	var/turf/targetTurf = istop ? GetBelow(src) : GetAbove(src)
@@ -84,6 +85,10 @@
 	return ..()
 
 /obj/structure/multiz/ladder/attack_hand(var/mob/M)
+
+	if (M.restrained())
+		M << "<span class='warning'>You can't use the ladder while you're restrained.</span>"
+		return
 
 	if(!target || !istype(target.loc, /turf))
 		M << "<span class='notice'>\The [src] is incomplete and can't be climbed.</span>"
@@ -109,7 +114,7 @@
 	if(do_after(M, 10, src))
 		if (target.loc && locate(/obj/train_pseudoturf) in target.loc)
 			T = target.loc // this is to prevent the train teleporting error
-		playsound(src.loc, 'sound/effects/ladder.ogg', 50, TRUE, -1)
+		playsound(loc, 'sound/effects/ladder.ogg', 50, TRUE, -1)
 		var/was_pulling = null
 		if (M.pulling)
 			was_pulling = M.pulling
@@ -177,11 +182,18 @@
 		return "up"
 	return "down"
 
-/* TRUE Z LEVEL LADDERS - Kachnov */
+/* 1 Z LEVEL LADDERS - Kachnov */
 
 /obj/structure/multiz/ladder/ww2
 	var/ladder_id = null
 	var/area_id = "defaultareaid"
+
+/obj/structure/multiz/ladder/ww2/Crossed(var/atom/movable/AM)
+	if (find_target())
+		if (isitem(AM) && !istype(AM, /obj/item/projectile))
+			var/obj/item/I = AM
+			if (I.w_class <= 2.0) // fixes maxim bug and probably some others - Kachnov
+				I.forceMove(get_turf(find_target()))
 
 /obj/structure/multiz/ladder/ww2/find_target()
 	for (var/obj/structure/multiz/ladder/ww2/ladder in world) // todo: get rid of
@@ -211,10 +223,12 @@
 /obj/structure/multiz/ladder/ww2/manhole/proc/fell(var/mob/living/M)
 	if (icon_state == "manhole-open" && target)
 		M.visible_message("<span class = 'warning'>[M] falls down the manhole!</span>", "<span class = 'userdanger'>You fall down the manhole!</span>")
-		M.adjustBruteLoss(rand(10,20))
+		M.adjustBruteLoss(rand(15,20))
 		M.loc = get_turf(target)
 
 /obj/structure/multiz/ladder/ww2/manhole/attack_hand(var/mob/M)
+	if (isobserver(M))
+		return ..(M)
 	switch (icon_state)
 		if ("manhole")
 			visible_message("<span class = 'danger'>[M] starts to move the cover off of the manhole.</span>")
@@ -275,7 +289,7 @@
 	//If it's the top, they can fall down just fine.
 	if(ismob(M) && M:client)
 		M:client.moving = TRUE
-	M.Move(locate(src.x, src.y, targetZ()))
+	M.Move(locate(x, y, targetZ()))
 	if (ismob(M) && M:client)
 		M:client.moving = FALSE
 
@@ -294,12 +308,11 @@
 	return
 
 /obj/structure/stairs/proc/targetZ()
-	return src.z + (istop ? -1 : TRUE)
+	return z + (istop ? -1 : TRUE)
 */
 
 /obj/structure/multiz/stairs
 	name = "Stairs"
-	desc = "Stairs leading to another deck.  Not too useful if the gravity goes out."
 	icon_state = "rampup"
 	layer = 2.4
 

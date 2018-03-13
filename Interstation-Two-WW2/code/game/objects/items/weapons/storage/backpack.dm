@@ -20,22 +20,22 @@
 	w_class = 4
 	slot_flags = SLOT_BACK
 	max_w_class = 4
-	max_storage_space = 28
+	max_storage_space = 22 // can hold 2 w_class 4 items. 28 let it hold 3
 
 /obj/item/weapon/storage/backpack/attackby(obj/item/weapon/W as obj, mob/user as mob)
-	if (src.use_sound)
-		playsound(src.loc, src.use_sound, 50, TRUE, -5)
+	if (use_sound)
+		playsound(loc, use_sound, 50, TRUE, -5)
 	..()
 
 /obj/item/weapon/storage/backpack/equipped(var/mob/user, var/slot)
-	if (slot == slot_back && src.use_sound)
-		playsound(src.loc, src.use_sound, 50, TRUE, -5)
+	if (slot == slot_back && use_sound)
+		playsound(loc, use_sound, 50, TRUE, -5)
 	..(user, slot)
 
 /*
 /obj/item/weapon/storage/backpack/dropped(mob/user as mob)
-	if (loc == user && src.use_sound)
-		playsound(src.loc, src.use_sound, 50, TRUE, -5)
+	if (loc == user && use_sound)
+		playsound(loc, use_sound, 50, TRUE, -5)
 	..(user)
 */
 

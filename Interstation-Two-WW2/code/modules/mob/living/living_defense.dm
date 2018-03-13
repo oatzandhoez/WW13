@@ -51,24 +51,33 @@
 
 /mob/living/bullet_act(var/obj/item/projectile/P, var/def_zone)
 
-
 	//Stun Beams
 	if(P.taser_effect)
 		stun_effect_act(0, P.agony, def_zone, P)
-		src <<"\red You have been hit by [P]!"
+		src <<"<span class = 'red'>You have been hit by [P]!</span>"
 		qdel(P)
 		return
 
 	//Armor
 	var/absorb = run_armor_check(def_zone, P.check_armour, P.armor_penetration)
 	var/proj_sharp = is_sharp(P)
-	var/proj_edge = has_edge(P)
+	var/proj_edge = P.edge
 	if ((proj_sharp || proj_edge) && prob(getarmor(def_zone, P.check_armour)))
 		proj_sharp = FALSE
 		proj_edge = FALSE
 
+	var/damage = P.damage
+
+	if (ishuman(src))
+		var/mob/living/carbon/human/H = src
+		if (H.takes_less_damage)
+			damage /= H.getStatCoeff("strength")
+/* // too meme so removed
+	if (check_zone(def_zone) == "head")
+		damage *= 2.0*/
+
 	if(!P.nodamage)
-		apply_damage(P.damage, P.damage_type, def_zone, absorb, FALSE, P, sharp=proj_sharp, edge=proj_edge)
+		apply_damage(damage, P.damage_type, def_zone, absorb, FALSE, P, sharp=proj_sharp, edge=proj_edge)
 
 	P.on_hit(src, absorb, def_zone)
 
@@ -93,7 +102,7 @@
 	  return FALSE //only carbon liveforms have this proc
 
 /mob/living/emp_act(severity)
-	var/list/L = src.get_contents()
+	var/list/L = get_contents()
 	for(var/obj/O in L)
 		O.emp_act(severity)
 	..()
@@ -125,7 +134,7 @@
 
 	//Apply weapon damage
 	var/weapon_sharp = is_sharp(I)
-	var/weapon_edge = has_edge(I)
+	var/weapon_edge = I.edge
 	if(prob(max(getarmor(hit_zone, "melee") - I.armor_penetration, FALSE))) //melee armour provides a chance to turn sharp/edge weapon attacks into blunt ones
 		weapon_sharp = FALSE
 		weapon_edge = FALSE
@@ -147,15 +156,15 @@
 			miss_chance = max(15*(distance-2), FALSE)
 
 		if (prob(miss_chance))
-			visible_message("\blue \The [O] misses [src] narrowly!")
+			visible_message("<span class = 'notice'>\The [O] misses [src] narrowly!</span>")
 			playsound(src, "miss_sound", 50, TRUE, -6)
 			return
 
-		src.visible_message("\red [src] has been hit by [O].")
+		visible_message("<span class = 'red'>[src] has been hit by [O].</span>")
 		var/armor = run_armor_check(null, "melee")
 
 		if(armor < 2)
-			apply_damage(throw_damage, dtype, null, armor, is_sharp(O), has_edge(O), O)
+			apply_damage(throw_damage, dtype, null, armor, is_sharp(O), O.edge, O)
 
 		O.throwing = FALSE		//it hit, so stop moving
 
@@ -163,10 +172,10 @@
 			var/mob/M = O.thrower
 			var/client/assailant = M.client
 			if(assailant)
-				src.attack_log += text("\[[time_stamp()]\] <font color='orange'>Has been hit with a [O], thrown by [M.name] ([assailant.ckey])</font>")
-				M.attack_log += text("\[[time_stamp()]\] <font color='red'>Hit [src.name] ([src.ckey]) with a thrown [O]</font>")
+				attack_log += text("\[[time_stamp()]\] <font color='orange'>Has been hit with a [O], thrown by [M.name] ([assailant.ckey])</font>")
+				M.attack_log += text("\[[time_stamp()]\] <font color='red'>Hit [name] ([ckey]) with a thrown [O]</font>")
 				if(!istype(src,/mob/living/simple_animal/mouse))
-					msg_admin_attack("[src.name] ([src.ckey]) was hit by a [O], thrown by [M.name] ([assailant.ckey]) (<A HREF='?_src_=holder;adminplayerobservecoodjump=1;X=[src.x];Y=[src.y];Z=[src.z]'>JMP</a>)")
+					msg_admin_attack("[name] ([ckey]) was hit by a [O], thrown by [M.name] ([assailant.ckey]) (<A HREF='?_src_=holder;adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)")
 
 		// Begin BS12 momentum-transfer code.
 		var/mass = 1.5
@@ -178,35 +187,35 @@
 		if(O.throw_source && momentum >= THROWNOBJ_KNOCKBACK_SPEED)
 			var/dir = get_dir(O.throw_source, src)
 
-			visible_message("\red [src] staggers under the impact!","\red You stagger under the impact!")
-			src.throw_at(get_edge_target_turf(src,dir),1,momentum)
+			visible_message("<span class = 'red'>[src] staggers under the impact!</span>","<span class = 'red'>You stagger under the impact!</span>")
+			throw_at(get_edge_target_turf(src,dir),1,momentum)
 
 			if(!O || !src) return
 
-			if(O.sharp) //Projectile is suitable for pinning.
+			if(O.sharp && O.w_class <= 2.0) //Projectile is suitable for pinning.
 				//Handles embedding for non-humans and simple_animals.
 				embed(O)
 
 				var/turf/T = near_wall(dir,2)
 
 				if(T)
-					src.loc = T
+					loc = T
 					visible_message("<span class='warning'>[src] is pinned to the wall by [O]!</span>","<span class='warning'>You are pinned to the wall by [O]!</span>")
-					src.anchored = TRUE
-					src.pinned += O
+					anchored = TRUE
+					pinned += O
 
 /mob/living/proc/embed(var/obj/O, var/def_zone=null)
 	O.loc = src
-	src.embedded += O
-	src.verbs += /mob/proc/yank_out_object
+	embedded += O
+	verbs += /mob/proc/yank_out_object
 
 //This is called when the mob is thrown into a dense turf
 /mob/living/proc/turf_collision(var/turf/T, var/speed)
-	src.take_organ_damage(speed*5)
+	take_organ_damage(speed*5)
 
 /mob/living/proc/near_wall(var/direction,var/distance=1)
 	var/turf/T = get_step(get_turf(src),direction)
-	var/turf/last_turf = src.loc
+	var/turf/last_turf = loc
 	var/i = TRUE
 
 	while(i>0 && i<=distance)
@@ -226,15 +235,15 @@
 		return
 
 	adjustBruteLoss(damage)
-	user.attack_log += text("\[[time_stamp()]\] <font color='red'>attacked [src.name] ([src.ckey])</font>")
-	src.attack_log += text("\[[time_stamp()]\] <font color='orange'>was attacked by [user.name] ([user.ckey])</font>")
-	src.visible_message("<span class='danger'>[user] has [attack_message] [src]!</span>")
+	user.attack_log += text("\[[time_stamp()]\] <font color='red'>attacked [name] ([ckey])</font>")
+	attack_log += text("\[[time_stamp()]\] <font color='orange'>was attacked by [user.name] ([user.ckey])</font>")
+	visible_message("<span class='danger'>[user] has [attack_message] [src]!</span>")
 	user.do_attack_animation(src)
 	spawn(1) updatehealth()
 	return TRUE
 
 /mob/living/proc/IgniteMob()
-	if(fire_stacks > FALSE && !on_fire)
+	if(fire_stacks > 0 && !on_fire)
 		on_fire = TRUE
 		set_light(light_range + 3)
 		update_fire()
@@ -242,7 +251,7 @@
 /mob/living/proc/ExtinguishMob()
 	if(on_fire)
 		on_fire = FALSE
-		fire_stacks = FALSE
+		fire_stacks = 0
 		set_light(max(0, light_range - 3))
 		update_fire()
 
@@ -262,13 +271,13 @@ var/obj/human_fire_overlay_lying = null
 		overlays -= generic_living_fire_overlay
 		overlays -= human_fire_overlay
 
-	if(fire_stacks < FALSE)
+	if(fire_stacks < 0)
 		fire_stacks = min(0, ++fire_stacks) //If we've doused ourselves in water to avoid fire, dry off slowly
 
 	if(!on_fire)
 		return TRUE
 
-	else if(fire_stacks <= FALSE)
+	else if(fire_stacks <= 0 || (stat == DEAD && prob(1)))
 		ExtinguishMob() //Fire's been put out.
 		return TRUE
 /*
@@ -284,19 +293,23 @@ var/obj/human_fire_overlay_lying = null
 		human_fire_overlay = new
 		human_fire_overlay.icon = 'icons/mob/OnFire.dmi'
 		human_fire_overlay.icon_state = "Standing"
-		human_fire_overlay.layer = 5
+		human_fire_overlay.layer = MOB_LAYER + 1
 
 		human_fire_overlay_lying = new
 		human_fire_overlay_lying.icon = 'icons/mob/OnFire.dmi'
 		human_fire_overlay_lying.icon_state = "Lying"
-		human_fire_overlay_lying.layer = 5
+		human_fire_overlay_lying.layer = MOB_LAYER + 1
 
 		generic_living_fire_overlay = new
 		generic_living_fire_overlay.icon = 'icons/mob/OnFire.dmi'
 		generic_living_fire_overlay.icon_state = "Generic_mob_burning"
-		generic_living_fire_overlay.layer = 5
+		generic_living_fire_overlay.layer = MOB_LAYER + 1
 
-	apply_damage(ceil(fire_stacks/3), BURN, "chest", FALSE) // because fire does 0.2 damage per tick
+	apply_damage(ceil(fire_stacks/3)+1, BURN, "chest", FALSE) // because fire does 0.2 damage per tick
+	if (prob((fire_stacks * 10) + 5))
+		if (!lying)
+			visible_message("<span class = 'danger'>[src] falls over in pain.</span>")
+		Weaken(fire_stacks+1)
 
 	if (ishuman(src))
 		var/mob/living/carbon/human/H = src
@@ -306,8 +319,6 @@ var/obj/human_fire_overlay_lying = null
 			overlays += human_fire_overlay
 	else
 		overlays += generic_living_fire_overlay
-
-
 
 /mob/living/fire_act()
 	adjust_fire_stacks(1)

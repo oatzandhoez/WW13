@@ -51,13 +51,13 @@
 		return
 
 	if(!usr.client.holder || !(usr.client.holder.rights & R_PERMISSIONS))
-		usr << "\red You do not have permission to do this!"
+		usr << "<span class = 'red'>You do not have permission to do this!</span>"
 		return
 
 	establish_db_connection()
 
 	if(!database)
-		usr << "\red Failed to establish database connection."
+		usr << "<span class = 'red'>Failed to establish database connection.</span>"
 		return
 
 	if(!adm_ckey || !new_rank)
@@ -78,27 +78,26 @@
 	var/list/rowdata = database.execute("SELECT id FROM admin WHERE ckey = '[adm_ckey]';")
 
 	var/new_admin = TRUE
-	var/admin_id
+	var/admin_id = 0
 
 	if (islist(rowdata) && !isemptylist(rowdata))
 		new_admin = FALSE
 		admin_id = text2num(rowdata["id"])
 
 	if(new_admin)
-		database.execute("INSERT INTO admin (id, ckey, rank, flags) VALUES ('[database.newUID()]', '[adm_ckey]', '[new_rank]', '[num2text(admin_ranks[ckeyEx(new_rank)])]');")
+		database.execute("INSERT INTO admin (id, ckey, rank, flags) VALUES ('[database.newUID()]', '[adm_ckey]', '[new_rank]', '[num2text(admin_ranks[ckeyEx(new_rank)])]');", FALSE)
 		message_admins("[key_name_admin(usr)] made '[adm_ckey]' an admin with the rank [new_rank].")
 		log_admin("[key_name(usr)] made '[adm_ckey]' an admin with the rank [new_rank].")
-		usr << "\blue New admin added."
+		usr << "<span class = 'good'>New admin successfully added.</span>"
 	else
-		if(isnull(admin_id) || !isnum(admin_id))
+		if(admin_id == 0 || !isnum(admin_id))
 			admin_id = database.newUID()
-			database.execute("UPDATE admin SET id = '[admin_id]' WHERE ckey = '[adm_ckey]';")
-			admin_id = text2num(admin_id)
-		if(!isnull(admin_id) && isnum(admin_id))
-			database.execute("UPDATE admin SET rank = '[new_rank]', flags = '[num2text(admin_ranks[ckeyEx(new_rank)])]' WHERE id = '[num2text(admin_id)]'")
-			message_admins("[key_name_admin(usr)] changed '[adm_ckey]''s admin rank to [new_rank]")
-			log_admin("[key_name(usr)] changed '[adm_ckey]''s  admin rank to [new_rank]")
-			usr << "\blue Admin rank changed."
+		else
+			admin_id = num2text(admin_id)
+		database.execute("UPDATE admin SET rank = '[new_rank]', flags = '[num2text(admin_ranks[ckeyEx(new_rank)])]' WHERE id = '[admin_id]'", FALSE)
+		message_admins("[key_name_admin(usr)] changed '[adm_ckey]''s admin rank to [new_rank].")
+		log_admin("[key_name(usr)] changed '[adm_ckey]''s  admin rank to [new_rank].")
+		usr << "<span class = 'good'>Admin rank successfully changed.</span>"
 
 // see admin/topic.dm
 /datum/admins/proc/log_admin_permission_modification(var/adm_ckey, var/new_permission, var/nominal)
@@ -107,13 +106,13 @@
 		return
 
 	if(!usr.client.holder || !(usr.client.holder.rights & R_PERMISSIONS))
-		usr << "\red You do not have permission to do this!"
+		usr << "<span class = 'red'>You do not have permission to do this!</span>"
 		return
 
 	establish_db_connection()
 
 	if(!database)
-		usr << "\red Failed to establish database connection"
+		usr << "<span class = 'red'>Failed to establish database connection.</span>"
 		return
 
 	if(!adm_ckey || !new_permission)
@@ -146,9 +145,9 @@
 		database.execute("UPDATE admin SET flags = '[admin_rights & ~new_permission]' WHERE id = '[admin_id]'")
 		message_admins("[key_name_admin(usr)] removed the [nominal] permission of [key_name_admin(adm_ckey)]")
 		log_admin("[key_name(usr)] removed the [nominal] permission of [key_name(adm_ckey)]")
-		usr << "\blue Permission removed."
+		usr << "<span class = 'notice'>Permission removed.</span>"
 	else //This admin doesn't have this permission, so we are adding it.
 		database.execute("UPDATE admin SET flags = '[admin_rights | new_permission]' WHERE id = '[admin_id]'")
 		message_admins("[key_name_admin(usr)] added the [nominal] permission of [key_name_admin(adm_ckey)]")
 		log_admin("[key_name(usr)] added the [nominal] permission of [key_name(adm_ckey)]")
-		usr << "\blue Permission added."
+		usr << "<span class = 'notice'>Permission added.</span>"

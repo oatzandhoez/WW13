@@ -37,7 +37,14 @@
 	* item/afterattack(atom,user,adjacent,params) - used both ranged and adjacent
 	* mob/RangedAttack(atom,params) - used only ranged, only used for tk and laser eyes but could be changed
 */
+
 /mob/proc/ClickOn(var/atom/A, var/params)
+
+	if (ishuman(src))
+		var/mob/living/carbon/human/H = src
+		if (H.lying)
+			if (ismob(A) || (A.loc && istype(A.loc, /turf)))
+				return
 
 	if(world.time <= next_click) // Hard check, before anything else, to avoid crashing
 		return
@@ -65,7 +72,7 @@
 		CtrlClickOn(A)
 		return TRUE
 
-	if(lying && istype(A, /turf/) && !istype(A, /turf/space/))
+	if(lying && istype(A, /turf))
 		if(A.Adjacent(src))
 			scramble(A)
 
@@ -144,8 +151,8 @@
 			var/turf/atom_turf = get_turf(A)
 			var/list/neighbors = atom_turf.neighbors()
 
-			for (var/v in TRUE to max(rate/5, 2))
-				spawn (v * TRUE)
+			for (var/v in 1 to max(ceil(rate/2), 2))
+				spawn (v)
 					if (prob(20))
 						mg.force_fire(pick(neighbors), src)
 					else
@@ -167,8 +174,8 @@
 	var/sdepth = A.storage_depth(src)
 	if((!isturf(A) && A == loc) || (sdepth != -1 && sdepth <= TRUE))
 		// faster access to objects already on you
-		if(A.loc != src)
-			setMoveCooldown(10) //getting something out of a backpack
+	//	if(A.loc != src)
+	//		setMoveCooldown(10) //getting something out of a backpack
 
 		if(W)
 			var/resolved = W.resolve_attackby(A, src)
@@ -187,12 +194,12 @@
 	// A is a turf or is on a turf, or in something on a turf (pen in a box); but not something in something on a turf (pen in a box in a backpack)
 	sdepth = A.storage_depth_turf()
 	if(isturf(A) || isturf(A.loc) || (sdepth != -1 && sdepth <= TRUE))
-		if(A.Adjacent(src) || (W && (istype(W, /obj/item/weapon/flamethrower/flammenwerfer) || istype(W, /obj/item/weapon/sandbag))) && A.rangedAdjacent(src)) // see adjacent.dm
+		if(A.Adjacent(src) || (W && W == get_active_hand() && (istype(W, /obj/item/weapon/flamethrower/flammenwerfer) || istype(W, /obj/item/weapon/sandbag))) && A.rangedAdjacent(src)) // see adjacent.dm
 
 			dir = get_dir(src, A)
 
 			if (W && istype(W, /obj/item/weapon/flamethrower/flammenwerfer) && A.rangedAdjacent(src))
-				if (src.get_active_hand() != W)
+				if (get_active_hand() != W)
 					return
 				var/obj/item/weapon/flamethrower/flammenwerfer/fw = W
 				if (fw.lit)
@@ -214,11 +221,11 @@
 				var/needs_to_be_in_front = istype(A, /turf)
 
 				if (needs_to_be_in_front) // but if we're making a new sandbag wall, we have to click right in front of us.
-					if (A != get_step(src, src.dir))
+					if (A != get_step(src, dir))
 						return
 
 
-			setMoveCooldown(5)
+		//	setMoveCooldown(5)
 
 			if(W)
 				// Return TRUE in attackby() to prevent afterattack() effects (when safely moving items for example)
@@ -423,15 +430,15 @@
 
 /mob/proc/scramble(var/atom/A)
 	var/direction
-	if(stat || buckled || paralysis || stunned || sleeping || (status_flags & FAKEDEATH) || restrained() || (weakened > 5))
+	if(stat || buckled || paralysis || stunned || sleeping || (status_flags & FAKEDEATH) || restrained() || (weakened > 10))
 		return
-	if(!istype(src.loc, /turf/))
+	if(!istype(loc, /turf/))
 		return
 	if(!A || !x || !y || !A.x || !A.y) return
 	if(scrambling)
 		return
 	if(!has_limbs)
-		src << "\red You can't even move yourself - you have no limbs!"
+		src << "<span class = 'red'>You can't even move yourself - you have no limbs!</span>"
 	var/dx = A.x - x
 	var/dy = A.y - y
 	if(!dx && !dy) return
@@ -448,10 +455,12 @@
 		if (map.check_prishtina_block(src, target))
 			return FALSE
 
+		var/slowness = weakened ? 1.50 : 1.00
+
 		scrambling = TRUE
-		sleep(2)
-		src.visible_message("\red <b>[src]</b> crawls!")
-		sleep(11)
+		sleep(2*slowness)
+		visible_message("<span class = 'red'><b>[src]</b> crawls!</span>")
+		sleep(7*slowness)
 		Move(target)
 		scrambling = FALSE
 		dir = 2

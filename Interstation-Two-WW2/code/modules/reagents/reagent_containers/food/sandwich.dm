@@ -22,17 +22,17 @@
 		if(istype(O,/obj/item/weapon/reagent_containers/food/snacks/breadslice))
 			sandwich_limit += 4
 
-	if(src.contents.len > sandwich_limit)
-		user << "\red If you put anything else on \the [src] it's going to collapse."
+	if(contents.len > sandwich_limit)
+		user << "<span class = 'red'>If you put anything else on \the [src] it's going to collapse.</span>"
 		return
 	else if(istype(W,/obj/item/weapon/material/shard))
-		user << "\blue You hide [W] in \the [src]."
+		user << "<span class = 'notice'>You hide [W] in \the [src].</span>"
 		user.drop_item()
 		W.loc = src
 		update()
 		return
 	else if(istype(W,/obj/item/weapon/reagent_containers/food/snacks))
-		user << "\blue You layer [W] over \the [src]."
+		user << "<span class = 'notice'>You layer [W] over \the [src].</span>"
 		var/obj/item/weapon/reagent_containers/F = W
 		F.reagents.trans_to_obj(src, F.reagents.total_volume)
 		user.drop_item()
@@ -58,13 +58,13 @@
 		else
 			fullname += ", [O.name]"
 
-		var/image/I = new(src.icon, "sandwich_filling")
+		var/image/I = new(icon, "sandwich_filling")
 		I.color = O.filling_color
 		I.pixel_x = pick(list(-1,0,1))
 		I.pixel_y = (i*2)+1
 		overlays += I
 
-	var/image/T = new(src.icon, "sandwich_top")
+	var/image/T = new(icon, "sandwich_top")
 	T.pixel_x = pick(list(-1,0,1))
 	T.pixel_y = (ingredients.len * 2)+1
 	overlays += T
@@ -81,7 +81,7 @@
 /obj/item/weapon/reagent_containers/food/snacks/csandwich/examine(mob/user)
 	..(user)
 	var/obj/item/O = pick(contents)
-	user << "\blue You think you can see [O.name] in there."
+	user << "<span class = 'notice'>You think you can see [O.name] in there.</span>"
 
 /obj/item/weapon/reagent_containers/food/snacks/csandwich/attack(mob/M as mob, mob/user as mob, def_zone)
 
@@ -96,6 +96,6 @@
 		H = M
 
 	if(H && shard && M == user) //This needs a check for feeding the food to other people, but that could be abusable.
-		H << "\red You lacerate your mouth on a [shard.name] in the sandwich!"
+		H << "<span class = 'red'>You lacerate your mouth on a [shard.name] in the sandwich!</span>"
 		H.adjustBruteLoss(5) //TODO: Target head if human.
 	..()

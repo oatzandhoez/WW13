@@ -1,4 +1,5 @@
 /mob/living/carbon/human
+
 	//Hair colour and style
 	var/r_hair = FALSE
 	var/g_hair = FALSE
@@ -23,8 +24,8 @@
 	var/g_skin = FALSE
 	var/b_skin = FALSE
 
-	var/size_multiplier = TRUE //multiplier for the mob's icon size
-	var/damage_multiplier = TRUE //multiplies melee combat damage
+	var/size_multiplier = 1.0 //multiplier for the mob's icon size
+	var/damage_multiplier = 1.0 //multiplies melee combat damage
 	var/icon_update = TRUE //whether icon updating shall take place
 
 	var/datum/body_build/body_build = null
@@ -127,6 +128,8 @@
 
 	/* All stat names MUST be lowercase. */
 
+	var/takes_less_damage = FALSE
+
 	var/list/stats = list(
 		"strength" = list(100,100),
 		"engineering" = list(100,100),
@@ -136,3 +139,15 @@
 		"heavyweapon" = list(100,100),
 		"medical" = list(100,100),
 		"survival" = list(100,100))
+
+	var/use_initial_stats = FALSE
+
+	var/has_hunger_and_thirst = TRUE
+
+	var/has_pain = TRUE
+
+	var/stopDumbDamage = FALSE
+
+	var/partial_languages[10]
+
+	var/debugmob = FALSE

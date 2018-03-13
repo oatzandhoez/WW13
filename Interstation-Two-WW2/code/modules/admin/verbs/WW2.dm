@@ -24,6 +24,14 @@
 
 	message_admins("[key_name(src)] tried to send the german train [direction].")
 
+/client/proc/toggle_playing()
+	set category = "WW2 (Admin)"
+	set name = "Toggle Playing"
+
+	ticker.players_can_join = !ticker.players_can_join
+	world << "<big><b>You [(ticker.players_can_join) ? "can" : "can't"] join the game [(ticker.players_can_join) ? "now" : "anymore"].</b></big>"
+	message_admins("[key_name(src)] changed the playing setting.")
+
 /client/proc/allow_join_geforce()
 	set category = "WW2 (Admin)"
 	set name = "Toggle joining (German)"
@@ -111,7 +119,7 @@
 		return
 
 	var/_clients = input("How many clients?") as num
-	job_master.toggle_roundstart_autobalance(_clients)
+	job_master.toggle_roundstart_autobalance(_clients, announce = 2)
 
 	message_admins("[key_name(src)] reset the roundstart autobalance for [_clients] players.")
 
@@ -127,47 +135,53 @@
 /client/proc/show_battle_report()
 	set category = "WW2 (Admin)"
 	set name = "Show Battle Report"
-
 	show_global_battle_report(src)
 
-/proc/show_global_battle_report(var/shower)
+/client/proc/see_battle_report()
+	set category = "WW2 (Admin)"
+	set name = "See Battle Report"
+	show_global_battle_report(src, TRUE)
 
-	var/total_germans = alive_germans.len + dead_germans + heavily_injured_germans.len
-	var/total_russians = alive_russians.len + dead_russians + heavily_injured_russians.len
-	var/total_civilians = alive_civilians.len + dead_civilians + heavily_injured_civilians.len
-	var/total_partisans = alive_partisans.len + dead_partisans + heavily_injured_partisans.len
+/proc/show_global_battle_report(var/shower, var/private = FALSE)
 
-	var/mortality_coefficient_german = FALSE
-	var/mortality_coefficient_russian = FALSE
-	var/mortality_coefficient_civilian = FALSE
-	var/mortality_coefficient_partisan = FALSE
+	var/total_germans = alive_germans.len + dead_germans.len + heavily_injured_germans.len
+	var/total_russians = alive_russians.len + dead_russians.len + heavily_injured_russians.len
+	var/total_civilians = alive_civilians.len + dead_civilians.len + heavily_injured_civilians.len
+	var/total_partisans = alive_partisans.len + dead_partisans.len + heavily_injured_partisans.len
 
-	if (dead_germans > 0)
-		mortality_coefficient_german = dead_germans/total_germans
+	var/mortality_coefficient_german = 0
+	var/mortality_coefficient_russian = 0
+	var/mortality_coefficient_civilian = 0
+	var/mortality_coefficient_partisan = 0
 
-	if (dead_russians > 0)
-		mortality_coefficient_russian = dead_russians/total_russians
+	if (dead_germans.len > 0)
+		mortality_coefficient_german = dead_germans.len/total_germans
 
-	if (dead_civilians > 0)
-		mortality_coefficient_civilian = dead_civilians/total_civilians
+	if (dead_russians.len > 0)
+		mortality_coefficient_russian = dead_russians.len/total_russians
 
-	if (dead_partisans > 0)
-		mortality_coefficient_partisan = dead_partisans/total_partisans
+	if (dead_civilians.len > 0)
+		mortality_coefficient_civilian = dead_civilians.len/total_civilians
+
+	if (dead_partisans.len > 0)
+		mortality_coefficient_partisan = dead_partisans.len/total_partisans
 
 	var/mortality_german = round(mortality_coefficient_german*100)
 	var/mortality_russian = round(mortality_coefficient_russian*100)
 	var/mortality_civilian = round(mortality_coefficient_civilian*100)
 	var/mortality_partisan = round(mortality_coefficient_partisan*100)
 
-	var/msg1 = "German Side: [alive_germans.len] alive, [heavily_injured_germans.len] heavily injured or unconscious, [dead_germans] deceased. Mortality rate: [mortality_german]%"
-	var/msg2 = "Soviet Side: [alive_russians.len] alive, [heavily_injured_russians.len] heavily injured or unconscious, [dead_russians] deceased. Mortality rate: [mortality_russian]%"
-	var/msg3 = "Civilians: [alive_civilians.len] alive, [heavily_injured_civilians.len] heavily injured or unconscious, [dead_civilians] deceased. Mortality rate: [mortality_civilian]%"
-	var/msg4 = "Partisans: [alive_partisans.len] alive, [heavily_injured_partisans.len] heavily injured or unconscious, [dead_partisans] deceased. Mortality rate: [mortality_partisan]%"
+	var/msg1 = "German Side: [alive_germans.len] alive, [heavily_injured_germans.len] heavily injured or unconscious, [dead_germans.len] deceased. Mortality rate: [mortality_german]%"
+	var/msg2 = "Soviet Side: [alive_russians.len] alive, [heavily_injured_russians.len] heavily injured or unconscious, [dead_russians.len] deceased. Mortality rate: [mortality_russian]%"
+	var/msg3 = "Civilians: [alive_civilians.len] alive, [heavily_injured_civilians.len] heavily injured or unconscious, [dead_civilians.len] deceased. Mortality rate: [mortality_civilian]%"
+	var/msg4 = "Partisans: [alive_partisans.len] alive, [heavily_injured_partisans.len] heavily injured or unconscious, [dead_partisans.len] deceased. Mortality rate: [mortality_partisan]%"
 
 	var/public = "Yes"
 
-	if (shower)
+	if (shower && !private)
 		public = alert(shower, "Show it to the entire server?",,"Yes", "No")
+	else if (private)
+		public = "No"
 
 	if(public == "Yes")
 		if (!shower || (input(shower, "Are you sure you want to show the battle report? Unless the Battle Controller Process died, it will happen automatically!", "Battle Report") in list ("Yes", "No")) == "Yes")
@@ -322,6 +336,9 @@
 
 	var/msg = input(usr, "Send what?", "Message Russians") as text
 
+	if (!msg)
+		return
+
 	var/ick_ock = input(usr, "Make this an IC message?", "Message Russians") in list("Yes", "No")
 	if (ick_ock == "Yes")
 		ick_ock = TRUE
@@ -344,6 +361,9 @@
 	set name = "Message Germans"
 
 	var/msg = input(usr, "Send what?", "Message Germans") as text
+
+	if (!msg)
+		return
 
 	var/ick_ock = input(usr, "Make this an IC message?", "Message Germans") in list("Yes", "No")
 
@@ -369,6 +389,9 @@
 
 	var/msg = input(usr, "Send what?", "Message the SS") as text
 
+	if (!msg)
+		return
+
 	var/ick_ock = input(usr, "Make this an IC message?", "Message the SS") in list("Yes", "No")
 
 	if (ick_ock == "Yes")
@@ -377,11 +400,12 @@
 		ick_ock = FALSE
 
 	if (msg)
-		for (var/mob/living/carbon/human/H in player_list)
-			if (istype(H) && H.client)
-				if (H.original_job && H.original_job.base_type_flag() == GERMAN && H.original_job.is_SS)
-					var/msg_start = ick_ock ? "<b>IMPORTANT MESSAGE FROM THE GERMAN HIGH COMMAND TO THE SS:</b>" : "<b>MESSAGE TO THE SS FROM ADMINS:</b>"
-					H << "[msg_start] <span class = 'notice'>[msg]</span>"
+		if (!ick_ock || !radio2SS(msg))
+			for (var/mob/living/carbon/human/H in player_list)
+				if (istype(H) && H.client)
+					if (H.original_job && H.original_job.base_type_flag() == GERMAN && H.original_job.is_SS)
+						var/msg_start = ick_ock ? "<b>IMPORTANT MESSAGE FROM THE GERMAN HIGH COMMAND TO THE SS:</b>" : "<b>MESSAGE TO THE SS FROM ADMINS:</b>"
+						H << "[msg_start] <span class = 'notice'>[msg]</span>"
 
 		src << "You sent '[msg]' to the SS."
 		message_admins("[key_name(src)] sent '[msg]' to the SS")
@@ -392,6 +416,9 @@
 	set name = "Messages Paratroopers"
 
 	var/msg = input(usr, "Send what?", "Message Paratroopers") as text
+
+	if (!msg)
+		return
 
 	var/ick_ock = input(usr, "Make this an IC message?", "Message Paratroopers") in list("Yes", "No")
 
@@ -416,6 +443,9 @@
 
 	var/msg = input(usr, "Send what? Note that this messages Partisans too!", "Message Civilians") as text
 
+	if (!msg)
+		return
+
 	var/ick_ock = input(usr, "Make this an IC message?", "Message Civilians") in list("Yes", "No")
 
 	if (ick_ock == "Yes")
@@ -438,6 +468,9 @@
 	set name = "Message Partisans"
 
 	var/msg = input(usr, "Send what?", "Message Partisans") as text
+
+	if (!msg)
+		return
 
 	var/ick_ock = input(usr, "Make this an IC message?", "Message Partisans") in list("Yes", "No")
 
@@ -474,3 +507,160 @@ var/soviet_civilian_mode = FALSE
 	var/M = "[key_name(src)] [soviet_civilian_mode ? "enabled" : "disabled"] Soviet Civilian Mode - Civilians will [soviet_civilian_mode ? "now" : "no longer"] count towards the amount of Soviets."
 	message_admins(M)
 	log_admin(M)
+
+var/partisans_toggled = TRUE
+var/civilians_toggled = TRUE
+var/SS_toggled = TRUE
+var/paratroopers_toggled = TRUE
+var/germans_toggled = TRUE
+var/soviets_toggled = TRUE
+
+/client/proc/toggle_factions()
+	set name = "Toggle Factions"
+	set category = "WW2 (Admin)"
+
+	if(!check_rights(R_ADMIN))
+		src << "<span class = 'danger'>You don't have the permissions.</span>"
+		return
+
+	if (!istype(ticker.mode, /datum/game_mode/ww2))
+		src << "<span class = 'danger'>You can't do this on this game mode.</span>"
+		return
+
+	var/list/choices = list()
+
+	choices += "PARTISANS ([partisans_toggled ? "ENABLED" : "DISABLED"])"
+	choices += "CIVILIANS ([civilians_toggled ? "ENABLED" : "DISABLED"])"
+	choices += "WAFFEN-SS ([SS_toggled ? "ENABLED" : "DISABLED"])"
+	choices += "PARATROOPERS ([paratroopers_toggled ? "ENABLED" : "DISABLED"])"
+	choices += "GERMANS ([germans_toggled ? "ENABLED" : "DISABLED"])"
+	choices += "SOVIET ([soviets_toggled ? "ENABLED" : "DISABLED"])"
+	choices += "CANCEL"
+
+	var/choice = input("Enable/Disable what faction?") in choices
+
+	if (choice == "CANCEL")
+		return
+
+	if (findtext(choice, "PARTISANS"))
+		partisans_toggled = !partisans_toggled
+		world << "<span class = 'warning'>The Partisan faction has been [partisans_toggled ? "<b><i>ENABLED</i></b>" : "<b><i>DISABLED</i></b>"].</span>"
+		message_admins("[key_name(src)] changed the Partisan faction 'enabled' setting to [partisans_toggled].")
+	else if (findtext(choice, "CIVILIANS"))
+		civilians_toggled = !civilians_toggled
+		world << "<span class = 'warning'>The Civilian faction has been [civilians_toggled ? "<b><i>ENABLED</i></b>" : "<b><i>DISABLED</i></b>"].</span>"
+		message_admins("[key_name(src)] changed the Civilian faction 'enabled' setting to [civilians_toggled].")
+	else if (findtext(choice, "WAFFEN-SS"))
+		SS_toggled = !SS_toggled
+		world << "<span class = 'warning'>The SS faction has been [SS_toggled ? "<b><i>ENABLED</i></b>" : "<b><i>DISABLED</i></b>"].</span>"
+		message_admins("[key_name(src)] changed the SS faction 'enabled' setting to [SS_toggled].")
+	else if (findtext(choice, "PARATROOPERS"))
+		paratroopers_toggled = !paratroopers_toggled
+		world << "<span class = 'warning'>The Paratrooper faction has been [paratroopers_toggled ? "<b><i>ENABLED</i></b>" : "<b><i>DISABLED</i></b>"].</span>"
+		message_admins("[key_name(src)] changed the Paratrooper faction 'enabled' setting to [paratroopers_toggled].")
+	else if (findtext(choice, "GERMAN"))
+		germans_toggled = !germans_toggled
+		world << "<span class = 'warning'>The German faction (not SS) has been [germans_toggled ? "<b><i>ENABLED</i></b>" : "<b><i>DISABLED</i></b>"].</span>"
+		message_admins("[key_name(src)] changed the German faction 'enabled' setting to [germans_toggled].")
+	else if (findtext(choice, "SOVIET"))
+		soviets_toggled = !soviets_toggled
+		world << "<span class = 'warning'>The Soviet faction has been [soviets_toggled ? "<b><i>ENABLED</i></b>" : "<b><i>DISABLED</i></b>"].</span>"
+		message_admins("[key_name(src)] changed the Soviet faction 'enabled' setting to [soviets_toggled].")
+
+var/partisans_forceEnabled = FALSE
+var/civilians_forceEnabled = FALSE
+var/germans_forceEnabled = FALSE
+var/soviets_forceEnabled = FALSE
+var/SS_forceEnabled = FALSE
+var/paratroopers_forceEnabled = FALSE
+
+/client/proc/forcibly_enable_faction()
+	set name = "Forcibly Enable Faction"
+	set category = "WW2 (Admin)"
+
+	if(!check_rights(R_ADMIN))
+		src << "<span class = 'danger'>You don't have the permissions.</span>"
+		return
+
+	if (!istype(ticker.mode, /datum/game_mode/ww2))
+		src << "<span class = 'danger'>You can't do this on this game mode.</span>"
+		return
+
+	var/list/choices = list()
+
+	choices += "PARTISANS ([partisans_forceEnabled ? "FORCIBLY ENABLED" : "NOT FORCIBLY ENABLED"])"
+	choices += "CIVILIANS ([civilians_forceEnabled ? "FORCIBLY ENABLED" : "NOT FORCIBLY ENABLED"])"
+	choices += "GERMANS ([germans_forceEnabled ? "FORCIBLY ENABLED" : "NOT FORCIBLY ENABLED"])"
+	choices += "SOVIET ([soviets_forceEnabled ? "FORCIBLY ENABLED" : "NOT FORCIBLY ENABLED"])"
+	choices += "SS ([SS_forceEnabled ? "FORCIBLY ENABLED" : "NOT FORCIBLY ENABLED"])"
+	choices += "PARATROOPERS ([paratroopers_forceEnabled ? "FORCIBLY ENABLED" : "NOT FORCIBLY ENABLED"])"
+	choices += "CANCEL"
+
+	var/choice = input("Enable/Disable what faction?") in choices
+
+	if (choice == "CANCEL")
+		return
+
+	if (findtext(choice, "PARTISANS"))
+		partisans_forceEnabled = !partisans_forceEnabled
+		world << "<span class = 'info'>The Partisan faction [partisans_forceEnabled ? "has been forcibly <b><i>ENABLED</i></b>" : "<b>is no longer forcibly enabled</b>"].</span>"
+		message_admins("[key_name(src)] changed the Partisan faction 'forceEnabled' setting to [partisans_forceEnabled].")
+	else if (findtext(choice, "CIVILIANS"))
+		civilians_forceEnabled = !civilians_forceEnabled
+		world << "<span class = 'info'>The Civilian faction [civilians_forceEnabled ? "has been forcibly <b><i>ENABLED</i></b>" : "<b>is no longer forcibly enabled</b>"].</span>"
+		message_admins("[key_name(src)] changed the Civilian faction 'forceEnabled' setting to [civilians_forceEnabled].")
+	else if (findtext(choice, "GERMAN"))
+		germans_forceEnabled = !germans_forceEnabled
+		world << "<span class = 'info'>The German faction [germans_forceEnabled ? "has been forcibly <b><i>ENABLED</i></b>" : "<b>is no longer forcibly enabled</b>"].</span>"
+		message_admins("[key_name(src)] changed the German faction 'forceEnabled' setting to [germans_forceEnabled].")
+	else if (findtext(choice, "SOVIET"))
+		soviets_forceEnabled = !soviets_forceEnabled
+		world << "<span class = 'info'>The Soviet faction [soviets_forceEnabled ? "has been forcibly <b><i>ENABLED</i></b>" : "<b>is no longer forcibly enabled</b>"].</span>"
+		message_admins("[key_name(src)] changed the Soviet faction 'forceEnabled' setting to [soviets_forceEnabled].")
+	else if (findtext(choice, "SS"))
+		SS_forceEnabled = !SS_forceEnabled
+		world << "<span class = 'info'>The SS subfaction [SS_forceEnabled ? "has been forcibly <b><i>ENABLED</i></b>" : "<b>is no longer forcibly enabled</b>"].</span>"
+		message_admins("[key_name(src)] changed the SS subfaction 'forceEnabled' setting to [SS_forceEnabled].")
+	else if (findtext(choice, "PARATROOPERS"))
+		paratroopers_forceEnabled = !paratroopers_forceEnabled
+		world << "<span class = 'info'>The Paratrooper subfaction [paratroopers_forceEnabled ? "has been forcibly <b><i>ENABLED</i></b>" : "<b>is no longer forcibly enabled</b>"].</span>"
+		message_admins("[key_name(src)] changed the Paratrooper subfaction 'forceEnabled' setting to [paratroopers_forceEnabled].")
+
+/client/proc/toggle_respawn_delays()
+	set category = "WW2 (Admin)"
+	set name = "Toggle Respawn Delays"
+	config.no_respawn_delays = !config.no_respawn_delays
+	var/M = "[key_name(src)] [config.no_respawn_delays ? "disabled" : "enabled"] respawn delays."
+	message_admins(M)
+	log_admin(M)
+	world << "<font size = 3><span class = 'notice'>Respawn delays are now <b>[config.no_respawn_delays ? "disabled" : "enabled"]</b>.</span></font>"
+
+/client/proc/open_armory_doors()
+	set name = "Open Armory Doors"
+	set category = "WW2 (Admin)"
+	var/side = input("Which side?") in list("Soviet", "German", "Cancel")
+	if (side == "Soviet")
+		for (var/obj/structure/simple_door/key_door/soviet/QM/D in world)
+			D.Open()
+		var/M = "[key_name(src)] opened Soviet Armory doors."
+		message_admins(M)
+		log_admin(M)
+	else if (side == "German")
+		for (var/obj/structure/simple_door/key_door/german/QM/D in world)
+			D.Open()
+		var/M = "[key_name(src)] opened German Armory doors."
+		message_admins(M)
+		log_admin(M)
+
+/client/proc/close_armory_doors()
+	set name = "Close Armory Doors"
+	set category = "WW2 (Admin)"
+	var/side = input("Which side?") in list("Soviet", "German", "Cancel")
+	if (side == "Soviet")
+		for (var/obj/structure/simple_door/key_door/soviet/QM/D in world)
+			D.Close()
+			D.keyslot.locked = TRUE
+	else if (side == "German")
+		for (var/obj/structure/simple_door/key_door/german/QM/D in world)
+			D.Close()
+			D.keyslot.locked = TRUE

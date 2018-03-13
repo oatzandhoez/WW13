@@ -9,13 +9,31 @@
 			E.attack_hand(src)
 	else
 		equip_to_slot_if_possible(W, slot)
+	if (W)
+		W.on_changed_slot()
+		for (var/obj/item/I in W.contents)
+			I.on_changed_slot()
 
-/mob/proc/put_in_any_hand_if_possible(obj/item/W as obj, del_on_fail = FALSE, disable_warning = TRUE, redraw_mob = TRUE)
-	if(equip_to_slot_if_possible(W, slot_l_hand, del_on_fail, disable_warning, redraw_mob))
-		return TRUE
-	else if(equip_to_slot_if_possible(W, slot_r_hand, del_on_fail, disable_warning, redraw_mob))
-		return TRUE
+/mob/proc/put_in_any_hand_if_possible(obj/item/W as obj, del_on_fail = FALSE, disable_warning = TRUE, redraw_mob = TRUE, prioritize_active_hand = FALSE)
+	if (!prioritize_active_hand)
+		if(equip_to_slot_if_possible(W, slot_l_hand, del_on_fail, disable_warning, redraw_mob))
+			return TRUE
+		else if(equip_to_slot_if_possible(W, slot_r_hand, del_on_fail, disable_warning, redraw_mob))
+			return TRUE
+	else
+		if (hand)
+			if(equip_to_slot_if_possible(W, slot_l_hand, del_on_fail, disable_warning, redraw_mob))
+				return TRUE
+			else if(equip_to_slot_if_possible(W, slot_r_hand, del_on_fail, disable_warning, redraw_mob))
+				return TRUE
+		else
+			if(equip_to_slot_if_possible(W, slot_r_hand, del_on_fail, disable_warning, redraw_mob))
+				return TRUE
+			else if(equip_to_slot_if_possible(W, slot_l_hand, del_on_fail, disable_warning, redraw_mob))
+				return TRUE
+
 	return FALSE
+
 
 //This is a SAFE proc. Use this instead of equip_to_slot()!
 //set del_on_fail to have it delete W if it fails to equip
@@ -29,7 +47,7 @@
 			qdel(W)
 		else
 			if(!disable_warning)
-				src << "\red You are unable to equip that." //Only print if del_on_fail is false
+				src << "<span class = 'red'>You are unable to equip that.</span>" //Only print if del_on_fail is false
 		return FALSE
 
 	equip_to_slot(W, slot, redraw_mob) //This proc should not ever fail.
@@ -85,14 +103,14 @@ var/list/slot_equipment_priority = list( \
 
 /mob/proc/equip_to_storage(obj/item/newitem)
 	// Try put it in their backpack
-	if(istype(src.back,/obj/item/weapon/storage))
-		var/obj/item/weapon/storage/backpack = src.back
+	if(istype(back,/obj/item/weapon/storage))
+		var/obj/item/weapon/storage/backpack = back
 		if(backpack.can_be_inserted(newitem, TRUE))
-			newitem.forceMove(src.back)
+			newitem.forceMove(back)
 			return TRUE
 
 	// Try to place it in any item that can store stuff, on the mob.
-	for(var/obj/item/weapon/storage/S in src.contents)
+	for(var/obj/item/weapon/storage/S in contents)
 		if(S.can_be_inserted(newitem, TRUE))
 			newitem.forceMove(S)
 			return TRUE
@@ -152,8 +170,8 @@ var/list/slot_equipment_priority = list( \
 //	both: if FALSE (false), it returns true if at least one hand is free, otherwise TRUE for checking both
 /mob/proc/has_empty_hand(var/both = FALSE)
 	if (both)
-		return src.l_hand == null && src.r_hand == null
-	return src.l_hand == null || src.r_hand == null
+		return l_hand == null && r_hand == null
+	return l_hand == null || r_hand == null
 
 // Removes an item from inventory and places it in the target atom.
 // If canremove or other conditions need to be checked then use unEquip instead.
@@ -255,14 +273,14 @@ var/list/slot_equipment_priority = list( \
 
 //Attemps to remove an object on a mob.
 /mob/proc/remove_from_mob(var/obj/O)
-	src.u_equip(O)
-	if (src.client)
-		src.client.screen -= O
+	u_equip(O)
+	if (client)
+		client.screen -= O
 	O.layer = initial(O.layer)
 	O.screen_loc = null
 	if(istype(O, /obj/item))
 		var/obj/item/I = O
-		I.forceMove(src.loc, MOVED_DROP)
+		I.forceMove(loc, MOVED_DROP)
 		I.dropped(src)
 	return TRUE
 

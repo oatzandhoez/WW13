@@ -3,7 +3,7 @@
 
 /mob/living/carbon/human/movement_delay()
 
-	if (world.timeofday <= next_calculate_tally)
+	if (world.time <= next_calculate_tally)
 		return stored_tally
 
 	var/tally = 0
@@ -11,13 +11,8 @@
 	if(species.slowdown)
 		tally = species.slowdown
 
-	if (istype(loc, /turf/space)) return -1 // It's hard to be slowed down in space by... anything
-
 	if(embedded_flag)
 		handle_embedded_objects() //Moving with objects stuck in you can cause bad times.
-
-	if (chem_effects.Find(CE_SPEEDBOOST))
-		return -1
 
 	var/health_deficiency = (maxHealth - health)
 	if(health_deficiency >= 40) tally += (health_deficiency / 25)
@@ -36,11 +31,11 @@
 		for(var/organ_name in list("l_hand","r_hand","l_arm","r_arm"))
 			var/obj/item/organ/external/E = get_organ(organ_name)
 			if(!E || E.is_stump())
-				tally += 4
+				tally += 3
 			if(E.status & ORGAN_SPLINTED)
-				tally += 0.5
+				tally += 0.4
 			else if(E.status & ORGAN_BROKEN)
-				tally += 1.5
+				tally += 1.2
 	else
 		if(shoes)
 			tally += shoes.slowdown
@@ -54,25 +49,35 @@
 			else if(E.status & ORGAN_BROKEN)
 				tally += 1.5
 
+	var/obj/item/organ/external/E = get_organ("chest")
+	if(!E || ((E.status & ORGAN_BROKEN) && E.brute_dam > E.min_broken_damage) || (E.status & ORGAN_MUTATED))
+		tally += 4
+
 	if(shock_stage >= 10) tally += 3
 
 	if(aiming && aiming.aiming_at) tally += 5 // Iron sights make you slower, it's a well-known fact.
 
-	if(FAT in src.mutations)
+	if(FAT in mutations)
 		tally += 1.5
+
+	/* this is removed until coats protect from the cold, instead of ignoring it.
+	   also, I'm reasonably sure that in real life being cold does not make you vastly slower - Kachnov
 	if (bodytemperature < 283.222)
-		tally += (283.222 - bodytemperature) / 10 * 1.75
+		tally += (283.222 - bodytemperature) / 10 * 1.75*/
 
 	tally += max(2 * stance_damage, FALSE) //damaged/missing feet or legs is slow
 
 	if(mRun in mutations)
-		tally = 0
+		tally = max(tally, 0)
 
-	// no more huge speedups from wearing shoes
-	. = max(0, (tally+config.human_delay))
-	stored_tally = .
+	if (chem_effects.Find(CE_SPEEDBOOST))
+		tally -= 0.10
 
-	next_calculate_tally = world.timeofday + 50
+	stored_tally = tally
+
+	next_calculate_tally = world.time + 10
+
+	return tally
 
 /mob/living/carbon/human/Process_Spacemove(var/check_drift = FALSE)
 	return FALSE

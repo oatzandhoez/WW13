@@ -1,6 +1,6 @@
 //ARTILLERY
 
-#define kanonier_msg " A Kanonier can now fire within <b>15 square tiles</b> of this position."
+#define kanonier_msg " A Kanonier can now fire within <b>15 square meters</b> of this position."
 
 var/global/list/valid_coordinates = list()
 /mob/living/carbon/human/var/checking_coords[4]
@@ -16,8 +16,106 @@ var/global/list/valid_coordinates = list()
 	verbs += /mob/living/carbon/human/proc/Reset_Coordinates_Chump
 	can_check_distant_coordinates = TRUE
 
+// all officer jobs not listed in one of these lists are considered tier 3 officers
+// ie kanoniers, squad leaders, quartermasters, MPs
+
+var/list/tier_1_officer_jobtypes = list(
+	/datum/job/german/commander,
+	/datum/job/soviet/commander,
+	/datum/job/german/XO,
+	/datum/job/soviet/XO)
+
+var/list/tier_2_officer_jobtypes = list(
+	/datum/job/german/staff_officer,
+	/datum/job/soviet/staff_officer)
+
+// if this returns 1, j1's rank > j2's rank
+// if this returns 0, its not. Its not necessary less important either.
+/proc/rankcmp(var/datum/job/j1, var/datum/job/j2)
+
+	// non-SS may not execute SS and vice versa. Different chain of command.
+	if (j1.is_SS != j2.is_SS)
+		return 0
+
+	// different factions
+	if (j1.base_type_flag() != j2.base_type_flag())
+		return 0
+
+	if (j1.is_commander && !j2.is_commander)
+		return 1
+
+	if (j1.is_officer && !j2.is_officer)
+		return 1
+
+	if (j1.is_officer && j2.is_officer)
+		if (tier_1_officer_jobtypes.Find(j1.type))
+			if (!tier_1_officer_jobtypes.Find(j2.type))
+				return 1
+		else if (tier_2_officer_jobtypes.Find(j1.type))
+			if (!tier_1_officer_jobtypes.Find(j2.type) && !tier_2_officer_jobtypes.Find(j2.type))
+				return 1
+
+	return 0
+
+/mob/living/carbon/human/var/next_execute = -1
+/mob/living/carbon/human/proc/Execute()
+	set category = "Officer"
+
+	if (next_execute > world.realtime)
+		src << "<span class = 'warning'>You can't execute anybody for a while.</span>"
+		return
+
+	var/obj/item/weapon/gun/projectile/G = null
+
+	if (istype(l_hand, /obj/item/weapon/gun/projectile))
+		G = l_hand
+	else if (istype(r_hand, /obj/item/weapon/gun/projectile))
+		G = r_hand
+
+	if (!G)
+		return
+
+	var/turf/T = get_turf(src)
+	var/steps = 0
+
+	while (TRUE)
+		T = get_step(T, dir)
+		++steps
+		if (steps >= 7 || T.density || locate_bullet_blocking_structure(T) || locate_type(T, /mob/living/carbon/human))
+			break
+
+	for (var/mob/living/carbon/human/H in T)
+		if (H != src && H.stat != DEAD && original_job && H.original_job)
+			if (rankcmp(original_job, H.original_job))
+
+				var/obj/item/projectile/in_chamber = G.consume_next_projectile()
+				if (!in_chamber || !istype(in_chamber))
+					return
+
+				var/datum/gender/GD = gender_datums[gender]
+				var/old_targeted_organ = targeted_organ
+				targeted_organ = "head"
+				visible_message("<span class = 'userdanger'>[src] lifts [GD.his] [G] and executes [H].</span>")
+
+				attack_log += text("\[[time_stamp()]\] <font color='red'>Officer-executed [H] ([H.key])</font>")
+				H.attack_log += text("\[[time_stamp()]\] <font color='orange'>Was officer-executed by [src] ([key])</font>")
+				msg_admin_attack("[name] ([ckey]) has officer executed [H] ([H.ckey]) (<A HREF='?_src_=holder;adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)")
+
+				G.executing = TRUE
+				G.Fire(H, src, forceburst = 1)
+				G.executing = FALSE
+				targeted_organ = old_targeted_organ
+				next_execute = world.realtime + 600
+				break
+
+/proc/check_coords_check()
+	return (!map || (map.germans_can_cross_blocks() && map.soviets_can_cross_blocks()))
+
 /mob/living/carbon/human/proc/Check_Coordinates()
 	set category = "Officer"
+	if (!check_coords_check())
+		usr << "<span class = 'warning'>You can't use this yet.</span>"
+		return
 	if (checking_coords[1] && checking_coords[2])
 		checking_coords[3] = x
 		checking_coords[4] = y
@@ -33,6 +131,9 @@ var/global/list/valid_coordinates = list()
 
 /mob/living/carbon/human/proc/Reset_Coordinates()
 	set category = "Officer"
+	if (!check_coords_check())
+		usr << "<span class = 'warning'>You can't use this yet.</span>"
+		return
 	if (checking_coords[1] && checking_coords[2])
 		var/x = checking_coords[1]
 		var/y = checking_coords[2]
@@ -47,6 +148,9 @@ var/global/list/valid_coordinates = list()
 /mob/living/carbon/human/proc/Check_Coordinates_Chump()
 	set category = "Scout"
 	set name = "Check Coordinates"
+	if (!check_coords_check())
+		usr << "<span class = 'warning'>You can't use this yet.</span>"
+		return
 	if (checking_coords[1] && checking_coords[2])
 		checking_coords[3] = x
 		checking_coords[4] = y
@@ -63,6 +167,9 @@ var/global/list/valid_coordinates = list()
 /mob/living/carbon/human/proc/Reset_Coordinates_Chump()
 	set category = "Scout"
 	set name = "Reset Coordinates"
+	if (!check_coords_check())
+		usr << "<span class = 'warning'>You can't use this yet.</span>"
+		return
 	if (checking_coords[1] && checking_coords[2])
 		var/x = checking_coords[1]
 		var/y = checking_coords[2]

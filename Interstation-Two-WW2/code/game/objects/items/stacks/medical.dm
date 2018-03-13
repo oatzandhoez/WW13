@@ -2,8 +2,8 @@
 	name = "medical pack"
 	singular_name = "medical pack"
 	icon = 'icons/obj/items.dmi'
-	amount = 5
-	max_amount = 5
+	amount = 30
+	max_amount = 30
 	w_class = 2
 	throw_speed = 4
 	throw_range = 20
@@ -216,6 +216,11 @@
 			else
 				user << "<span class='notice'>The [affecting.name] is cut open, you'll need more than a bandage!</span>"
 
+		if (affecting.open == FALSE)
+			if (affecting.is_bandaged() && affecting.is_disinfected())
+				affecting.wounds.Cut()
+				H.bad_external_organs -= affecting
+
 /obj/item/stack/medical/advanced/ointment
 	name = "advanced burn kit"
 	singular_name = "advanced burn kit"
@@ -270,11 +275,14 @@
 		var/mob/living/carbon/human/H = M
 		var/obj/item/organ/external/affecting = H.get_organ(user.targeted_organ)
 		var/limb = affecting.name
-		if(!(affecting.limb_name in list("l_arm","r_arm","l_leg","r_leg")))
+		if(!(affecting.limb_name in list("chest", "head", "groin", "l_arm","r_arm","l_leg","r_leg", "l_hand", "r_hand", "l_foot", "r_foot")))
 			user << "<span class='danger'>You can't apply a splint there!</span>"
 			return
-		if(affecting.status & ORGAN_SPLINTED)
+		else if(affecting.status & ORGAN_SPLINTED)
 			user << "<span class='danger'>[M]'s [limb] is already splinted!</span>"
+			return
+		else if (affecting.status == 0)
+			user << "<span class='danger'>[M]'s [limb] does not need splinting.</span>"
 			return
 		if (M != user)
 			user.visible_message("<span class='danger'>[user] starts to apply \the [src] to [M]'s [limb].</span>", "<span class='danger'>You start to apply \the [src] to [M]'s [limb].</span>", "<span class='danger'>You hear something being wrapped.</span>")
@@ -287,7 +295,7 @@
 			if (M != user)
 				user.visible_message("<span class='danger'>[user] finishes applying \the [src] to [M]'s [limb].</span>", "<span class='danger'>You finish applying \the [src] to [M]'s [limb].</span>", "<span class='danger'>You hear something being wrapped.</span>")
 			else
-				if(prob(25))
+				if(prob(40 * H.getStatCoeff("medical")))
 					user.visible_message("<span class='danger'>[user] successfully applies \the [src] to their [limb].</span>", "<span class='danger'>You successfully apply \the [src] to your [limb].</span>", "<span class='danger'>You hear something being wrapped.</span>")
 				else
 					user.visible_message("<span class='danger'>[user] fumbles \the [src].</span>", "<span class='danger'>You fumble \the [src].</span>", "<span class='danger'>You hear something being wrapped.</span>")

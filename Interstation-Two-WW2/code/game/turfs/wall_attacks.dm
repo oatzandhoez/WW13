@@ -94,9 +94,14 @@
 /turf/wall/attackby(obj/item/weapon/W as obj, mob/user as mob)
 
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
+
+	if (istype(src, /turf/wall/indestructable))
+		return
+
+	/* not sure what this shitcode is so its disabled - Kachnov
 	if (!user.)
 		user << "<span class='warning'>You don't have the dexterity to do this!</span>"
-		return
+		return*/
 
 	//get the user's location
 	if(!istype(user.loc, /turf))	return	//can't do this stuff whilst inside objects and such
@@ -117,10 +122,10 @@
 				return
 		else if(!is_sharp(W) && W.force >= 10 || W.force >= 20)
 			user << "<span class='notice'>\The [src] crumbles away under the force of your [W.name].</span>"
-			src.dismantle_wall(1)
+			dismantle_wall(1)
 			return
 
-	//THERMITE related stuff. Calls src.thermitemelt() which handles melting walls and the relevant effects
+	//THERMITE related stuff. Calls thermitemelt() which handles melting walls and the relevant effects
 /*	if(thermite)
 		if( istype(W, /obj/item/weapon/weldingtool) )
 			var/obj/item/weapon/weldingtool/WT = W

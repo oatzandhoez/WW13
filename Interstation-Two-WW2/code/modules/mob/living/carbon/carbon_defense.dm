@@ -15,7 +15,7 @@
 
 	//Apply weapon damage
 	var/weapon_sharp = is_sharp(I)
-	var/weapon_edge = has_edge(I)
+	var/weapon_edge = I.edge
 	if(prob(getarmor(hit_zone, "melee"))) //melee armour provides a chance to turn sharp/edge weapon attacks into blunt ones
 		weapon_sharp = FALSE
 		weapon_edge = FALSE
@@ -34,14 +34,15 @@
 
 		//Sharp objects will always embed if they do enough damage.
 		if((weapon_sharp && damage > (10*I.w_class)) || (damage > embed_threshold && prob(embed_chance)))
-			src.embed(I, hit_zone)
+			if (I.w_class <= 2.0)
+				embed(I, hit_zone)
 
 	return TRUE
 
 // Attacking someone with a weapon while they are neck-grabbed = throat slitting
 /mob/living/carbon/proc/check_attack_throat(obj/item/W, mob/user)
 	if(user.a_intent == I_HURT)
-		for(var/obj/item/weapon/grab/G in src.grabbed_by)
+		for(var/obj/item/weapon/grab/G in grabbed_by)
 			if(G.assailant == user && G.state >= GRAB_NECK)
 				if(attack_throat(W, G, user))
 					return TRUE
@@ -96,6 +97,6 @@
 	emote("scream")
 
 	user.attack_log += "\[[time_stamp()]\]<font color='red'> slit [name]'s throat ([ckey]) with [W.name] (INTENT: [uppertext(user.a_intent)]) (DAMTYE: [uppertext(W.damtype)])</font>"
-	src.attack_log += "\[[time_stamp()]\]<font color='orange'> got throatslit by [user.name] ([user.ckey]) with [W.name] (INTENT: [uppertext(user.a_intent)]) (DAMTYE: [uppertext(W.damtype)])</font>"
+	attack_log += "\[[time_stamp()]\]<font color='orange'> got throatslit by [user.name] ([user.ckey]) with [W.name] (INTENT: [uppertext(user.a_intent)]) (DAMTYE: [uppertext(W.damtype)])</font>"
 	msg_admin_attack("[key_name(user)] slit [key_name(src)]'s throat with [W.name] (INTENT: [uppertext(user.a_intent)]) (DAMTYE: [uppertext(W.damtype)])" )
 	return TRUE

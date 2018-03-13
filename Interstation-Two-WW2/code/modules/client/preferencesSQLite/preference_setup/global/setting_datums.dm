@@ -48,15 +48,20 @@ var/list/_client_preferences_by_type
 	description ="Play admin midis"
 	key = "SOUND_MIDI"
 
+/datum/client_preference/play_admin_midis/toggled(var/mob/new_player/preference_mob, var/enabled)
+	if (!enabled)
+		preference_mob << sound(null, channel = 777)
+
 /datum/client_preference/play_lobby_music
 	description ="Play lobby music"
 	key = "SOUND_LOBBY"
 
 /datum/client_preference/play_lobby_music/toggled(var/mob/new_player/preference_mob, var/enabled)
 	if(enabled)
-		if (istype(preference_mob)) preference_mob << sound(ticker.login_music, repeat = TRUE, wait = FALSE, volume = 85, channel = TRUE)
+		if (istype(preference_mob))
+			preference_mob << sound(ticker.login_music, repeat = TRUE, wait = FALSE, volume = 50, channel = TRUE)
 	else
-		preference_mob << sound(null, repeat = FALSE, wait = FALSE, volume = 85, channel = TRUE)
+		preference_mob << sound(null, repeat = FALSE, wait = FALSE, volume = 50, channel = TRUE)
 
 /datum/client_preference/play_ambiance
 	description ="Play ambience"

@@ -3,9 +3,10 @@
 	var/burst = TRUE
 	var/burst_delay = null
 	var/fire_delay = null
-	var/move_delay = TRUE
+	var/move_delay = 0
 	var/list/accuracy = list(0)
 	var/list/dispersion = list(0)
+	var/recoil = -1
 
 //using a list makes defining fire modes for new guns much nicer,
 //however we convert the lists to datums in part so that firemodes can be VVed if necessary.
@@ -43,7 +44,7 @@
 	var/burst_delay = 2	//delay between shots, if firing in bursts
 	var/fire_sound = 'sound/weapons/kar_shot.ogg'
 	var/fire_sound_text = "gunshot"
-	var/recoil = FALSE		//screen shake
+	var/recoil = 0		//screen shake
 	var/silenced = FALSE
 	var/muzzle_flash = 3
 	var/accuracy = 0   //accuracy is measured in tiles. +1 accuracy means that everything is effectively one tile closer for the purpose of miss chance, -1 means the opposite. launchers are not supported, at the moment.
@@ -51,7 +52,7 @@
 
 	var/next_fire_time = FALSE
 
-	var/sel_mode = TRUE //index of the currently selected mode
+	var/sel_mode = 1 //index of the currently selected mode
 	var/list/firemodes = list()
 	var/firemode_type = /datum/firemode //for subtypes that need custom firemode data
 
@@ -70,7 +71,7 @@
 	var/can_scope = FALSE
 
 	var/burst = TRUE
-	var/move_delay = TRUE
+	var/move_delay = 0
 	var/list/burst_accuracy = list(0)
 	var/list/dispersion = list(0)
 
@@ -78,12 +79,17 @@
 
 	var/gun_type = GUN_TYPE_GENERIC
 
+	var/autofiring = FALSE
+
+	var/gibs = FALSE
+	var/crushes = FALSE
+
 /obj/item/weapon/gun/New()
 	..()
 	if(!firemodes.len)
 		firemodes += new firemode_type
 	else
-		for(var/i in TRUE to firemodes.len)
+		for(var/i in 1 to firemodes.len)
 			firemodes[i] = new firemode_type(firemodes[i])
 
 	if(isnull(scoped_accuracy))
@@ -169,44 +175,52 @@
 		PreFire(A,user,params) //They're using the new gun system, locate what they're aiming at.
 		return
 
-
-	var/obj/item/weapon/gun/off_hand   //DUAL WIELDING
+	//DUAL WIELDING: only works with pistols edition
+	var/obj/item/weapon/gun/off_hand = null
 	if(ishuman(user) && user.a_intent == "harm")
 		var/mob/living/carbon/human/H = user
-		if(H.r_hand == src && istype(H.l_hand, /obj/item/weapon/gun))
-			off_hand = H.l_hand
+		if (istype(H.l_hand, /obj/item/weapon/gun/projectile/pistol))
+			if (istype(H.r_hand, /obj/item/weapon/gun/projectile/pistol))
+				if(H.r_hand == src)
+					off_hand = H.l_hand
 
-		else if(H.l_hand == src && istype(H.r_hand, /obj/item/weapon/gun))
-			off_hand = H.r_hand
+				else if(H.l_hand == src)
+					off_hand = H.r_hand
 
-		if(off_hand && off_hand.can_hit(user))
-			spawn(1)
-			off_hand.Fire(A,user,params)
+				if(off_hand && off_hand.can_hit(user))
+					spawn(1)
+						off_hand.Fire(A,user,params)
 
 	Fire(A,user,params) //Otherwise, fire normally.
 
 /obj/item/weapon/gun/attack(atom/A, mob/living/user, def_zone)
-	if (A == user && user.targeted_organ == "mouth" && !mouthshoot)
-		handle_suicide(user)
+	if (A == user)
+		if (user.targeted_organ == "mouth" && !mouthshoot)
+			handle_suicide(user)
+		else if (user.a_intent == I_HURT)
+			handle_shoot_self(user)
+		return
 
 	if(user.a_intent == I_HURT && !bayonet) //point blank shooting
 		Fire(A, user, pointblank=1)
 	else
 		if(bayonet && isliving(A))
-			var/mob/living/l = A
+			var/mob/living/L = A
 			var/mob/living/carbon/C = A
 			if (!istype(C) || !C.check_attack_throat(src, user))
-				if (prob(35) && l != user && !l.lying)
-					visible_message("<span class = 'danger'>[user] tries to bayonet [l], but they miss!</span>")
-				else
-					var/obj/item/weapon/attachment/bayonet/a = bayonet
-					user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN) // No more rapid stabbing for you.
-					visible_message("<span class = 'danger'>[user] impales [l] with their gun's bayonet!</span>")
-					l.apply_damage(a.force * 2, BRUTE, def_zone)
-					l.Weaken(rand(1,2))
-					if (l.stat == CONSCIOUS)
-						l.emote("scream")
-					playsound(get_turf(src), a.attack_sound, rand(90,100))
+		/*		if (prob(50) && L != user && !L.lying)
+					visible_message("<span class = 'danger'>[user] tries to bayonet [L], but they miss!</span>")
+				else*/
+
+				// bayonets no longer have a miss chance, but have been balanced otherwise - Kachnov
+				var/obj/item/weapon/attachment/bayonet/a = bayonet
+				user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN) // No more rapid stabbing for you.
+				visible_message("<span class = 'danger'>[user] impales [L] with their gun's bayonet!</span>")
+				L.apply_damage(a.force, BRUTE, def_zone)
+				L.Weaken(a.weakens)
+				if (L.stat == CONSCIOUS && prob(50))
+					L.emote("scream")
+				playsound(get_turf(src), a.attack_sound, rand(90,100))
 			else
 				var/obj/item/weapon/attachment/bayonet/a = bayonet
 				playsound(get_turf(src), a.attack_sound, rand(90,100))
@@ -224,7 +238,7 @@
 
 	var/shoot_time = (burst - TRUE)* burst_delay
 	user.setClickCooldown(shoot_time) //no clicking on things while shooting
-	user.setMoveCooldown(shoot_time) //no moving while shooting either
+//	user.setMoveCooldown(shoot_time) //no moving while shooting either
 	next_fire_time = world.time + shoot_time
 
 
@@ -238,7 +252,7 @@
 */
 	//actually attempt to shoot
 	var/turf/targloc = get_turf(target) //cache this in case target gets deleted during shooting, e.g. if it was a securitron that got destroyed.
-	for(var/i in TRUE to burst)
+	for(var/i in 1 to burst)
 		var/obj/projectile = consume_next_projectile(user)
 		if(!projectile)
 			handle_click_empty(user)
@@ -279,9 +293,17 @@
 				return FALSE
 	..()
 
-/obj/item/weapon/gun/proc/Fire(atom/target, mob/living/user, clickparams, pointblank=0, reflex=0)
+/obj/item/weapon/gun/proc/Fire(atom/target, mob/living/user, clickparams, pointblank=0, reflex=0, forceburst = -1)
 
 	if(!user || !target) return
+
+	// stops admemes from sending immortal dummies into combat
+	if (user)
+		if (istype(user, /mob/living/carbon/human/dummy))
+			if (user.client)
+				if (clients.len > 1)
+					user << "<span class = 'danger'>Hey you fucking dumbass, don't send immortal dummies into combat.</span>"
+					return
 
 	add_fingerprint(user)
 
@@ -296,9 +318,12 @@
 	//unpack firemode data
 	var/datum/firemode/firemode = firemodes[sel_mode]
 	var/_burst = firemode.burst
-	var/_burst_delay = isnull(firemode.burst_delay)? src.burst_delay : firemode.burst_delay
-	var/_fire_delay = isnull(firemode.fire_delay)? src.fire_delay : firemode.fire_delay
-	var/_move_delay = firemode.move_delay + (can_wield && !wielded) ? 2 : FALSE
+	var/_burst_delay = isnull(firemode.burst_delay)? burst_delay : firemode.burst_delay
+	var/_fire_delay = isnull(firemode.fire_delay)? fire_delay : firemode.fire_delay
+	var/_move_delay = firemode.move_delay
+
+	if (forceburst != -1)
+		_burst = forceburst
 
 	var/shoot_time = (_burst - TRUE)*_burst_delay
 	user.next_move = world.time + shoot_time  //no clicking on things while shooting
@@ -308,7 +333,7 @@
 	//actually attempt to shoot
 	var/turf/targloc = get_turf(target) //cache this in case target gets deleted during shooting, e.g. if it was a securitron that got destroyed.
 
-	for(var/i in TRUE to _burst)
+	for(var/i in 1 to _burst)
 		var/obj/projectile = consume_next_projectile(user)
 
 		if(!projectile)
@@ -318,46 +343,56 @@
 		var/acc = firemode.accuracy[min(i, firemode.accuracy.len)]
 		var/disp = firemode.dispersion[min(i, firemode.dispersion.len)]
 
-
 		if (istype(projectile, /obj/item/projectile))
 			var/obj/item/projectile/P = projectile
-	//		log_debug("[P.KD_chance]")
-	//		log_debug("[acc]")
 
-			if (gun_type == GUN_TYPE_RIFLE)
-				P.KD_chance *= 10
-				if (ishuman(user))
-					var/mob/living/carbon/human/H = user
-					P.KD_chance *= H.getStatCoeff("rifle")
-					acc += max(H.getStatCoeff("rifle")-1, FALSE)
+			// 100% chance of KD
+			if (gun_type == GUN_TYPE_SHOTGUN)
+				P.KD_chance *= 20
 
+			// 75%
 			else if (gun_type == GUN_TYPE_HEAVY)
 				P.KD_chance *= 15
 				if (ishuman(user))
 					var/mob/living/carbon/human/H = user
 					P.KD_chance *= H.getStatCoeff("heavyweapon")
-					acc += max(H.getStatCoeff("heavyweapon")-1, FALSE)
+					acc += max(H.getStatCoeff("heavyweapon")-1, 0) * 2
 
-			else if (gun_type == GUN_TYPE_MG)
+			// 60% chance of KD
+			else if (gun_type == GUN_TYPE_RIFLE)
+				P.KD_chance *= 12
 				if (ishuman(user))
 					var/mob/living/carbon/human/H = user
-					P.KD_chance *= H.getStatCoeff("mg")
-					acc += max(H.getStatCoeff("mg")-1, FALSE)
+					P.KD_chance *= H.getStatCoeff("rifle")
+					acc += max(H.getStatCoeff("rifle")-1, 0) * 2
 
+			// 30% chance of KD
 			else if (gun_type == GUN_TYPE_PISTOL)
+				P.KD_chance *= 6
 				if (ishuman(user))
 					var/mob/living/carbon/human/H = user
 					P.KD_chance *= H.getStatCoeff("pistol")
-					acc += max(H.getStatCoeff("pistol")-1, FALSE)
-	//		log_debug("[P.KD_chance]")
-	//		log_debug("[acc]")
+					acc += max(H.getStatCoeff("pistol")-1, 0) * 2
+
+			// 20% chance of KD
+			else if (gun_type == GUN_TYPE_MG)
+				P.KD_chance *= 4
+				if (ishuman(user))
+					var/mob/living/carbon/human/H = user
+					P.KD_chance *= H.getStatCoeff("mg")
+					acc += max(H.getStatCoeff("mg")-1, 0) * 2
+
+			if (ishuman(user))
+				var/mob/living/carbon/human/H = user
+				if (H.lying)
+					acc -= 2
 
 		process_accuracy(projectile, user, target, acc, disp)
 
-		if(pointblank) // oh so this is how pointblank works. Todo: delet this
+		if(pointblank)
 			if (istype(projectile, /obj/item/projectile))
 				var/obj/item/projectile/P = projectile
-				P.KD_chance *= 10
+				P.KD_chance = 100
 			process_point_blank(projectile, user, target)
 
 		if(process_projectile(projectile, user, target, user.targeted_organ, clickparams))
@@ -376,6 +411,10 @@
 	//update timing
 	user.next_move = world.time + 4
 	if(user.client) user.client.move_delay = world.time + _move_delay
+
+	if(_move_delay)
+		user.setMoveCooldown(_move_delay)
+
 	next_fire_time = world.time + _fire_delay
 
 	if(muzzle_flash)
@@ -402,14 +441,14 @@
 	else
 		visible_message("*click click*")
 
-	playsound(src.loc, 'sound/weapons/empty.ogg', 100, TRUE)
+	playsound(loc, 'sound/weapons/empty.ogg', 100, TRUE)
 
 //called after successfully firing
 /obj/item/weapon/gun/proc/handle_post_fire(mob/user, atom/target, var/pointblank=0, var/reflex=0)
 	if(silenced)
-		playsound(get_turf(user), fire_sound, 10, TRUE, 50)
+		playsound(get_turf(user), fire_sound, 10, TRUE, 100)
 	else
-		playsound(get_turf(user), fire_sound, 100, TRUE, 50)
+		playsound(get_turf(user), fire_sound, 100, TRUE, 100)
 
 		/*
 		if(reflex)
@@ -429,14 +468,23 @@
 		if(muzzle_flash)
 			set_light(muzzle_flash)
 
+	var/datum/firemode/F = firemodes[sel_mode]
+
+	var/i_recoil = recoil
+	if (F.recoil != -1)
+		recoil = F.recoil
+
 	if(recoil)
-		spawn()
-			var/shake_strength = recoil
-			if(can_wield && !wielded)
-				shake_strength += 2
-			shake_strength -= TRUE
-			if (shake_strength > FALSE)
-				shake_camera(user, shake_strength+1, shake_strength)
+		spawn(0)
+			var/shake_strength = recoil+0.5
+		//	if(can_wield && !wielded)
+			//	shake_strength += 2
+			if (shake_strength > 0)
+				shake_camera(user, max(shake_strength, 0), min(shake_strength, 50))
+			recoil = i_recoil
+	else
+		recoil = i_recoil
+
 	update_icon()
 
 
@@ -446,7 +494,7 @@
 		return //default behaviour only applies to true projectiles
 
 	//default point blank multiplier
-	var/damage_mult = 2
+	var/damage_mult = 1.33
 
 	//determine multiplier due to the target being grabbed
 	if(ismob(target))
@@ -469,7 +517,7 @@
 
 	//Accuracy modifiers
 	P.accuracy = accuracy + acc_mod
-	P.dispersion = dispersion + (can_wield && !wielded) ? 2 : FALSE
+	P.dispersion = dispersion
 
 	//accuracy bonus from aiming
 	if (aim_targets && (target in aim_targets))
@@ -478,7 +526,7 @@
 		//As opposed to no-delay pew pew
 		P.accuracy += 2
 
-/* // since weilding was removed
+/* // since wielding was removed
 	if(can_wield && !wielded)
 		P.accuracy -= 2 */
 
@@ -514,10 +562,11 @@
 		return
 	var/mob/living/carbon/human/M = user
 
+	// realistic WW2 suicide, no hesitation - Kachnov
 	mouthshoot = TRUE
-	M.visible_message("\red [user] sticks their gun in their mouth, ready to pull the trigger...")
-	if(!do_after(user, 15))
-		M.visible_message("\blue [user] decided life was worth living")
+	M.visible_message("<span class = 'red'>[user] sticks their gun in their mouth.</span>")
+	if(!do_after(user, 3))
+		M.visible_message("<span class = 'notice'>[user] failed to commit suicide.</span>")
 		mouthshoot = FALSE
 		return
 	var/obj/item/projectile/in_chamber = consume_next_projectile()
@@ -543,6 +592,41 @@
 		mouthshoot = FALSE
 		return
 
+// fixes shooting yourself bug - Kachnov
+/obj/item/weapon/gun/proc/handle_shoot_self(mob/living/user)
+	if(!ishuman(user))
+		return
+
+	var/mob/living/carbon/human/M = user
+
+	var/obj/item/projectile/in_chamber = consume_next_projectile()
+	if (istype(in_chamber))
+		var/damage_multiplier = 2.0
+		var/organ_name = replacetext(replacetext(user.targeted_organ, "l_", "left "), "r_", "right ")
+		switch (user.targeted_organ)
+			if ("l_hand", "r_hand", "l_foot", "r_foot")
+				damage_multiplier = 1.0
+			if ("chest")
+				damage_multiplier = 3.0
+
+		M.visible_message("<span class = 'red'>[user] shoots themselves in \the [organ_name]!</span>")
+		if(silenced)
+			playsound(user, fire_sound, 20, TRUE)
+		else
+			playsound(user, fire_sound, 100, TRUE)
+
+		in_chamber.on_hit(M)
+		if (in_chamber.damage_type != HALLOSS)
+			user.apply_damage(in_chamber.damage*damage_multiplier, in_chamber.damage_type, user.targeted_organ, used_weapon = "Point blank shot in the [user.targeted_organ] with \a [in_chamber]", sharp=1)
+		else
+			user << "<span class = 'notice'>Ow...</span>"
+			user.apply_effect(110,AGONY,0)
+		qdel(in_chamber)
+		return
+	else
+		handle_click_empty(user)
+		return
+
 /obj/item/weapon/gun/examine(mob/user)
 	..()
 	if(firemodes.len > TRUE)
@@ -564,7 +648,7 @@
 	if(wielded)
 		return
 
-	src.wielded = TRUE
+	wielded = TRUE
 	update_icon()
 
 	var/obj/item/weapon/offhand/O = new(src)
@@ -577,7 +661,7 @@
 	if(!wielded)
 		return
 
-	src.wielded = FALSE
+	wielded = FALSE
 	update_icon()
 
 	var/obj/item/weapon/offhand/O = user.get_inactive_hand()
@@ -623,7 +707,7 @@
 				G.unwield()
 			qdel(src)
 		else
-			user << "\red Something is WRONG!!"
+			user << "<span class = 'red'>Something is WRONG!!</span>"
 */
 
 /obj/item/weapon/offhand/update_icon()
@@ -641,66 +725,66 @@
 	set name = "Wield"
 	set category = "Weapons"
 
-	var/obj/item/weapon/gun/G = src.get_active_hand()
+	var/obj/item/weapon/gun/G = get_active_hand()
 	if(!G || !istype(G))
-		G = src.get_inactive_hand()
+		G = get_inactive_hand()
 		if(!G || !istype(G))
-			src << "\red You can't wield anything in your hands."
+			src << "<span class = 'red'>You can't wield anything in your hands.</span>"
 			return
 
 	if(G.wielded)
-		src << "\red The [G.name] is already wielded."
+		src << "<span class = 'red'>The [G.name] is already wielded.</span>"
 		return
 
 	if(!G.can_wield)
-		usr << "\red You can't wield the [G.name]."
+		usr << "<span class = 'red'>You can't wield the [G.name].</span>"
 		return
 
 	G.wield(src)
 
-	usr << "\red You wielded the [G.name]."
+	usr << "<span class = 'red'>You wielded the [G.name].</span>"
 
 /mob/living/carbon/human/verb/unwield_weapon()
 	set name = "Unwield"
 	set category = "Weapons"
 
-	var/obj/item/weapon/gun/G = src.get_active_hand()
+	var/obj/item/weapon/gun/G = get_active_hand()
 	if(!G || !istype(G))
-		G = src.get_inactive_hand()
+		G = get_inactive_hand()
 		if(!G || !istype(G))
-			src << "\red You can't unwield anything in your hands."
+			src << "<span class = 'red'>You can't unwield anything in your hands.</span>"
 			return
 
 	if(!G.wielded)
-		src << "\red The [G.name] is not wielded."
+		src << "<span class = 'red'>The [G.name] is not wielded.</span>"
 		return
 
 	G.unwield(src)
 	//if(G != get_active_hand())
 	//	H:swap_hand()
 
-	usr << "\red You unwielded the [name]."
+	usr << "<span class = 'red'>You unwielded the [name].</span>"
 */
 /mob/living/carbon/human/verb/eject_magazine()
 	set name = "Eject magazine"
 	set category = "Weapons"
 
-	var/obj/item/weapon/gun/projectile/G = src.get_active_hand()
+	var/obj/item/weapon/gun/projectile/G = get_active_hand()
 	if(!G || !istype(G))
-		G = src.get_inactive_hand()
+		G = get_inactive_hand()
 		if(!G || !istype(G))
-			src << "\red You can't unload magazine from anything in your hands."
+			src << "<span class = 'red'>You can't unload magazine from anything in your hands.</span>"
 			return
 
 	if(G.load_method == MAGAZINE && G.ammo_magazine == null)
-		src << "\red The [G.name] is already unloaded."
+		src << "<span class = 'red'>The [G.name] is already unloaded.</span>"
 		return
 
 	//if(G.wielded)
 	//	G.unwield()
 
-	G.ammo_magazine.loc = get_turf(src.loc)
-	src.visible_message(
+	G.ammo_magazine.loc = get_turf(loc)
+	visible_message(
 		"[G.ammo_magazine] falls out and clatters on the floor!",
 		"<span class='notice'>[G.ammo_magazine] falls out and clatters on the floor!</span>"
 		)
@@ -712,11 +796,11 @@
 	set name = "Toggle firerate"
 	set category = "Weapons"
 
-	var/obj/item/weapon/gun/G = src.get_active_hand()
+	var/obj/item/weapon/gun/G = get_active_hand()
 	if(!G || !istype(G))
-		G = src.get_inactive_hand()
+		G = get_inactive_hand()
 		if(!G || !istype(G))
-			src << "\red You have no weapon in hands."
+			src << "<span class = 'red'>You have no weapon in hands.</span>"
 			return
 
 	if(G.firemodes.len > TRUE)

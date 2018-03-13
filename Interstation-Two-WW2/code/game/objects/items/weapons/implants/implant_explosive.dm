@@ -60,16 +60,16 @@
 						qdel(src)
 			if (elevel == "Destroy Body")
 				explosion(get_turf(T), -1, FALSE, TRUE, 6)
-				T.gib()
+				T.crush()
 			if (elevel == "Full Explosion")
 				explosion(get_turf(T), FALSE, TRUE, 3, 6)
-				T.gib()
+				T.crush()
 
 		else
 			explosion(get_turf(imp_in), FALSE, TRUE, 3, 6)
 
 	if(need_gib)
-		imp_in.gib()
+		imp_in.crush()
 
 	var/turf/t = get_turf(imp_in)
 
@@ -82,8 +82,8 @@
 	phrase = input("Choose activation phrase:") as text
 	var/list/replacechars = list("'" = "","\"" = "",">" = "","<" = "","(" = "",")" = "")
 	phrase = replace_characters(phrase, replacechars)
-	usr.mind.store_memory("Explosive implant in [source] can be activated by saying something containing the phrase ''[src.phrase]'', <B>say [src.phrase]</B> to attempt to activate.", FALSE, FALSE)
-	usr << "The implanted explosive implant in [source] can be activated by saying something containing the phrase ''[src.phrase]'', <B>say [src.phrase]</B> to attempt to activate."
+	usr.mind.store_memory("Explosive implant in [source] can be activated by saying something containing the phrase ''[phrase]'', <b>say [phrase]</b> to attempt to activate.", FALSE, FALSE)
+	usr << "The implanted explosive implant in [source] can be activated by saying something containing the phrase ''[phrase]'', <b>say [phrase]</b> to attempt to activate."
 
 /obj/item/weapon/implant/explosive/proc/small_boom()
 	if (ishuman(imp_in) && part)

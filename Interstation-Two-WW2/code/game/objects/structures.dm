@@ -6,6 +6,7 @@
 	var/breakable = FALSE
 	var/parts
 	var/list/climbers = list()
+	var/low = FALSE
 
 /obj/structure/Destroy()
 	if(parts)
@@ -79,7 +80,7 @@
 	return FALSE
 
 /obj/structure/proc/neighbor_turf_passable()
-	var/turf/T = get_step(src, src.dir)
+	var/turf/T = get_step(src, dir)
 	if(!T || !istype(T))
 		return FALSE
 	if(T.density == TRUE)
@@ -96,6 +97,22 @@
 	if (!can_climb(user))
 		return
 
+	user.face_atom(src)
+
+	var/turf/target = null
+
+	if (istype(src, /obj/structure/window/sandbag))
+		target = get_step(src, user.dir)
+	else
+		target = get_turf(src)
+
+	if (!target || target.density)
+		return
+
+	for (var/obj/structure/S in target)
+		if (S != src && S.density)
+			return
+
 	usr.visible_message("<span class='warning'>[user] starts climbing onto \the [src]!</span>")
 	climbers |= user
 
@@ -107,7 +124,14 @@
 		climbers -= user
 		return
 
-	usr.forceMove(get_turf(src))
+	if (!target || target.density)
+		return
+
+	for (var/obj/structure/S in target)
+		if (S != src && S.density)
+			return
+
+	usr.forceMove(target)
 
 	if (get_turf(user) == get_turf(src))
 		usr.visible_message("<span class='warning'>[user] climbs onto \the [src]!</span>")

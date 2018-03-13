@@ -1,3 +1,8 @@
+#define PLAYER_THRESHOLD_LOW 10
+#define PLAYER_THRESHOLD_MEDIUM 20
+#define PLAYER_THRESHOLD_HIGH 30
+#define PLAYER_THRESHOLD_HIGHEST 50
+
 /proc/check_for_german_train_conductors()
 	if (!game_started)
 		return TRUE // if we haven't started the game yet
@@ -31,13 +36,22 @@
 /datum/job/var/is_sturmovik = FALSE
 /datum/job/var/is_guard = FALSE
 /datum/job/var/is_tankuser = FALSE
-/datum/job/var/absolute_limit = FALSE // if this is FALSE it's ignored
+/datum/job/var/rank_abbreviation = null
+
+// new autobalance stuff - Kachnov
+/datum/job/var/min_positions = 1 // absolute minimum positions if we reach player threshold
+/datum/job/var/max_positions = 1 // absolute maximum positions if we reach player threshold
+/datum/job/var/player_threshold = 0 // number of players who have to be on for this job to be open
+/datum/job/var/scale_to_players = 50 // as we approach this, our open positions approach max_positions. Does nothing if min_positions == max_positions, so just don't touch it
 
 /* type_flag() replaces flag, and base_type_flag() replaces department_flag
  * this is a better solution than bit constants, in my opinion */
 
 /datum/job
 	var/_base_type_flag = -1
+
+/datum/job/proc/specialcheck()
+	return TRUE
 
 /datum/job/proc/type_flag()
 	return "[type]"
@@ -66,6 +80,8 @@
 		. = UKRAINIAN
 	else if (istype(src, /datum/job/italian))
 		. = ITALIAN
+	else if (istype(src, /datum/job/pillarman))
+		. = PILLARMEN
 
 	_base_type_flag = .
 	return _base_type_flag
@@ -260,6 +276,8 @@
 		return "Red Army"
 	if(side == GERMAN)
 		return "German Wehrmacht"
+	if (side == PILLARMEN)
+		return "PILLARMEN"
 	return null
 
 // here's a story
@@ -275,6 +293,7 @@
 	if (gave_radio)
 		return
 
+
 	gave_radio = TRUE
 
 	spawn (1)
@@ -285,10 +304,40 @@
 
 		spawn (0)
 			if (istype(original_job, /datum/job/soviet))
-				equip_to_slot_or_del(new /obj/item/device/radio/rbs(src), slot_s_store)
+				if (original_job.is_officer)
+					equip_to_slot_or_del(new /obj/item/device/radio/rbs/command(src), slot_s_store)
+				else
+					equip_to_slot_or_del(new /obj/item/device/radio/rbs(src), slot_s_store)
 			else if (istype(original_job, /datum/job/german))
-				equip_to_slot_or_del(new /obj/item/device/radio/feldfu(src), slot_s_store)
+				if (original_job.is_SS)
+					if (original_job.is_officer)
+						equip_to_slot_or_del(new /obj/item/device/radio/feldfu/SS/command(src), slot_s_store)
+					else
+						equip_to_slot_or_del(new /obj/item/device/radio/feldfu/SS(src), slot_s_store)
+				else
+					if (original_job.is_officer)
+						equip_to_slot_or_del(new /obj/item/device/radio/feldfu/command(src), slot_s_store)
+					else
+						equip_to_slot_or_del(new /obj/item/device/radio/feldfu(src), slot_s_store)
 			else if (istype(original_job, /datum/job/partisan))
 				equip_to_slot_or_del(new /obj/item/device/radio/partisan(src), slot_s_store)
 
 	src << "<span class = 'notice'><b>You have a radio in your suit storage. To use it while its on your back, prefix your message with ':b'.</b></span>"
+
+/datum/job/update_character(var/mob/living/carbon/human/H)
+	..()
+	if (is_officer)
+		H.make_artillery_officer()
+		H.verbs += /mob/living/carbon/human/proc/Execute
+		H << "<span class = 'info'>As an officer, you can check coordinates and execute your subordinates.</span>"
+
+	// hack to make scope icons immediately appear - Kachnov
+	spawn (20)
+		for (var/obj/item/weapon/gun/G in H.contents)
+			for (var/obj/item/weapon/attachment/scope/S in G.contents)
+				if (S.azoom)
+					S.azoom.Grant(H)
+
+		for (var/obj/item/weapon/attachment/scope/S in H.contents)
+			if (S.azoom)
+				S.azoom.Grant(H)

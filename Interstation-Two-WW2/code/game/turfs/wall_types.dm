@@ -59,10 +59,21 @@
 	..(newloc,"silver")
 /turf/wall/plasma/New(var/newloc)
 	..(newloc,"plasma")
+/turf/wall/stone/New(var/newloc)
+	..(newloc,"stone")
 /turf/wall/sandstone/New(var/newloc)
 	..(newloc,"sandstone")
 /turf/wall/wood/New(var/newloc)
 	..(newloc,"hardwood")
+/turf/wall/indestructable
+	icon_state = "rgeneric" // so we look better on the map
+/turf/wall/indestructable/black
+	color = "#000000"
+/turf/wall/indestructable/New(var/newloc)
+	icon_state = initial(icon_state)
+	..(newloc,"indestructable")
+/turf/wall/indestructable/ex_act(severity)
+	return FALSE
 /turf/wall/ironplasma/New(var/newloc)
 	..(newloc,"iron","plasma")
 /turf/wall/golddiamond/New(var/newloc)

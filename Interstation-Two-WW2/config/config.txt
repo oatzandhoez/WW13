@@ -1,12 +1,18 @@
+## The path to our global configuration file, if any
+GLOBAL_CONFIG_PATH nil
+
+## The website where we get our resources from, if any 
+RESOURCE_WEBSITE nil
+
 ## Server name: This appears at the top of the screen in-game and in the BYOND hub. Remove the # infront of SERVERNAME and replace 'tgstation' with the name of your choice.
 ## IMPORTANT: Don't include special characters such as ' in here
-SERVER_NAME Lebensraum
+SERVER_NAME Lebensraum Alpha
 
 ## What features do you want to advertise on your hub message?
 HUB_FEATURES A new light-medium roleplay WW2 Server
 
 ## The main content of your hub message
-HUB_BODY <i>1942, SEASON, TIME_OF_DAY, Ukraine</i><br>
+HUB_BODY <i>1941, SEASON, TIME_OF_DAY, Ukraine</i><br>
 
 ## Use a link to a banner on your hub message? Comment out if not
 HUB_BANNER_URL <img src='http://tny.im/btn'>
@@ -153,7 +159,7 @@ CHECK_RANDOMIZER
 ## TODO: whitelists
 
 ## Set to prevent anyone but those ckeys listed in config/whitelist.txt and config/admins.txt from joining your server
-USEWHITELIST
+#USEWHITELIST
 
 ## Set this to give people in the 'teststaff' whitelist admin permissions
 ALLOW_TESTING_STAFF
@@ -172,13 +178,13 @@ FORUMURL http://ww13.boards.net/
 DONATIONURL https://www.paypal.me/WW13Server
 
 ## rules address
-RULESURL https://discord.gg/3zjPhfb
+RULESURL http://mechahitler.co.nf/lebensraum/rules.html
 
 ## discord address
 DISCORDURL https://discord.gg/PVqjqCv
 
 ## Wiki address
-WIKIURL http://noml.wikia.com/wiki/No_Man%27s_Land_Wiki
+WIKIURL http://mechahitler.co.nf/wiki/media/index.php?title=Main_Page
 
 ## Website address
 WEBSITEURL http://mechahitler.co.nf/
@@ -209,7 +215,7 @@ GITHUBURL https://github.com/WW2-SS13/WW13/issues
 TICK_LIMIT_MC_INIT 500
 
 ##Defines the ticklag for the world.  0.9 is the normal one, 0.5 is smoother.
-TICKLAG 0.5
+TICKLAG 0.33
 
 ## Comment this out to disable automuting
 #AUTOMUTE_ON
@@ -291,7 +297,9 @@ MINUTE_TOPIC_LIMIT 100
 ##How long to wait between messaging admins about occurences of an unique error
 #ERROR_MSG_DELAY 50
 
-RESPAWN_DELAY 0
+NO_RESPAWN_DELAYS 0
+
+MAX_EXPECTED_PLAYERS 50
 
 #show mods in staff who
 SHOW_MODS 1
@@ -325,6 +333,14 @@ ANIMAL_DELAY 0
 LIGHTING_IS_RUSTIC 0
 MACHINERY_DOES_NOT_USE_POWER 1
 
+## Use one of three formats here: 'VALUE1, VALUE2, VALUE3', 'ALL', or 'NONE'
+## Valid seasons are 'SUMMER', 'SPRING', 'FALL', 'WINTER'
+## Valid weathers are 'RAIN', 'SNOW'
+## Having a value of 'NONE' for seasons means the only available season is Spring
+
+ENABLED_SEASONS ALL 
+ENABLED_WEATHER RAIN
+
 ##Train stuff
 
 GERMAN_TRAIN_CARS_OFFICER 1
@@ -336,3 +352,7 @@ GERMAN_SUPPLYTRAIN_CARS 4
 ##WW2 job stuff
 
 PARATROOPER_DROP_TIME 3000
+
+## Dumb memes
+
+ALLOW_DABBING 

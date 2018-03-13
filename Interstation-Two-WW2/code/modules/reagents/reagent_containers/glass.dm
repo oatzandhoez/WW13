@@ -18,9 +18,9 @@
 	var/label_text = ""
 
 	var/list/can_be_placed_into = list(
-		/obj/machinery/chem_master/,
-		/obj/machinery/chemical_dispenser,
-		/obj/machinery/reagentgrinder,
+		/obj/structure/chem_master/,
+		/obj/structure/chemical_dispenser,
+		/obj/structure/reagentgrinder,
 		/obj/structure/table,
 		/obj/structure/closet,
 		/obj/structure/sink,
@@ -29,7 +29,7 @@
 	//	/obj/machinery/dna_scannernew,
 		/obj/item/weapon/grenade/chem_grenade,
 		/obj/item/weapon/storage/secure/safe,
-		/obj/machinery/iv_drip,
+		/obj/structure/iv_drip,
 	//	/obj/machinery/disease2/incubator,
 	//	/obj/machinery/disposal,
 		/mob/living/simple_animal/cow,
@@ -39,6 +39,8 @@
 	//	/obj/machinery/biogenerator,
 	//	/obj/machinery/constructable_frame
 		)
+
+	dropsound = 'sound/effects/drop_glass.ogg'
 
 	New()
 		..()
@@ -250,7 +252,7 @@
 	volume = 100
 
 	on_reagent_change()
-		switch(src.reagents.total_volume)
+		switch(reagents.total_volume)
 			if(0)
 				icon_state = "blender_jug_e"
 			if(1 to 75)

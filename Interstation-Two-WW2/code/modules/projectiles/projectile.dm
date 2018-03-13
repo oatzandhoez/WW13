@@ -17,10 +17,12 @@
 	anchored = TRUE //There's a reason this is here, Mport. God fucking damn it -Agouri. Find&Fix by Pete. The reason this is here is to stop the curving of emitter shots.
 	pass_flags = PASSTABLE
 	mouse_opacity = FALSE
+
 	var/bumped = FALSE		//Prevents it from hitting more than one guy at once
 	var/hitsound_wall = ""//"ricochet"
 	var/def_zone = ""	//Aiming at
 	var/mob/firer = null//Who shot it
+	var/firer_original_dir = null
 	var/obj/item/weapon/gun/firedfrom = null // gun which shot it
 	var/silenced = FALSE	//Attack message
 	var/yo = null
@@ -34,7 +36,7 @@
 	var/p_x = 16
 	var/p_y = 16 // the pixel location of the tile that the player clicked. Default is the center
 
-	var/accuracy = FALSE
+	var/accuracy = 0
 	var/dispersion = 0.0
 
 	var/damage = 10
@@ -43,7 +45,9 @@
 	var/taser_effect = FALSE //If set then the projectile will apply it's agony damage using stun_effect_act() to mobs it hits, and other damage will be ignored
 	var/check_armour = "bullet" //Defines what armor to use when it hits things.  Must be set to bullet, laser, energy,or bomb	//Cael - bio and rad are also valid
 	var/projectile_type = /obj/item/projectile
-	var/penetrating = FALSE //If greater than zero, the projectile will pass through dense objects as specified by on_penetrate()
+	var/penetrating = 0 //If greater than zero, the projectile will pass through dense objects as specified by on_penetrate()
+	var/gibs = FALSE
+	var/crushes = FALSE
 	var/kill_count = 30 //This will de-increment every process(). When == 0, it will delete the projectile.
 		//Effects
 	var/stun = FALSE
@@ -106,6 +110,9 @@
 
 //return TRUE if the projectile should be allowed to pass through after all, FALSE if not.
 /obj/item/projectile/proc/check_penetrate(var/atom/A)
+	if (istype(A, /turf/wall))
+		if (prob(50))
+			return FALSE
 	return TRUE
 
 /obj/item/projectile/proc/check_fire(atom/target as mob, var/mob/living/user as mob)  //Checks if you can hit them or not.
@@ -136,6 +143,7 @@
 		return TRUE
 
 	firer = user
+	firer_original_dir = firer.dir
 	firedfrom = launcher
 	def_zone = target_zone
 
@@ -155,7 +163,7 @@
 	original = target
 	loc = curloc
 	starting = curloc
-	current = curloc
+
 	yo = targloc.y - curloc.y + y_offset
 	xo = targloc.x - curloc.x + x_offset
 
@@ -167,16 +175,20 @@
 
 	return FALSE
 
-// fixes grenades?
 /obj/item/projectile/proc/launch_fragment(atom/target)
 
+	var/turf/curloc = loc
 	var/turf/targloc = get_turf(target)
 
-	if (!istype(targloc))
+	if (!istype(targloc) || !istype(curloc))
 		qdel(src)
 		return TRUE
 
-	if(targloc == get_turf(src)) //Shooting something in the same turf
+	firer = null
+	firedfrom = null
+	def_zone = "chest"
+
+	if(targloc == curloc) //Shooting something in the same turf
 		target.pre_bullet_act(src)
 		target.bullet_act(src, "chest")
 		on_impact(target)
@@ -184,12 +196,13 @@
 		return FALSE
 
 	original = target
-	loc = get_turf(src)
-	starting = get_turf(src)
-	current = get_turf(src)
-	yo = targloc.y - y
-	xo = targloc.x - x
+	loc = curloc
+	starting = curloc
+	current = curloc
+	yo = targloc.y - curloc.y
+	xo = targloc.x - curloc.x
 
+	shot_from = null
 	silenced = FALSE
 
 	spawn()
@@ -208,6 +221,7 @@
 	loc = get_turf(user) //move the projectile out into the world
 
 	firer = user
+	firer_original_dir = firer.dir
 	firedfrom = launcher
 	shot_from = launcher.name
 	silenced = launcher.silenced
@@ -216,11 +230,12 @@
 
 //Used to change the direction of the projectile in flight.
 /obj/item/projectile/proc/redirect(var/new_x, var/new_y, var/atom/starting_loc, var/mob/new_firer=null)
-	var/turf/new_target = locate(new_x, new_y, src.z)
+	var/turf/new_target = locate(new_x, new_y, z)
 
 	original = new_target
 	if(new_firer)
 		firer = src
+		firer_original_dir = firer.dir
 
 	setup_trajectory(starting_loc, new_target)
 
@@ -233,6 +248,8 @@
 //	miss_modifier = max(15*(distance-2) - round(15*accuracy) + miss_modifier, FALSE)
 //	var/zoomed = (accuracy >= firedfrom.scoped_accuracy && firedfrom.scoped_accuracy > firedfrom.accuracy)
 	var/miss_chance = get_miss_chance(def_zone, distance, accuracy, miss_modifier)
+	if (istype(src, /obj/item/projectile/bullet/rifle/murder) || istype(src, /obj/item/projectile/bullet/shotgun/murder))
+		miss_chance = 0
 	var/hit_zone = get_zone_with_miss_chance(def_zone, target_mob, miss_chance, ranged_attack=(distance > TRUE || original != target_mob), range = abs_dist(target_mob, firer)) //if the projectile hits a target we weren't originally aiming at then retain the chance to miss
 	var/result = PROJECTILE_FORCE_MISS
 
@@ -243,7 +260,7 @@
 
 	if(result == PROJECTILE_FORCE_MISS)
 		if(!silenced)
-			visible_message("<span class='notice'>\The [src] misses [target_mob] narrowly!</span>")
+		//	visible_message("<span class='notice'>\The [src] misses [target_mob] narrowly!</span>")
 			playsound(target_mob, "miss_sound", 60, TRUE)
 
 		return FALSE
@@ -259,9 +276,9 @@
 	if(!no_attack_log)
 		if(istype(firer, /mob))
 
-			var/attacker_message = "shot with \a [src.type]"
-			var/victim_message = "shot with \a [src.type]"
-			var/admin_message = "shot (\a [src.type])"
+			var/attacker_message = "shot with \a [type]"
+			var/victim_message = "shot with \a [type]"
+			var/admin_message = "shot (\a [type])"
 
 			admin_attack_log(firer, target_mob, attacker_message, victim_message, admin_message)
 		else
@@ -281,6 +298,9 @@
 	if(A == firer)
 		loc = A.loc
 		return FALSE //cannot shoot yourself
+
+	if (istype(A, /obj/structure/window/sandbag))
+		return FALSE
 
 	if((bumped && !forced) || (A in permutated))
 		return FALSE
@@ -314,7 +334,7 @@
 				attack_mob(M, distance)
 
 	//penetrating projectiles can pass through things that otherwise would not let them
-	if(!passthrough && penetrating > FALSE)
+	if(!passthrough && penetrating > 0)
 		if(check_penetrate(A))
 			passthrough = TRUE
 		penetrating--
@@ -346,15 +366,14 @@
 /obj/item/projectile/CanPass(atom/movable/mover, turf/target, height=0, air_group=0)
 	return TRUE
 
-
 /obj/item/projectile/process()
-	var/first_step = TRUE
+	var/first_step = 1
 
 	//plot the initial trajectory
 	setup_trajectory()
 
 	spawn while(src && loc)
-		if(--kill_count < TRUE)
+		if(--kill_count < 1)
 			loc.pre_bullet_act(src)
 			on_impact(loc) //for any final impact behaviours
 			spawn (1)
@@ -366,7 +385,7 @@
 			return
 		if((!( current ) || loc == current))
 			current = locate(min(max(x + xo, TRUE), world.maxx), min(max(y + yo, TRUE), world.maxy), z)
-		if((x == TRUE || x == world.maxx || y == TRUE || y == world.maxy))
+		if((x == 1 || x == world.maxx || y == 1 || y == world.maxy))
 			loc.pre_bullet_act(src)
 			on_impact(loc)
 			spawn (1)
@@ -403,73 +422,9 @@
 		if(!hitscan)
 			if (prob(100/speed))
 				sleep(step_delay)	//add delay between movement iterations if it's not a hitscan weapon
-/*
-/obj/item/projectile/process()
-	var/first_step = TRUE
 
-	spawn while(src && src.loc)
-		if(kill_count-- < TRUE)
-			on_impact(src.loc) //for any final impact behaviours
-			qdel(src)
-			return
-		if((!( current ) || loc == current))
-			current = locate(min(max(x + xo, TRUE), world.maxx), min(max(y + yo, TRUE), world.maxy), z)
-		if((x == TRUE || x == world.maxx || y == TRUE || y == world.maxy))
-			qdel(src)
-			return
-
-		trajectory.increment()	// increment the current location
-		location = trajectory.return_location(location)		// update the locally stored location data
-
-		if(!location)
-			qdel(src)	// if it's left the world... kill it
-			return
-
-		before_move()
-		Move(location.return_turf())
-
-		if(!bumped && !isturf(original))
-			if(loc == get_turf(original))
-				if(!(original in permutated))
-					if(Bump(original))
-						return
-
-		if(first_step)
-			muzzle_effect(effect_transform)
-			first_step = FALSE
-		else if(!bumped)
-			tracer_effect(effect_transform)
-
-		if(!hitscan)
-			sleep(step_delay)	//add delay between movement iterations if it's not a hitscan weapon
-*/
 /obj/item/projectile/proc/before_move()
 	return FALSE
-/*
-/obj/item/projectile/proc/setup_trajectory(turf/startloc, turf/targloc, var/x_offset = FALSE, var/y_offset = FALSE)
-	// setup projectile state
-	starting = startloc
-	current = startloc
-//	yo = targloc.y - startloc.y + y_offset
-//	xo = targloc.x - startloc.x + x_offset
-
-	// trajectory dispersion
-	var/offset = FALSE
-	if(dispersion)
-		var/radius = round(dispersion*9, TRUE)
-		offset = rand(-radius, radius)
-
-	// plot the initial trajectory
-	trajectory = new()
-	trajectory.setup(starting, original, pixel_x, pixel_y, angle_offset=offset)
-
-	// generate this now since all visual effects the projectile makes can use it
-	effect_transform = new()
-	effect_transform.Scale(trajectory.return_hypotenuse(), TRUE)
-	effect_transform.Turn(-trajectory.return_angle())		//no idea why this has to be inverted, but it works
-
-	transform = turn(transform, -(trajectory.return_angle() + 90)) //no idea why 90 needs to be added, but it works
-*/
 
 /obj/item/projectile/proc/setup_trajectory()
 	// trajectory dispersion

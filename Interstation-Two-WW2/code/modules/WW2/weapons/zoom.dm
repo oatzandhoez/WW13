@@ -12,7 +12,7 @@ Parts of code courtesy of Super3222
 	var/zoomed = FALSE
 	var/datum/action/toggle_scope/azoom
 	attachment_type = ATTACH_SCOPE
-	slot_flags = SLOT_POCKET
+	slot_flags = SLOT_POCKET|SLOT_BELT
 
 /obj/item/weapon/attachment/scope/New()
 	..()
@@ -22,6 +22,7 @@ Parts of code courtesy of Super3222
 	name = "generic adjustable scope"
 	var/min_zoom = 3
 	var/max_zoom = 3
+	var/zooming = FALSE
 
 /obj/item/weapon/attachment/scope/adjustable/New()
 	..()
@@ -30,22 +31,22 @@ Parts of code courtesy of Super3222
 /obj/item/weapon/attachment/scope/adjustable/sniper_scope/zoom()
 	..()
 	if(A_attached)
-		var/obj/item/weapon/gun/L = loc //loc is the gun this is attached to
+		var/obj/item/weapon/gun/G = loc //loc is the gun this is attached to
 		var/zoom_offset = round(world.view * zoom_amt)
 		if(zoomed)
-			if(L.accuracy)
-				L.accuracy = L.scoped_accuracy + zoom_offset
-			if(L.recoil)
-				L.recoil = round(L.recoil*(zoom_amt/5)+1)//recoil is worse when looking through a scope
+			if(G.accuracy)
+				G.accuracy = G.scoped_accuracy + zoom_offset
+			if(G.recoil)
+				G.recoil = round(G.recoil*(zoom_amt/5)+1) //recoil is worse when looking through a scope
 		else
-			L.accuracy = initial(L.accuracy)
-			L.recoil = initial(L.recoil)
+			G.accuracy = initial(G.accuracy)
+			G.recoil = initial(G.recoil)
 
 //Not actually an attachment
 /obj/item/weapon/attachment/scope/adjustable/binoculars
 	name = "binoculars"
 	desc = "A pair of binoculars."
-	max_zoom = 25
+	max_zoom = 21
 	attachable = FALSE
 
 /obj/item/weapon/attachment/scope/adjustable/verb/adjust_scope_verb()
@@ -62,34 +63,44 @@ Parts of code courtesy of Super3222
 
 	if(!Adjacent(user))
 		return
-	if(zoomed)
-		zoom(user, FALSE)
 
-	var/input = input(user, "Set the zoom amount.", "Zoom" , "") as num
-	if(input == zoom_amt)
+	if (zooming)
 		return
 
-	var/dial_check = FALSE
+	if(zoomed)
+		zoom(user, 0)
 
-	if(input > max_zoom)
-		if(zoom_amt == max_zoom)
-			user << "<span class='warning'>You can't adjust it any further.</span>"
-			return
-		else
-			zoom_amt = max_zoom
-			dial_check = TRUE
-	else if(input < min_zoom)
-		if(zoom_amt == min_zoom)
-			user << "<span class='warning'>You can't adjust it any further.</span>"
-			return
-		else
-			zoom_amt = min_zoom
-	else
-		if(input > zoom_amt)
-			dial_check = TRUE
-		zoom_amt = input
+	zooming = TRUE
 
-	user << "<span class='notice'>You twist the dial on [src] [dial_check ? "clockwise, increasing" : "counterclockwise, decreasing"] the zoom range to [zoom_amt].</span>"
+	if (do_after(user, 7, src))
+
+		zooming = FALSE
+
+		var/input = input(user, "Set the zoom amount.", "Zoom" , "") as num
+		if(input == zoom_amt)
+			return
+
+		var/dial_check = FALSE
+
+		if(input > max_zoom)
+			if(zoom_amt == max_zoom)
+				user << "<span class='warning'>You can't adjust it any further.</span>"
+				return
+			else
+				zoom_amt = max_zoom
+				dial_check = TRUE
+		else if(input < min_zoom)
+			if(zoom_amt == min_zoom)
+				user << "<span class='warning'>You can't adjust it any further.</span>"
+				return
+			else
+				zoom_amt = min_zoom
+		else
+			if(input > zoom_amt)
+				dial_check = TRUE
+			zoom_amt = input
+
+		user << "<span class='notice'>You twist the dial on [src] [dial_check ? "clockwise, increasing" : "counterclockwise, decreasing"] the zoom range to [zoom_amt].</span>"
 
 // An ugly hack called a boolean proc, made it like this to allow special
 // behaviour without big overrides. So special snowflake weapons like the minigun
@@ -119,10 +130,17 @@ Parts of code courtesy of Super3222
 		return FALSE
 	return TRUE
 
+/mob/living/var/next_zoom = -1
+
 /obj/item/weapon/attachment/scope/proc/zoom(mob/living/user, forced_zoom, var/bypass_can_zoom = FALSE)
 
 	if(!user || !user.client)
 		return
+
+	if (user.next_zoom > world.time)
+		return
+
+	user.next_zoom = world.time + 10
 
 	switch(forced_zoom)
 		if(FALSE)
@@ -149,7 +167,7 @@ Parts of code courtesy of Super3222
 						_y = -zoom_amt
 					if(WEST)
 						_x = -zoom_amt
-				if(zoom_amt > world.view)//So we can still see the player at the edge of the screen if the zoom amount is greater than the world view
+				if(zoom_amt > world.view && user && user.client)//So we can still see the player at the edge of the screen if the zoom amount is greater than the world view
 					var/view_offset = round((zoom_amt - world.view)/2, TRUE)
 					user.client.view += view_offset
 					switch(user.dir)
@@ -170,14 +188,14 @@ Parts of code courtesy of Super3222
 					animate(user.client, pixel_x = FALSE, pixel_y = FALSE)
 					user.client.pixel_x = world.icon_size*_x
 					user.client.pixel_y = world.icon_size*_y
-				user.visible_message("[user] peers through the [zoomdevicename ? "[zoomdevicename] of \the [src.name]" : "[src.name]"].")
+				user.visible_message("[user] peers through the [zoomdevicename ? "[zoomdevicename] of \the [name]" : "[name]"].")
 			else
 				zoomed = FALSE
 	else //Resets everything
 		user.client.pixel_x = FALSE
 		user.client.pixel_y = FALSE
 		user.client.view = world.view
-		user.visible_message("[zoomdevicename ? "[user] looks up from \the [src.name]" : "[user] lowers \the [src.name]"].")
+		user.visible_message("[zoomdevicename ? "[user] looks up from \the [name]" : "[user] lowers \the [name]"].")
 
 	if (zoomed)
 		// prevent scopes from bugging out opened storage objs in mob process
@@ -192,6 +210,7 @@ Parts of code courtesy of Super3222
 	check_flags = AB_CHECK_ALIVE|AB_CHECK_RESTRAINED|AB_CHECK_STUNNED|AB_CHECK_LYING
 	button_icon_state = "sniper_zoom"
 	var/obj/item/weapon/attachment/scope/scope = null
+	var/boundto = null
 
 /datum/action/toggle_scope/IsAvailable()
 	. = ..()
@@ -217,6 +236,29 @@ Parts of code courtesy of Super3222
 	..()
 	if(azoom)
 		azoom.Grant(user)
+
+/obj/item/weapon/attachment/scope/on_enter_storage(S)
+	..(S)
+	if (azoom)
+		azoom.Remove(azoom.owner)
+
+/obj/item/weapon/attachment/scope/on_changed_slot()
+	..()
+
+	if (istype(loc, /obj/item))
+		var/obj/item/holder = loc
+		var/mob/user = holder.loc
+		if (user && istype(user))
+			if (!(user.r_hand == holder || user.l_hand == holder))
+				if (azoom)
+					azoom.Remove(user)
+
+	else if (istype(loc, /mob))
+		var/mob/user = loc
+		if (user && istype(user))
+			if (!(user.r_hand == src || user.l_hand == src))
+				if (azoom)
+					azoom.Remove(user)
 
 /obj/item/weapon/attachment/scope/dropped(mob/user)
 	..()
@@ -252,7 +294,7 @@ Parts of code courtesy of Super3222
 	if(client && actions.len)
 		if(client.pixel_x || client.pixel_y) //Cancel currently scoped weapons
 			for(var/datum/action/toggle_scope/T in actions)
-				if(T.scope.zoomed && src.m_intent=="run")
+				if(T.scope.zoomed && m_intent=="run")
 					shake_camera(src, 2, rand(2,3))
 
 	for (var/obj/item/weapon/gun/projectile/minigun/M in range(2, src))

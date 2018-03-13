@@ -172,6 +172,12 @@ world/loop_checks = FALSE
 		. = !A.Destroy()
 		if(. && A)
 			A.finalize_qdel()
+		if (isatom(A))
+			var/atom/AT = A
+			AT.invisibility = 101
+			if (ismovable(A))
+				var/atom/movable/AM = A
+				AM.loc = null // maybe fixes projectiles, hopefully doesn't break anything - Kachnov
 
 /proc/qdel_list(var/list/L)
 	if (!L)
@@ -274,10 +280,10 @@ world/loop_checks = FALSE
 		for(var/varname in thing.vars)
 			var/variable = thing.vars[varname]
 			if(variable == src)
-				testing("Found [src.type] \ref[src] in [thing.type]'s [varname] var.")
+				testing("Found [type] \ref[src] in [thing.type]'s [varname] var.")
 			else if(islist(variable))
 				if(src in variable)
-					testing("Found [src.type] \ref[src] in [thing.type]'s [varname] list var.")
+					testing("Found [type] \ref[src] in [thing.type]'s [varname] list var.")
 	testing("Completed search for references to a [type].")
 	usr.client.running_find_references = null
 

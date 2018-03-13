@@ -9,6 +9,7 @@
 	icon_state = "purple1"
 	dynamic_lighting = TRUE
 
+
 /area/prishtina/New()
 	..()
 	if (istype(src, /area/prishtina/german) && !istype(src, /area/prishtina/german/ss_torture_room))
@@ -19,7 +20,9 @@
 		name = "(Waffen-S.S.) [name]"
 	else if (istype(src, /area/prishtina/german/ss_torture_room))
 		name = "(Waffen-S.S.) [name]"
-	else
+	else if (istype(src, /area/prishtina/void/sky/paratrooper_drop_zone))
+		name = "(Sky) [name]"
+	else if (!istype(src, /area/prishtina/void/sky))
 		name = "(Civilian) [name]"
 
 // Basic Area Definitions
@@ -36,6 +39,73 @@
 	icon_state = "purple1"
 
 /area/prishtina/no_mans_land/invisible_wall
+	icon_state = "green1"
+
+/area/prishtina/no_mans_land/invisible_wall/inside
+	location = AREA_INSIDE
+
+/area/prishtina/no_mans_land/sector1
+	name = "Northwestern Town"
+/area/prishtina/no_mans_land/sector1/ss1
+/area/prishtina/no_mans_land/sector1/ss2
+/area/prishtina/no_mans_land/sector1/ss3
+/area/prishtina/no_mans_land/sector1/ss4
+
+/area/prishtina/no_mans_land/sector2
+	name = "Northern Town"
+/area/prishtina/no_mans_land/sector2/ss1
+/area/prishtina/no_mans_land/sector2/ss2
+/area/prishtina/no_mans_land/sector2/ss3
+/area/prishtina/no_mans_land/sector2/ss4
+
+/area/prishtina/no_mans_land/sector3
+	name = "Northeastern Town"
+/area/prishtina/no_mans_land/sector3/ss1
+/area/prishtina/no_mans_land/sector3/ss2
+/area/prishtina/no_mans_land/sector3/ss3
+/area/prishtina/no_mans_land/sector3/ss4
+
+/area/prishtina/no_mans_land/sector4
+	name = "Western Town"
+/area/prishtina/no_mans_land/sector4/ss1
+/area/prishtina/no_mans_land/sector4/ss2
+/area/prishtina/no_mans_land/sector4/ss3
+/area/prishtina/no_mans_land/sector4/ss4
+
+/area/prishtina/no_mans_land/sector5
+	name = "Central Town"
+/area/prishtina/no_mans_land/sector5/ss1
+/area/prishtina/no_mans_land/sector5/ss2
+/area/prishtina/no_mans_land/sector5/ss3
+/area/prishtina/no_mans_land/sector5/ss4
+
+/area/prishtina/no_mans_land/sector6
+	name = "Eastern Town"
+/area/prishtina/no_mans_land/sector6/ss1
+/area/prishtina/no_mans_land/sector6/ss2
+/area/prishtina/no_mans_land/sector6/ss3
+/area/prishtina/no_mans_land/sector6/ss4
+
+/area/prishtina/no_mans_land/sector7
+	name = "Southwestern Town"
+/area/prishtina/no_mans_land/sector7/ss1
+/area/prishtina/no_mans_land/sector7/ss2
+/area/prishtina/no_mans_land/sector7/ss3
+/area/prishtina/no_mans_land/sector7/ss4
+
+/area/prishtina/no_mans_land/sector8
+	name = "Southern Town"
+/area/prishtina/no_mans_land/sector8/ss1
+/area/prishtina/no_mans_land/sector8/ss2
+/area/prishtina/no_mans_land/sector8/ss3
+/area/prishtina/no_mans_land/sector8/ss4
+
+/area/prishtina/no_mans_land/sector9
+	name = "Southeastern Town"
+/area/prishtina/no_mans_land/sector9/ss1
+/area/prishtina/no_mans_land/sector9/ss2
+/area/prishtina/no_mans_land/sector9/ss3
+/area/prishtina/no_mans_land/sector9/ss4
 
 /area/prishtina/forest
 	dynamic_lighting = FALSE
@@ -43,10 +113,9 @@
 	icon_state = "purple1"
 
 /area/prishtina/forest/north/invisible_wall
-
 /area/prishtina/forest/south/invisible_wall
 
-/* sector TRUE = top left, sector 2 = top center, sector 3 = top right
+/* sector 1 = top left, sector 2 = top center, sector 3 = top right
    sector 4 = middle left, sector 5 = middle center, sector 6 = middle right
    sector 7 = bottom left, sector 8 = bottom center, sector 9 = bottom right */
 
@@ -140,6 +209,10 @@
 	name = "Admin Zone"
 	location = AREA_INSIDE
 
+/area/prishtina/admin/tonkland
+	name = "Tonk Zone"
+	location = AREA_INSIDE
+
 // houses in No Man's Land
 
 /area/prishtina/houses
@@ -161,6 +234,13 @@
 /area/prishtina/houses/nml_twelve
 /area/prishtina/houses/nml_thirteen
 /area/prishtina/houses/nml_fourteen
+/area/prishtina/houses/nml_fifteen
+/area/prishtina/houses/nml_sixteen
+/area/prishtina/houses/nml_seventeen
+/area/prishtina/houses/nml_eighteen
+/area/prishtina/houses/nml_nineteen
+/area/prishtina/houses/nml_twenty
+/area/prishtina/houses/nml_twentyone
 
 /area/prishtina/houses/sov_one
 /area/prishtina/houses/sov_two
@@ -271,6 +351,38 @@
 /area/prishtina/void/sky
 	icon_state = "purple1"
 	name = "The Sky"
+	var/corresponding_area_type = null
+	var/corresponding_area_allow_subtypes = FALSE
+
+/area/prishtina/void/sky/paratrooper_drop_zone
+	corresponding_area_type = /area/prishtina/forest
+	corresponding_area_allow_subtypes = TRUE
+	name = "The Sky"
+
+/area/prishtina/void/sky/paratrooper_drop_zone/plane
+	corresponding_area_type = /area/prishtina/forest
+	corresponding_area_allow_subtypes = TRUE
+	name = "Fallschirmjager Plane"
+
+/area/prishtina/void/soviet_command_center
+
+/area/prishtina/void/civilian_second_floors
+/area/prishtina/void/civilian_second_floors/house1
+/area/prishtina/void/civilian_second_floors/house2
+/area/prishtina/void/civilian_second_floors/house3
+/area/prishtina/void/civilian_second_floors/house4
+/area/prishtina/void/civilian_second_floors/outside
+	dynamic_lighting = FALSE
+
+/area/prishtina/void/civilian_basements
+/area/prishtina/void/civilian_basements/house1
+	parent_area_type = /area/prishtina/houses/sov_three
+/area/prishtina/void/civilian_basements/house2
+	parent_area_type = /area/prishtina/houses/sov_thirteen
+/area/prishtina/void/civilian_basements/house3
+	parent_area_type = /area/prishtina/houses/nml_two
+
+
 // end of wormhole areas
 
 // german areas
@@ -278,16 +390,21 @@
 /area/prishtina/german
 
 /area/prishtina/german/main_area
-	name = "German Base"
+	name = "Base"
 	icon_state = "red1"
 	dynamic_lighting = FALSE
+
+/area/prishtina/german/main_area/inside
+	location = AREA_INSIDE
+	icon_state = "red2"
+	dynamic_lighting = TRUE
 
 /area/prishtina/german/main_area/sector1
 /area/prishtina/german/main_area/sector2
 /area/prishtina/german/main_area/sector3
 
 /area/prishtina/german/main_area/dogshed
-	name = "German Dogshed"
+	name = "Dogshed"
 	icon_state = "red2"
 	dynamic_lighting = FALSE
 	location = AREA_INSIDE
@@ -298,7 +415,7 @@
 	location = AREA_INSIDE
 
 /area/prishtina/german/gas_chamber
-	name = "German Gas Chamber"
+	name = "Gas Chamber"
 	icon_state = "red3"
 	dynamic_lighting = FALSE
 
@@ -355,6 +472,25 @@
 	icon_state = "blue2"
 	location = AREA_INSIDE
 
+/area/prishtina/german/armory/supplydrop
+	name = "Supplydrop Pad"
+	icon_state = "blue3"
+	location = AREA_OUTSIDE
+
+/area/prishtina/german/armory/room1
+	icon_state = "green1"
+
+/area/prishtina/german/armory/room2
+	icon_state = "green2"
+
+/area/prishtina/german/armory/room3
+	icon_state = "green3"
+
+/area/prishtina/german/prison
+	name = "Prison"
+	icon_state = "green1"
+	location = AREA_INSIDE
+
 /area/prishtina/german/armory/train
 	name = "Armory"
 	icon_state = "blue3"
@@ -370,6 +506,16 @@
 	name = "Kitchen"
 	icon_state = "blue5"
 	location = AREA_INSIDE
+
+/area/prishtina/german/kitchen/storage
+	name = "Kitchen Storage"
+	icon_state = "blue4"
+
+/area/prishtina/german/kitchen/cellar
+	name = "Kitchen Cellar"
+	icon_state = "blue3"
+	location = AREA_INSIDE
+	parent_area_type = /area/prishtina/german/kitchen/storage
 
 /area/prishtina/german/shower1
 	name = "Showers #1"
@@ -433,7 +579,7 @@
 	location = AREA_INSIDE
 
 /area/prishtina/german/command/office
-	name = "Feldwebel's Office"
+	name = "Hauptmann's Office"
 	icon_state = "green2"
 	location = AREA_INSIDE
 
@@ -456,6 +602,16 @@
 	icon_state = "blue1"
 	location = AREA_INSIDE
 
+/area/prishtina/german/ss_armory
+	name = "SS Armory"
+	icon_state = "green1"
+	location = AREA_INSIDE
+
+/area/prishtina/german/ss_prison
+	name = "SS Prison"
+	icon_state = "green2"
+	location = AREA_INSIDE
+
 /area/prishtina/german/janitor
 	name = "Janitor's Closet"
 	icon_state = "blue2"
@@ -465,6 +621,50 @@
 	name = "Medical Area"
 	icon_state = "blue3"
 	location = AREA_INSIDE
+	dynamic_lighting = TRUE
+
+/area/prishtina/german/medical/storage
+	name = "Medical Storage"
+	icon_state = "blue4"
+
+/area/prishtina/german/medical/hallway
+	name = "Medical Hallway"
+	icon_state = "blue5"
+
+/area/prishtina/german/medical/surgery1
+	name = "Surgery Room #1"
+	icon_state = "blue1"
+
+/area/prishtina/german/medical/surgery2
+	name = "Surgery Room #2"
+	icon_state = "blue2"
+
+/area/prishtina/german/medical/chemistry
+	name = "Chemistry Room"
+	icon_state = "blue3"
+
+/area/prishtina/german/medical/morgue
+	name = "Morgue"
+	icon_state = "blue4"
+	parent_area_type = /area/prishtina/german/medical/hallway
+
+// special german areas
+
+/area/prishtina/german/bunker
+	name = "Bunker"
+	location = AREA_INSIDE
+	dynamic_lighting = FALSE
+	base_turf = /turf/floor/dirt
+
+/area/prishtina/german/lift
+	name = "Lift"
+	location = AREA_INSIDE
+
+/area/prishtina/german/lift/up
+	name = "Upper Lift"
+
+/area/prishtina/german/lift/down
+	name = "Lower Lift"
 
 // soviet areas
 
@@ -474,42 +674,86 @@
 // for the small map
 
 /area/prishtina/soviet/small_map/main_area
-	name = "Soviet Main Area"
+	name = "Main Area"
 	icon_state = "blue1"
 
 /area/prishtina/soviet/small_map/inside
-	name = "Soviet Inside Area"
+	name = "Inside Area"
 	icon_state = "red2"
 	location = AREA_INSIDE
 
 /area/prishtina/soviet/small_map/inside/armory
-	name = "Soviet Armory"
+	name = "Armory"
+	icon_state = "red3"
+
+/area/prishtina/soviet/small_map/inside/engineering
+	name = "Engineering Area"
 	icon_state = "red3"
 
 /area/prishtina/soviet/small_map/inside/resting_area
-	name = "Soviet Resting Area"
+	name = "Resting Area"
 	icon_state = "red4"
 
 /area/prishtina/soviet/small_map/inside/gearing
-	name = "Soviet Gearing Up Area"
+	name = "Gearing Up Area"
 	icon_state = "red5"
 
 /area/prishtina/soviet/small_map/inside/relaxation
-	name = "Soviet Relaxation Area"
+	name = "Relaxation Area"
 	icon_state = "red5"
 
 /area/prishtina/soviet/small_map/inside/kitchen
-	name = "Soviet Kitchen"
+	name = "Kitchen"
 	icon_state = "blue1"
 
+/area/prishtina/soviet/small_map/inside/kitchen/cellar
+	name = "Kitchen Cellar"
+	icon_state = "blue2"
+
 /area/prishtina/soviet/small_map/inside/commander_bedroom
-	name = "Soviet Commander Bedroom"
+	name = "Kapitan's Office"
 	icon_state = "blue1"
 
 /area/prishtina/soviet/small_map/inside/medical
-	name = "Soviet Medical Room"
+	name = "Medical Main Area"
 	icon_state = "blue2"
 
+/area/prishtina/soviet/small_map/inside/medical/storage
+	name = "Medical Storage"
+
+/area/prishtina/soviet/small_map/inside/medical/chemistry
+	name = "Chemistry Room"
+	icon_state = "blue3"
+
+/area/prishtina/soviet/small_map/inside/medical/hallway
+	name = "Medical Hallway"
+	icon_state = "blue4"
+
+/area/prishtina/soviet/small_map/inside/medical/surgery1
+	name = "Surgery Room #1"
+	icon_state = "blue5"
+
+/area/prishtina/soviet/small_map/inside/medical/surgery2
+	name = "Surgery Room #2"
+	icon_state = "blue4"
+
+/area/prishtina/soviet/small_map/inside/medical/morgue
+	name = "Morgue"
+	icon_state = "blue5"
+	parent_area_type = /area/prishtina/soviet/small_map/inside/medical/hallway
+
+/area/prishtina/soviet/small_map/inside/mparea
+	name = "MP Area"
+	icon_state = "green1"
+
+/area/prishtina/soviet/small_map/inside/prison
+	name = "Prison"
+	icon_state = "green2"
+	parent_area_type = /area/prishtina/soviet/small_map/inside/mparea
+
+/area/prishtina/soviet/small_map/main_area/supplypad
+	name = "Supply Pad"
+	icon_state = "green2"
 // for the large map
 
 /area/prishtina/soviet/bunker_entrance
@@ -523,7 +767,7 @@
 	dynamic_lighting = FALSE
 
 /area/prishtina/soviet/dogshed
-	name = "Soviet Dog Shed"
+	name = "Dog Shed"
 	icon_state = "blue1"
 	dynamic_lighting = TRUE
 	location = AREA_INSIDE
@@ -540,12 +784,12 @@
 // bunker areas
 
 /area/prishtina/soviet/bunker
-	name = "Soviet Bunker"
+	name = "Bunker"
 	location = AREA_INSIDE
 
 /area/prishtina/soviet/bunker/tunnel
 	icon_state = "red2"
-	name = "Soviet Bunker Tunnel"
+	name = "Bunker Tunnel"
 
 /area/prishtina/soviet/bunker/entrance
 	icon_state = "green1"
@@ -617,7 +861,7 @@
 
 /area/prishtina/soviet/lift/
 	icon_state = "blue1"
-	name = "Soviet Lift"
+	name = "Lift"
 	location = AREA_INSIDE
 
 /area/prishtina/soviet/lift/upper
@@ -626,7 +870,7 @@
 
 /area/prishtina/soviet/backup_armory
 	icon_state = "blue2"
-	name = "Soviet Backup Armory"
+	name = "Backup Armory"
 	location = AREA_INSIDE
 
 

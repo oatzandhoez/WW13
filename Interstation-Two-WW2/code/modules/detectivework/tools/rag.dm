@@ -1,3 +1,4 @@
+#define BURNING_RAG_LIFE_TICKS 10000 // pretty much forever
 
 /obj/item/clothing/gloves
 	var/transfer_blood = FALSE
@@ -9,7 +10,7 @@
 /obj/item/weapon/reagent_containers/glass/rag
 	name = "rag"
 	desc = "For cleaning up messes, you suppose."
-	w_class = TRUE
+	w_class = 1
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "rag"
 	amount_per_transfer_from_this = 5
@@ -17,9 +18,10 @@
 	volume = 10
 	can_be_placed_into = null
 	flags = OPENCONTAINER | NOBLUDGEON
+	dropsound = null
 
 	var/on_fire = FALSE
-	var/burn_time = 20 //if the rag burns for too long it turns to ashes
+	var/burn_time = BURNING_RAG_LIFE_TICKS //if the rag burns for too long it turns to ashes
 
 /obj/item/weapon/reagent_containers/glass/rag/New()
 	..()
@@ -39,7 +41,7 @@
 
 /obj/item/weapon/reagent_containers/glass/rag/attackby(obj/item/W, mob/user)
 	if(!on_fire)
-		if(istype(W, /obj/item/weapon/flame) || istype(W, /obj/item/clothing/mask/smokable/cigarette) || (istype(W, /obj/item/device/flashlight/flare) && W:on))
+		if(istype(W, /obj/item/weapon/flame) || istype(W, /obj/item/clothing/mask/smokable/cigarette) || (istype(W, /obj/item/device/flashlight/flare) && W:on) || (istype(W, /obj/item/weapon/weldingtool) && W:welding))
 			var/cont = FALSE
 			var/obj/item/weapon/flame/F = W
 			if (istype(F) && F.lit)
@@ -47,6 +49,10 @@
 			else if (istype(W, /obj/item/device/flashlight))
 				var/obj/item/device/flashlight/FL = W
 				if (FL.on)
+					cont = TRUE
+			else if (istype(W, /obj/item/weapon/weldingtool))
+				var/obj/item/weapon/weldingtool/WT = W
+				if (WT.welding)
 					cont = TRUE
 
 			if(cont)
@@ -123,26 +129,27 @@
 
 /obj/item/weapon/reagent_containers/glass/rag/attack(atom/target as obj|turf|area, mob/user as mob , flag)
 	if(isliving(target))
-		var/mob/living/M = target
-		if(on_fire)
-			user.visible_message("<span class='danger'>\The [user] hits [target] with [src]!</span>",)
-			user.do_attack_animation(src)
-			M.IgniteMob()
-		else if(reagents.total_volume)
-			if(user.targeted_organ == "mouth")
+		if (do_after(user, 20, get_turf(user)))
+			var/mob/living/M = target
+			if(on_fire)
+				user.visible_message("<span class='danger'>\The [user] hits [target] with [src]!</span>",)
 				user.do_attack_animation(src)
-				user.visible_message(
-					"<span class='danger'>\The [user] smothers [target] with [src]!</span>",
-					"<span class='warning'>You smother [target] with [src]!</span>",
-					"You hear some struggling and muffled cries of surprise"
-					)
+				M.IgniteMob()
+			else if(reagents.total_volume)
+				if(user.targeted_organ == "mouth")
+					user.do_attack_animation(src)
+					user.visible_message(
+						"<span class='danger'>\The [user] smothers [target] with [src]!</span>",
+						"<span class='warning'>You smother [target] with [src]!</span>",
+						"You hear some struggling and muffled cries of surprise"
+						)
 
-				//it's inhaled, so... maybe CHEM_BLOOD doesn't make a whole lot of sense but it's the best we can do for now
-				reagents.trans_to_mob(target, amount_per_transfer_from_this, CHEM_BLOOD)
-				update_name()
-			else
-				wipe_down(target, user)
-		return
+					//it's inhaled, so... maybe CHEM_BLOOD doesn't make a whole lot of sense but it's the best we can do for now
+					reagents.trans_to_mob(target, amount_per_transfer_from_this, CHEM_BLOOD)
+					update_name()
+				else
+					wipe_down(target, user)
+			return
 
 	return ..()
 
@@ -166,14 +173,14 @@
 		else if(!ismob(A)) //mobs are handled in attack() - this prevents us from wiping down people while smothering them.
 			wipe_down(A, user)
 		return
-
+/*
 /obj/item/weapon/reagent_containers/glass/rag/fire_act(datum/gas_mixture/air, exposed_temperature, exposed_volume)
 	if(exposed_temperature >= 50 + T0C)
 		ignite()
 	if(exposed_temperature >= 900 + T0C)
 		new /obj/effect/decal/cleanable/ash(get_turf(src))
 		qdel(src)
-
+*/
 //rag must have a minimum of 2 units welder fuel and at least 80% of the reagents must be welder fuel.
 //maybe generalize flammable reagents someday
 /obj/item/weapon/reagent_containers/glass/rag/proc/can_ignite()
@@ -219,8 +226,6 @@
 	update_name()
 	update_icon()
 
-#define BURNING_RAG_LIFE_TICKS 1000
-
 /obj/item/weapon/reagent_containers/glass/rag/process()
 	if(!can_ignite())
 		visible_message("<span class='warning'>\The [src] burns out.</span>")
@@ -230,16 +235,17 @@
 	if(isliving(loc))
 		var/mob/living/M = loc
 		M.IgniteMob()
+
 	var/turf/location = get_turf(src)
 	if(location)
 		location.hotspot_expose(700, 5)
 
-	if(burn_time <= FALSE)
+	if(burn_time <= 0)
 		processing_objects -= src
 		new /obj/effect/decal/cleanable/ash(location)
 		qdel(src)
 		return
 
-	reagents.remove_reagent("fuel", reagents.maximum_volume/BURNING_RAG_LIFE_TICKS)
+//	reagents.remove_reagent("fuel", reagents.maximum_volume/BURNING_RAG_LIFE_TICKS)
 	update_name()
 	burn_time--

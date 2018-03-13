@@ -100,28 +100,6 @@
 		var/obj/item/clothing/head/helmet/tactical/sovhelm/head = H.head
 		head.transform2german()
 
-/obj/item/clothing/under/sovuni
-	name = SOVIET_UNIFORM_NAME
-	desc = SOVIET_UNIFORM_DESC
-	icon_state = SOVIET_UNIFORM_STATE
-	item_state = SOVIET_UNIFORM_STATE
-	worn_state = SOVIET_UNIFORM_STATE
-
-/obj/item/clothing/under/sovuni/officer
-	name = "soviet officer's uniform"
-	desc = "A fancier, more pressed uniform of the Red Army, given to Soviet officers. It has a feel of pride and authority."
-	icon_state = "sovuniofficer"
-	item_state = "sovuniofficer"
-	worn_state = "sovuniofficer"
-
-/obj/item/clothing/under/sovuni/MP
-	name = "soviet MP's uniform"
-	desc = "A fancier, more pressed uniform of the Red Army, given to Soviet military police."
-	icon_state = "sovuni_MP"
-	item_state = "sovuni_MP"
-	worn_state = "sovuni_MP"
-
-
 /obj/item/clothing/under/geruni
 	name = GERMAN_UNIFORM_NAME
 	desc = GERMAN_UNIFORM_DESC
@@ -147,6 +125,8 @@
 /obj/item/clothing/under/geruni/verb/roll_sleeves()
 	set category = null
 	set src in usr
+	if (type != /obj/item/clothing/under/geruni)
+		return // no sprites - Kachnov
 	if (rolled)
 		item_state = "geruni"
 		worn_state = "geruni"
@@ -161,6 +141,13 @@
 		rolled = TRUE
 	update_clothing_icon()
 
+/obj/item/clothing/under/geruni/general
+	name = "Heer General uniform"
+	desc = "A comfortable and sturdy officer's uniform."
+	icon_state = "gerunigeneral"
+	item_state = "gerunigeneral"
+	worn_state = "gerunigeneral"
+
 /obj/item/clothing/under/geruni/falluni
 	name = "Fallschirmjager uniform"
 	desc = "Standart german uniform for fallschirmjagers. This is quite comfy and sturdy uniform."
@@ -168,30 +155,19 @@
 	item_state = "falluni"
 	worn_state = "falluni"
 
-/obj/item/clothing/suit/fallsparka
-	name = "Fallschirmjager Parka"
-	desc = "A warm and comfy parka for fallschirmjagers."
-	icon_state = "fallsparka"
-	item_state = "fallsparka"
-	worn_state = "fallsparka"
-	allowed = list(/obj/item/device/radio/rbs,/obj/item/device/radio/feldfu,/obj/item/device/radio/partisan)
-
-
-/obj/item/clothing/suit/sssmock
-	name = "S.S. Smock"
-	desc = "A camo S.S. overcoat that blends in well in the fall."
-	icon_state = "sssmock"
-	item_state = "sssmock"
-	worn_state = "sssmock"
-	allowed = list(/obj/item/device/radio/rbs,/obj/item/device/radio/feldfu,/obj/item/device/radio/partisan)
-
-
 /obj/item/clothing/under/geruni/ssuni
 	name = "SS uniform"
-	desc = "Camo uniform for ShutzStaffel soldiers. Sturdy, comfy, and makes you less visible in autumn. They gave you this too early by the way."
+	desc = "A black uniform ShutzStaffel soldiers. Sturdy and comfortable."
 	icon_state = "newssuni"
 	item_state = "newssuni"
 	worn_state = "newssuni"
+
+/obj/item/clothing/under/geruni/sscamo
+	name = "SS camo uniform"
+	desc = "Camo uniform for ShutzStaffel soldiers. Sturdy, comfy, and makes you less visible in autumn. They gave you this too early by the way."
+	icon_state = "ssunicamo"
+	item_state = "ssunicamo"
+	worn_state = "ssunicamo"
 
 /obj/item/clothing/under/geruni/ssformalofc
 	name = "SS Officer's Formal Uniform"
@@ -207,12 +183,60 @@
 	item_state = "gertankeruni"
 	worn_state = "gertankeruni"
 
+/obj/item/clothing/under/sovuni
+	name = SOVIET_UNIFORM_NAME
+	desc = SOVIET_UNIFORM_DESC
+	icon_state = SOVIET_UNIFORM_STATE
+	item_state = SOVIET_UNIFORM_STATE
+	worn_state = SOVIET_UNIFORM_STATE
+
+/obj/item/clothing/under/sovuni/camo
+	name = "Soviet Camo Uniform"
+	desc = "Camo uniform for Soviet soldiers. Sturdy, comfy, and makes you less visible in autumn. They gave you this too early by the way."
+	icon_state = "sovunicamo"
+	item_state = "sovunicamo"
+	worn_state = "sovunicamo"
+
+/obj/item/clothing/under/sovuni/officer
+	name = "Soviet Officer's uniform"
+	desc = "A fancier, more pressed uniform of the Red Army, given to Soviet officers. It has a feel of pride and authority."
+	icon_state = "sovuniofficer"
+	item_state = "sovuniofficer"
+	worn_state = "sovuniofficer"
+
+/obj/item/clothing/under/sovuni/MP
+	name = "Soviet MP's uniform"
+	desc = "A fancier, more pressed uniform of the Red Army, given to Soviet military police."
+	icon_state = "sovuni_MP"
+	item_state = "sovuni_MP"
+	worn_state = "sovuni_MP"
+
 /obj/item/clothing/under/sovuni/sovtankeruni
 	name = "Soviet Crewman Uniform"
 	desc = "Dark blue jumpsuit with a brown belt and bandolier."
 	icon_state = "sovtankeruni"
 	item_state = "sovtankeruni"
 	worn_state = "sovtankeruni"
+
+/obj/item/clothing/suit/fallsparka
+	name = "Fallschirmjager Parka"
+	desc = "A warm and comfy parka for fallschirmjagers."
+	icon_state = "fallsparka"
+	item_state = "fallsparka"
+	worn_state = "fallsparka"
+	allowed = list(/obj/item/device/radio/rbs,/obj/item/device/radio/feldfu,/obj/item/device/radio/partisan)
+
+/obj/item/clothing/suit/sssmock
+	name = "S.S. Smock"
+	desc = "A camo S.S. overcoat that blends in well in the fall."
+	icon_state = "sssmock"
+	item_state = "sssmock"
+	worn_state = "sssmock"
+	allowed = list(/obj/item/device/radio/rbs,/obj/item/device/radio/feldfu,/obj/item/device/radio/partisan)
+
+/obj/item/clothing/head/helmet/tactical
+	force = 7
+	throwforce = 15
 
 /obj/item/clothing/head/helmet/tactical/gerhelm
 	name = GERMAN_HELMET_NAME
@@ -286,9 +310,9 @@
 	desc = "Can hold gear like pistol, ammo and other thingies."
 	icon_state = "gerbelt"
 	item_state = "gerbelt"
-	storage_slots = 6
+	storage_slots = 12
 	max_w_class = 3
-	max_storage_space = 28
+	max_storage_space = 24
 	can_hold = list(
 		/obj/item/ammo_magazine,
 		/obj/item/weapon/material,
@@ -297,14 +321,42 @@
 		/obj/item/weapon/attachment,
 		/obj/item/weapon/gun/projectile/pistol,
 		/obj/item/weapon/melee/classic_baton,
-		/obj/item/device/flashlight
+		/obj/item/device/flashlight,
+		/obj/item/weapon/handcuffs,
+		/obj/item/ammo_casing/a145
 		)
+
+/obj/item/weapon/storage/belt/soviet_basic
+	name = "Small soviet belt pouch"
+	desc = "A basic soviet belt pouch capable of storing a small arms handgun, handgun magazines, gauze and your trustyworthy shovel. Uraaa!"
+	icon_state = "gerbelt"
+	item_state = "gerbelt"
+	storage_slots = 6
+	max_w_class = 2
+	max_storage_space = 12
+	can_hold = list(
+		/obj/item/weapon/gun/projectile/pistol,
+		/obj/item/ammo_magazine/c762mm_tokarev,
+		/obj/item/ammo_magazine/c45m,
+		/obj/item/ammo_magazine/luger,
+		/obj/item/weapon/gauze_pack,
+		/obj/item/weapon/shovel/spade/russia
+		/obj/item/weapon/reagent_containers/food
+		)
+		
+/obj/item/weapon/storage/belt/soviet_basic/soldier
+/obj/item/weapon/storage/belt/soviet_basic/soldier/New()
+	..()
+	new /obj/item/weapon/gun/projectile/pistol/tokarev(src)
+	new /obj/item/ammo_magazine/c762mm_tokarev(src)
+	new /obj/item/ammo_magazine/c762mm_tokarev(src)
+	new /obj/item/weapon/shovel/spade/russia(src)
 
 /obj/item/weapon/storage/belt/soviet/anti_tank_crew
 /obj/item/weapon/storage/belt/soviet/anti_tank_crew/New()
 	..()
 
-	for (var/v in TRUE to 10)
+	for (var/v in 1 to 12)
 		new /obj/item/ammo_casing/a145(src)
 
 /obj/item/weapon/storage/belt/soviet/MP/New()
@@ -321,9 +373,9 @@
 	desc = "Can hold gear like pistol, ammo and other thingies."
 	icon_state = "gerbelt"
 	item_state = "gerbelt"
-	storage_slots = 6
+	storage_slots = 12
 	max_w_class = 3
-	max_storage_space = 28
+	max_storage_space = 24
 	can_hold = list(
 		/obj/item/ammo_magazine,
 		/obj/item/weapon/material,
@@ -332,14 +384,42 @@
 		/obj/item/weapon/attachment,
 		/obj/item/weapon/gun/projectile/pistol,
 		/obj/item/weapon/melee/classic_baton,
-		/obj/item/device/flashlight
+		/obj/item/device/flashlight,
+		/obj/item/weapon/handcuffs,
+		/obj/item/ammo_casing/a145
 		)
+
+/obj/item/weapon/storage/belt/german_basic
+	name = "German soldier belt"
+	desc = "A basic belt. Only capable of storing a small arms pistol, clips, rations, gauze and a shovel."
+	icon_state = "gerbelt"
+	item_state = "gerbelt"
+	storage_slots = 6
+	max_w_class = 2
+	max_storage_space = 8
+	can_hold = list(
+		/obj/item/ammo_magazine,
+		/obj/item/weapon/gauze_pack,
+		/obj/item/weapon/gun/projectile/pistol,
+		/obj/item/weapon/shovel/spade/russia,
+		/obj/item/weapon/reagent_containers/food
+		)
+
+/obj/item/weapon/storage/belt/german_basic/soldier
+/obj/item/weapon/storage/belt/german_basic/soldier/New()
+	..()
+	new /obj/item/weapon/gun/projectile/pistol/mauser(src)
+	new /obj/item/ammo_magazine/c763x25mm_mauser(src)
+	new /obj/item/ammo_magazine/c763x25mm_mauser(src)
+	new /obj/item/weapon/shovel/spade/russia(src)
+	new /obj/item/weapon/reagent_containers/food/snacks/chocolatebar(src)
+
 
 /obj/item/weapon/storage/belt/german/anti_tank_crew
 /obj/item/weapon/storage/belt/german/anti_tank_crew/New()
 	..()
 
-	for (var/v in TRUE to 10)
+	for (var/v in 1 to 12)
 		new /obj/item/ammo_casing/a145(src)
 
 /obj/item/weapon/storage/belt/german/fallofficer
@@ -423,7 +503,6 @@
 	item_state = "civuni3"
 	worn_state = "civuni3"
 
-
 /obj/item/weapon/storage/backpack/german
 	name = "german backpack"
 	desc = "You wear this on your back and put items into it."
@@ -436,14 +515,14 @@
 
 /obj/item/weapon/storage/backpack/german/rations/New()
 	..()
-	for (var/v in TRUE to 3)
+	for (var/v in 1 to 3)
 		contents += new_ration(GERMAN, "solid")
 
 /obj/item/weapon/storage/backpack/german/paratrooper
 
 /obj/item/weapon/storage/backpack/german/paratrooper/New()
 	..()
-	for (var/v in TRUE to 3)
+	for (var/v in 1 to 3)
 		contents += new_ration(GERMAN, "solid")
 	contents += new/obj/item/device/flashlight/lantern()
 
@@ -454,3 +533,76 @@
 	desc = "You wear this on your back and put items into it."
 	icon_state = "russianpack"
 	item_state_slots = null
+
+// coats
+
+/obj/item/clothing/suit/storage/coat
+	name = "generic coat"
+	desc = "generic desc"
+	allowed = list(/obj/item/device/radio/rbs,/obj/item/device/radio/feldfu,/obj/item/device/radio/partisan)
+
+/obj/item/clothing/suit/storage/coat/civilian
+	name = "Civilian's Coat"
+	desc = "An ordinary winter coat."
+	icon_state = "winter_coat"
+	item_state = "winter_coat"
+	worn_state = "winter_coat"
+
+/obj/item/clothing/suit/storage/coat/german
+	name = "German Soldier's Coat"
+	desc = "An ordinary winter coat for a Wehrmacht soldier."
+	icon_state = "nazi_coat"
+	item_state = "nazi_coat"
+	worn_state = "nazi_coat"
+
+/obj/item/clothing/suit/storage/coat/german/SS
+	name = "SS Soldier's Coat"
+	desc = "An ordinary winter coat for an SS soldier."
+	icon_state = "ss_coat"
+	item_state = "ss_coat"
+	worn_state = "ss_coat"
+
+/obj/item/clothing/suit/storage/coat/german/officer
+	name = "German Officer's Coat"
+	desc = "An ordinary winter coat for a Wehrmacht officer."
+	icon_state = "nazimp_coat"
+	item_state = "nazimp_coat"
+	worn_state = "nazimp_coat"
+
+/obj/item/clothing/suit/storage/coat/soviet
+	name = "Soviet Soldier's Coat"
+	desc = "An ordinary winter coat for a Soviet soldier."
+	icon_state = "soviet_coat"
+	item_state = "soviet_coat"
+	worn_state = "soviet_coat"
+
+/obj/item/clothing/suit/storage/coat/soviet/officer
+	name = "Soviet Officer's Coat"
+	desc = "An ordinary winter coat for a Soviet officer."
+	icon_state = "sovofficer_coat"
+	item_state = "sovofficer_coat"
+	worn_state = "sovofficer_coat"
+
+// WEBBING - can hold everything but clothing
+
+/obj/item/clothing/accessory/storage/webbing
+	name = "webbing"
+	desc = "A sturdy mess of cotton belts and buckles, ready to share your burden."
+	icon_state = "webbing"
+	slots = 8
+
+	New()
+		..()
+		hold.cant_hold = list(/obj/item/clothing)
+
+// CUSTOMIZED GAS MASKS
+
+/obj/item/clothing/mask/gas/german
+	icon_state = "m38_mask"
+	item_state = "m38_mask"
+	filtered_gases = list("xylyl_bromide", "mustard_gas", "white_phosphorus_gas", "chlorine_gas", "zyklon_b")
+
+/obj/item/clothing/mask/gas/soviet
+	icon_state = "gp5_mask"
+	item_state = "gp5_mask"
+	filtered_gases = list("xylyl_bromide", "mustard_gas", "white_phosphorus_gas", "chlorine_gas", "zyklon_b")

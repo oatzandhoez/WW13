@@ -162,6 +162,11 @@
 
 	return FALSE
 
+/datum/reagents/proc/multiply_reagent(var/id, var/mult = 2.0)
+	if (get_reagent_amount(id) > 0)
+		return add_reagent(id, get_reagent_amount(id)*(mult-1.0))
+	return FALSE
+
 /datum/reagents/proc/remove_reagent(var/id, var/amount, var/safety = FALSE)
 	if(!isnum(amount))
 		return FALSE
@@ -173,18 +178,30 @@
 				handle_reactions()
 			if(my_atom)
 				my_atom.on_reagent_change()
+			if (id == "blood")
+				if (my_atom && ishuman(my_atom))
+					var/mob/living/carbon/human/H = my_atom
+					H.nutrition -= amount/2
+					H.water -= amount/2
+					H.nutrition = min(H.nutrition, H.max_nutrition)
+					H.nutrition = max(H.nutrition, -H.max_nutrition)
+					H.water = min(H.water, H.max_water)
+					H.water = max(H.water, -H.max_water)
 			return TRUE
 	return FALSE
 
 /datum/reagents/proc/del_reagent(var/id)
 	for(var/datum/reagent/current in reagent_list)
-		if (current.id == id)
+		if (current.id == id || id == TRUE)
 			reagent_list -= current
 			qdel(current)
 			update_total()
 			if(my_atom)
 				my_atom.on_reagent_change()
 			return FALSE
+
+/datum/reagents/proc/del_reagents()
+	return del_reagent(TRUE)
 
 /datum/reagents/proc/has_reagent(var/id, var/amount = FALSE)
 	for(var/datum/reagent/current in reagent_list)

@@ -22,12 +22,12 @@
 	var/list/charge_costs = null
 	var/list/datum/matter_synth/synths = null
 
-/obj/item/stack/New(var/loc, var/amount=null)
+/obj/item/stack/New(var/loc, var/_amount=0)
 	..()
 	if (!stacktype)
 		stacktype = type
-	if (amount)
-		src.amount = amount
+	if (_amount)
+		amount = _amount
 	return
 
 /obj/item/stack/Destroy()
@@ -40,7 +40,7 @@
 /obj/item/stack/examine(mob/user)
 	if(..(user, TRUE))
 		if(!uses_charge)
-			user << "There [src.amount == TRUE ? "is" : "are"] [src.amount] [src.singular_name]\s in the stack."
+			user << "There [amount == TRUE ? "is" : "are"] [amount] [singular_name]\s in the stack."
 		else
 			user << "There is enough charge for [get_amount()]."
 
@@ -57,7 +57,7 @@
 	if (recipes_sublist && recipe_list[recipes_sublist] && istype(recipe_list[recipes_sublist], /datum/stack_recipe_list))
 		var/datum/stack_recipe_list/srl = recipe_list[recipes_sublist]
 		recipe_list = srl.recipes
-	var/t1 = text("<HTML><HEAD><title>Constructions from []</title></HEAD><body><TT>Amount Left: []<br>", src, src.get_amount())
+	var/t1 = text("<HTML><HEAD><title>Constructions from []</title></HEAD><body><TT>Amount Left: []<br>", src, get_amount())
 	for(var/i=1;i<=recipe_list.len,i++)
 		var/E = recipe_list[i]
 		if (isnull(E))
@@ -73,7 +73,7 @@
 
 		if (istype(E, /datum/stack_recipe))
 			var/datum/stack_recipe/R = E
-			var/max_multiplier = round(src.get_amount() / R.req_amount)
+			var/max_multiplier = round(get_amount() / R.req_amount)
 			var/title as text
 			var/can_build = TRUE
 			can_build = can_build && (max_multiplier>0)
@@ -81,7 +81,7 @@
 				title+= "[R.res_amount]x [R.title]\s"
 			else
 				title+= "[R.title]"
-			title+= " ([R.req_amount] [src.singular_name]\s)"
+			title+= " ([R.req_amount] [singular_name]\s)"
 			if (can_build)
 				t1 += text("<A href='?src=\ref[src];sublist=[recipes_sublist];make=[i];multiplier=1'>[title]</A>  ")
 			else
@@ -102,6 +102,7 @@
 	onclose(user, "stack")
 	return
 
+/mob/var/can_build_recipe = TRUE
 /obj/item/stack/proc/produce_recipe(datum/stack_recipe/recipe, var/quantity, mob/user)
 	var/required = quantity*recipe.req_amount
 	var/produced = min(quantity*recipe.res_amount, recipe.max_res_amount)
@@ -152,23 +153,77 @@
 	if (ishuman(user))
 		H = user
 
-	if (recipe.result_type == /obj/structure/barbwire)
+	if (recipe.result_type == /obj/structure/noose)
+		var/structurecheck = 0
+
+		for (var/obj/structure/structure in get_turf(H))
+			if ((structure.density && !structure.low) || istype(structure, /obj/structure/bed))
+				if (!(structure.flags & ON_BORDER))
+					structurecheck = 2
+			else if (structurecheck == 0)
+				structurecheck = 1
+		for (var/obj/item/weapon/stool/stool in get_turf(H))
+			structurecheck = 2
+
+		if (structurecheck == 0)
+			H << "<span class = 'warning'>You need to be on a structure to make a noose.</span>"
+			return
+		else if (structurecheck == 1)
+			H << "<span class = 'warning'>This structure is not suitable for standing on.</span>"
+			return
+
+		var/area/H_area = get_area(H)
+		if (H_area.location == OUTSIDE)
+
+
+			var/turf/north = get_step(H, NORTH)
+			var/turf/south = get_step(H, SOUTH)
+			var/turf/east = get_step(H, EAST)
+			var/turf/west = get_step(H, WEST)
+
+			if (north.density || locate(/obj/structure) in north)
+				goto skipnoosecheck1
+			else if (south.density || locate(/obj/structure) in south)
+				goto skipnoosecheck1
+			else if (east.density || locate(/obj/structure) in east)
+				goto skipnoosecheck1
+			else if (west.density || locate(/obj/structure) in west)
+				goto skipnoosecheck1
+
+			H << "<span class = 'warning'>You need a ceiling to make a noose.</span>"
+			return
+
+	else if (recipe.result_type == /obj/structure/barbwire)
+		if (locate(/obj/structure/barbwire) in get_turf(H))
+			return
 		if (H)
 			if (H.original_job)
-				if (H.original_job.base_type_flag() == GERMAN)
-					if (istype(get_area(src), /area/prishtina/german))
-						user << "<span class = 'warning'>This isn't a great place for barbwire.</span>"
-						return
-				else if (H.original_job.base_type_flag() == SOVIET)
-					if (istype(get_area(src), /area/prishtina/soviet))
-						user << "<span class = 'warning'>This isn't a great place for barbwire.</span>"
-						return
+				var/area/H_area = get_area(H)
+				if (H_area.location == AREA_INSIDE)
+					if (H.original_job.base_type_flag() == GERMAN)
+						if (istype(H_area, /area/prishtina/german))
+							user << "<span class = 'warning'>This isn't a great place for barbwire.</span>"
+							return
+					else if (H.original_job.base_type_flag() == SOVIET)
+						if (istype(H_area, /area/prishtina/soviet))
+							user << "<span class = 'warning'>This isn't a great place for barbwire.</span>"
+							return
+
+	else if (recipe.result_type == /obj/structure/girder)
+		if (H)
+			if (H.getStat("engineering") < STAT_HIGH)
+				H << "<span class = 'info'>You have no idea of how to build a girder.</span>"
+				return
+
+	skipnoosecheck1
 
 	if (recipe.time)
 		var/buildtime = recipe.time
 		if (H)
 			buildtime /= H.getStatCoeff("strength")
 			buildtime /= (H.getStatCoeff("engineering") * H.getStatCoeff("engineering"))
+
+		buildtime = round(buildtime)
 
 		user << "<span class='notice'>Building [recipe.title] ...</span>"
 		if (!do_after(user, buildtime))
@@ -212,7 +267,10 @@
 		list_recipes(usr, text2num(href_list["sublist"]))
 
 	if (href_list["make"])
-		if (src.get_amount() < TRUE) qdel(src) //Never should happen
+
+		if (get_amount() < 1)
+			qdel(src)
+			return
 
 		var/list/recipes_list = recipes
 		if (href_list["sublist"])
@@ -221,14 +279,19 @@
 
 		var/datum/stack_recipe/R = recipes_list[text2num(href_list["make"])]
 		var/multiplier = text2num(href_list["multiplier"])
-		if (!multiplier || (multiplier <= FALSE)) //href exploit protection
+		if (!multiplier || (multiplier <= 0)) //href exploit protection
 			return
 
-		src.produce_recipe(R, multiplier, usr)
+		if (ishuman(usr))
+			var/mob/living/carbon/human/H = usr
+			if (H.can_build_recipe)
+				H.can_build_recipe = FALSE
+				produce_recipe(R, multiplier, usr)
+				H.can_build_recipe = TRUE
 
 	if (src && usr.machine==src) //do not reopen closed window
 		spawn( FALSE )
-			src.interact(usr)
+			interact(usr)
 			return
 	return
 
@@ -285,12 +348,12 @@
 	if ((stacktype != S.stacktype) && !type_verified)
 		return FALSE
 	if (isnull(tamount))
-		tamount = src.get_amount()
+		tamount = get_amount()
 
-	var/transfer = max(min(tamount, src.get_amount(), (S.get_max_amount() - S.get_amount())), FALSE)
+	var/transfer = max(min(tamount, get_amount(), (S.get_max_amount() - S.get_amount())), FALSE)
 
-	var/orig_amount = src.get_amount()
-	if (transfer && src.use(transfer))
+	var/orig_amount = get_amount()
+	if (transfer && use(transfer))
 		S.add(transfer)
 		if (prob(transfer/orig_amount * 100))
 			transfer_fingerprints_to(S)
@@ -306,11 +369,11 @@
 	if(uses_charge)
 		return null
 
-	var/transfer = max(min(tamount, src.amount, initial(max_amount)), FALSE)
+	var/transfer = max(min(tamount, amount, initial(max_amount)), FALSE)
 
-	var/orig_amount = src.amount
-	if (transfer && src.use(transfer))
-		var/obj/item/stack/newstack = new src.type(loc, transfer)
+	var/orig_amount = amount
+	if (transfer && use(transfer))
+		var/obj/item/stack/newstack = new type(loc, transfer)
 		newstack.color = color
 		if (prob(transfer/orig_amount * 100))
 			transfer_fingerprints_to(newstack)
@@ -349,7 +412,7 @@
 	for (var/obj/item/stack/item in user.loc)
 		if (item==src)
 			continue
-		var/transfer = src.transfer_to(item)
+		var/transfer = transfer_to(item)
 		if (transfer)
 			user << "<span class='notice'>You add a new [item.singular_name] to the stack. It now contains [item.amount] [item.singular_name]\s.</span>"
 		if(!amount)
@@ -357,14 +420,14 @@
 
 /obj/item/stack/attack_hand(mob/user as mob)
 	if (user.get_inactive_hand() == src)
-		var/obj/item/stack/F = src.split(1)
+		var/obj/item/stack/F = split(1)
 		if (F)
 			user.put_in_hands(F)
-			src.add_fingerprint(user)
+			add_fingerprint(user)
 			F.add_fingerprint(user)
 			spawn(0)
 				if (src && usr.machine==src)
-					src.interact(usr)
+					interact(usr)
 	else
 		..()
 	return
@@ -373,15 +436,15 @@
 	if (istype(W, /obj/item/stack))
 		var/obj/item/stack/S = W
 		if (user.get_inactive_hand()==src)
-			src.transfer_to(S, TRUE)
+			transfer_to(S, TRUE)
 		else
-			src.transfer_to(S)
+			transfer_to(S)
 
 		spawn(0) //give the stacks a chance to delete themselves if necessary
 			if (S && usr.machine==S)
 				S.interact(usr)
 			if (src && usr.machine==src)
-				src.interact(usr)
+				interact(usr)
 	else
 		return ..()
 
@@ -399,17 +462,17 @@
 	var/on_floor = FALSE
 	var/use_material
 
-	New(title, result_type, req_amount = TRUE, res_amount = TRUE, max_res_amount = TRUE, time = FALSE, one_per_turf = FALSE, on_floor = FALSE, supplied_material = null)
+	New(_title, _result_type, _req_amount = TRUE, _res_amount = TRUE, _max_res_amount = TRUE, _time = 0, _one_per_turf = FALSE, _on_floor = FALSE, _supplied_material = null)
 
-		src.title = title
-		src.result_type = result_type
-		src.req_amount = req_amount
-		src.res_amount = res_amount
-		src.max_res_amount = max_res_amount
-		src.time = time
-		src.one_per_turf = one_per_turf
-		src.on_floor = on_floor
-		src.use_material = supplied_material
+		title = _title
+		result_type = _result_type
+		req_amount = _req_amount
+		res_amount = _res_amount
+		max_res_amount = _max_res_amount
+		time = _time
+		one_per_turf = _one_per_turf
+		on_floor = _on_floor
+		use_material = _supplied_material
 
 /*
  * Recipe list datum
@@ -417,6 +480,6 @@
 /datum/stack_recipe_list
 	var/title = "ERROR"
 	var/list/recipes = null
-	New(title, recipes)
-		src.title = title
-		src.recipes = recipes
+	New(_title, _recipes)
+		title = _title
+		recipes = _recipes

@@ -63,6 +63,7 @@
 		flamethrower.ptank = new ptank.type
 		flamethrower.pressure_1 = ptank.air_contents.return_pressure()
 		flamethrower.fueltank += 1.00
+		flamethrower.fueltank = min(flamethrower.fueltank, 1.00)
 
 /obj/item/weapon/storage/backpack/flammenwerfer/attack_hand(mob/user as mob)
 	if (loc == user)
@@ -77,18 +78,20 @@
 /obj/item/weapon/storage/backpack/flammenwerfer/proc/explode()
 	if (istype(loc, /mob))
 		var/mob/m = loc
-		m.visible_message("<span class = 'danger'>[m]'s flammenwerfer explodes!</span>", "<span class = 'danger'><font size = 3>Your flammenwerfer explodes!</font></span>")
-		explosion(get_turf(m), FALSE, 2, 3, 4)
+		m.visible_message("<span class = 'userdanger'>[m]'s flammenwerfer explodes!</span>", "<span class = 'danger'><font size = 3>Your flammenwerfer explodes!</font></span>")
+		explosion(get_turf(m), 1, 2, 3, 4)
 
 		for (var/mob/mm in range(1, get_turf(m)))
 			var/turf/t = get_turf(mm)
 			t.hotspot_expose((ptank.air_contents.temperature*2) + 380,500)
 
-		if (m.get_active_hand() == flamethrower || m.get_inactive_hand() == flamethrower)
-			m.u_equip(flamethrower)
-			flamethrower.loc = null
+		//if (m.get_active_hand() == flamethrower || m.get_inactive_hand() == flamethrower)
+		m.remove_from_mob(flamethrower)
+		flamethrower.loc = null
 
 		qdel(src)
 
+		spawn (1)
+			m.regenerate_icons()
 
 

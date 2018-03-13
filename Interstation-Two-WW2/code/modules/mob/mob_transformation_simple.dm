@@ -5,7 +5,7 @@
 /mob/proc/change_mob_type(var/new_type = null, var/turf/location = null, var/new_name = null as text, var/delete_old_mob = FALSE as num, var/subspecies)
 
 	if(istype(src,/mob/new_player))
-		usr << "\red cannot convert players who have not entered yet."
+		usr << "<span class = 'red'>You cannot convert players who have not entered yet.</span>"
 		return
 
 	if(!new_type)
@@ -19,14 +19,14 @@
 		return
 
 	if( new_type == /mob/new_player )
-		usr << "\red cannot convert into a new_player mob type."
+		usr << "<span class = 'red'>You cannot convert into a new_player mob type.</span>"
 		return
 
 	var/mob/M
 	if(isturf(location))
 		M = new new_type( location )
 	else
-		M = new new_type( src.loc )
+		M = new new_type( loc )
 
 	if(!M || !ismob(M))
 		usr << "Type path is not a mob (new_type = [new_type]) in change_mob_type(). Contact a coder."
@@ -37,11 +37,11 @@
 		M.name = new_name
 		M.real_name = new_name
 	else
-		M.name = src.name
-		M.real_name = src.real_name
+		M.name = name
+		M.real_name = real_name
 
-	if(src.dna)
-		M.dna = src.dna.Clone()
+	if(dna)
+		M.dna = dna.Clone()
 
 	if(mind)
 		mind.transfer_to(M)

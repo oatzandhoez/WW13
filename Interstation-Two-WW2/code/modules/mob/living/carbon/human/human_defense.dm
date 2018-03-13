@@ -2,8 +2,6 @@
 Contains most of the procs that are called when a mob is attacked by something
 
 bullet_act
-ex_act
-meteor_act
 
 */
 
@@ -12,15 +10,28 @@ meteor_act
 		return ..(W, user)
 	if (!istype(W) || !W.sharp)
 		return ..(W, user)
-	else if (W.sharp && !istype(W, /obj/item/weapon/reagent_containers) && user.a_intent == I_HURT)
-		user.visible_message("<span class = 'notice'>[user] starts to butcher [src].</span>")
-		if (do_after(user, 30, src))
-			user.visible_message("<span class = 'notice'>[user] butchers [src] into a few meat slabs.</span>")
-			for (var/v in TRUE to rand(5,7))
-				var/obj/item/weapon/reagent_containers/food/snacks/meat/human/meat = new/obj/item/weapon/reagent_containers/food/snacks/meat/human(get_turf(src))
-				meat.name = "[name] meatsteak"
-			crush()
-			qdel(src)
+
+	var/grabbed_by_user = FALSE
+	for(var/obj/item/weapon/grab/G in grabbed_by)
+		if(G.assailant == user && G.state >= GRAB_NECK)
+			grabbed_by_user = TRUE
+
+	if (W.sharp && !istype(W, /obj/item/weapon/reagent_containers) && user.a_intent == I_HURT && !grabbed_by_user)
+		if (stat == DEAD)
+			var/mob/living/carbon/human/H = user
+			if ((istype(H) && H.original_job && H.original_job.is_nonmilitary) || istype(W, /obj/item/weapon/material/knife/butch))
+				user.visible_message("<span class = 'notice'>[user] starts to butcher [src].</span>")
+				if (do_after(user, 30, src))
+					user.visible_message("<span class = 'notice'>[user] butchers [src] into a few meat slabs.</span>")
+					for (var/v in 1 to rand(5,7))
+						var/obj/item/weapon/reagent_containers/food/snacks/meat/human/meat = new/obj/item/weapon/reagent_containers/food/snacks/meat/human(get_turf(src))
+						meat.name = "[name] meatsteak"
+					for (var/obj/item/clothing/I in contents)
+						drop_from_inventory(I)
+					crush()
+					qdel(src)
+			else
+				user << "<span class = 'info'>You don't know how to butcher people.</span>"
 	else
 		return ..(W, user)
 
@@ -41,16 +52,16 @@ meteor_act
 					H.adaptStat("heavyweapon", 1)
 
 	def_zone = check_zone(def_zone)
-	if (src.is_spy && istype(src.spy_faction, /datum/faction/german))
-		say("GOD DAMN IT HURTS", src.languages.Find(GERMAN))
+	if (is_spy && istype(spy_faction, /datum/faction/german))
+		say("GOD DAMN IT HURTS", languages.Find(GERMAN))
 
-	if (src.is_spy && istype(src.spy_faction, /datum/faction/soviet))
-		say("GOD DAMN IT HURTS", src.languages.Find(RUSSIAN))
+	if (is_spy && istype(spy_faction, /datum/faction/soviet))
+		say("GOD DAMN IT HURTS", languages.Find(RUSSIAN))
 
-	if (P.firer && (P.firer.dir == src.dir || P.firer.lying))
+	if (P.firer && (P.firer_original_dir == dir || lying))
 		if (istype(back, /obj/item/weapon/storage/backpack/flammenwerfer))
 			var/obj/item/weapon/storage/backpack/flammenwerfer/flamethrower = back
-			if (prob(20) || (world.time - last_movement >= 50))
+			if (prob(16) || (world.time - last_movement >= 50))
 				flamethrower.explode()
 
 	if(!has_organ(def_zone))
@@ -62,20 +73,92 @@ meteor_act
 	var/shield_check = check_shields(P.damage*5, P, null, def_zone, "the [P.name]")
 
 	if(shield_check)
-		if(shield_check < FALSE)
+		if(shield_check < 0)
 			return shield_check
 		else
 			P.on_hit(src, 2, def_zone)
 			return 2
 	else
+		/* bullet grazing is affected by three factors now:
+		 * from most to least important, these are:
+		   * 1. is the target moving while being shot? Modified by distance
+		   * 2. randomness
+		   * 3. survival stat
+		*/
+
+		var/distcheck = max(abs(P.starting.x - x), abs(P.starting.y - y))
+
+		if (distcheck > 2) // not PB range
+			if (!istype(P, /obj/item/projectile/bullet/rifle/murder) && !istype(P, /obj/item/projectile/bullet/shotgun/murder))
+
+				// shooting a moving target from 19 tiles away (new max scope range) has a 72% graze chance
+				// this means if snipers want to hit people they need to shoot at still targets
+				// shooting at someone from <= 7 tiles away has no graze chance - Kachnov
+
+				var/graze_chance_multiplier = 5
+				if (list("head", "mouth", "eyes").Find(def_zone))
+					++graze_chance_multiplier
+				graze_chance_multiplier += (1 * getStatCoeff("survival"))
+
+				if (lastMovedRecently())
+					if (prob(graze_chance_multiplier * max(distcheck - 7, 0)))
+						visible_message("<span class = 'warning'>[src] is just grazed by the bullet!</span>")
+						adjustBruteLoss(pick(4,5))
+						qdel(P)
+						return
+				else if (list("head", "mouth", "eyes").Find(def_zone) && prob(20 * getStatCoeff("survival")))
+					visible_message("<span class = 'warning'>[src] is just grazed by the bullet!</span>")
+					adjustBruteLoss(pick(4,5))
+					qdel(P)
+					return
+
+/*
+				// 30% base chance to miss the head, because headshots are painful - Kachnov
+				else if (list("head", "mouth", "eyes").Find(def_zone) && prob(30 * getStatCoeff("survival")))
+					visible_message("<span class = 'warning'>[src] is just grazed by the bullet!</span>")
+					qdel(P)
+					adjustBruteLoss(pick(6,7))
+					return
+
+				// 15% base chance to graze elsewhere
+				else if (prob(15 * getStatCoeff("survival")))
+					visible_message("<span class = 'warning'>[src] is just grazed by the bullet!</span>")
+					qdel(P)
+					adjustBruteLoss(pick(4,5))
+					return*/
+
 		// get knocked back once in a while
-		if (prob(P.KD_chance/2))
-			var/behind = behind()
+		// unless we're on a train because bugs
+		if (prob(P.KD_chance/2) && !is_on_train())
+			SpinAnimation(5,1)
+			var/turf/behind = get_step(src, P.dir)
 			if (behind)
-				forceMove(behind)
+				if (behind.density || locate(/obj/structure) in behind)
+					var/turf/slammed_into = behind
+					if (!slammed_into.density)
+						for (var/obj/structure/S in slammed_into)
+							if (S.density)
+								slammed_into = S
+								break
+
+					visible_message("<span class = 'danger'>[src] flies back from the force of the blast and slams into \the [slammed_into]!</span>")
+					Weaken(rand(5,7))
+					adjustBruteLoss(rand(20,30))
+					if (client)
+						shake_camera(src, rand(2,3), rand(2,3))
+					playsound(get_turf(src), 'sound/effects/gore/fallsmash.ogg', 100, TRUE)
+					for (var/obj/structure/window/W in get_turf(slammed_into))
+						W.shatter()
+				else
+					forceMove(behind)
+					visible_message("<span class = 'danger'>[src] flies back from the force of the blast!</span>")
+
 		// get weakened too
 		if (prob(P.KD_chance))
-			Weaken(rand(2,3))
+			Weaken(rand(3,4))
+			stamina = max(stamina - 50, 0)
+			if (client)
+				shake_camera(src, rand(2,3), rand(2,3))
 
 	//Shrapnel
 	if(P.can_embed())
@@ -87,7 +170,15 @@ meteor_act
 			SP.loc = organ
 			organ.embed(SP)
 
-	return (..(P , def_zone))
+	if (P.gibs)
+		gib()
+	else if (P.crushes)
+		crush()
+
+	..(P , def_zone)
+
+	spawn (0.01)
+		qdel(P)
 
 /mob/living/carbon/human/stun_effect_act(var/stun_amount, var/agony_amount, var/def_zone)
 	var/obj/item/organ/external/affected = get_organ(check_zone(def_zone))
@@ -106,7 +197,7 @@ meteor_act
 				c_hand = r_hand
 
 			if(c_hand && (stun_amount || agony_amount > 10))
-				msg_admin_attack("[src.name] ([src.ckey]) was disarmed by a stun effect")
+				msg_admin_attack("[name] ([ckey]) was disarmed by a stun effect")
 
 				drop_from_inventory(c_hand)
 				if (affected.status & ORGAN_ROBOT)
@@ -117,18 +208,18 @@ meteor_act
 
 		else
 			if (agony_amount > 10)
-				if (src.is_spy && istype(src.spy_faction, /datum/faction/german))
-					say("OH GOD THE PAIN", src.languages.Find(GERMAN))
+				if (is_spy && istype(spy_faction, /datum/faction/german))
+					say("OH GOD THE PAIN", languages.Find(GERMAN))
 
-				if (src.is_spy && istype(src.spy_faction, /datum/faction/soviet))
-					say("OH GOD THE PAIN", src.languages.Find(RUSSIAN))
+				if (is_spy && istype(spy_faction, /datum/faction/soviet))
+					say("OH GOD THE PAIN", languages.Find(RUSSIAN))
 		else
 			if (agony_amount > 10)
-				if (src.is_spy && istype(src.spy_faction, /datum/faction/german))
-					say("OH GOD THE PAIN", src.languages.Find(GERMAN))
+				if (is_spy && istype(spy_faction, /datum/faction/german))
+					say("OH GOD THE PAIN", languages.Find(GERMAN))
 
-				if (src.is_spy && istype(src.spy_faction, /datum/faction/soviet))
-					say("OH GOD THE PAIN", src.languages.Find(RUSSIAN))
+				if (is_spy && istype(spy_faction, /datum/faction/soviet))
+					say("OH GOD THE PAIN", languages.Find(RUSSIAN))
 	..(stun_amount, agony_amount, def_zone)
 
 /mob/living/carbon/human/getarmor(var/def_zone, var/type)
@@ -270,10 +361,10 @@ meteor_act
 				if(prob(effective_force + 10))
 					visible_message("<span class='danger'>[src] has been knocked down!</span>")
 					apply_effect(6, WEAKEN, blocked)
-	var/obj/item/organ/external/head/O = locate(/obj/item/organ/external/head) in src.organs
+	var/obj/item/organ/external/head/O = locate(/obj/item/organ/external/head) in organs
 	if(prob(I.force * (hit_zone == "mouth" ? 5 : FALSE)) && O) //Will the teeth fly out?
 		if(O.knock_out_teeth(get_dir(user, src), round(rand(28, 38) * ((I.force*1.5)/100))))
-			src.visible_message("<span class='danger'>Some of [src]'s teeth sail off in an arc!</span>", \
+			visible_message("<span class='danger'>Some of [src]'s teeth sail off in an arc!</span>", \
 								"<span class='userdanger'>Some of [src]'s teeth sail off in an arc!</span>")
 		//Apply blood
 		if(!(I.flags & NOBLOODY))
@@ -341,7 +432,7 @@ meteor_act
 		var/miss_chance = 15
 		if (O.throw_source)
 			var/distance = get_dist(O.throw_source, loc)
-			miss_chance = max(15*(distance-2), FALSE)
+			miss_chance = max(15*(distance-2), 0)
 		zone = get_zone_with_miss_chance(zone, src, miss_chance, ranged_attack=1)
 
 		if(zone && O.thrower != src)
@@ -351,29 +442,37 @@ meteor_act
 			else if(shield_check)
 				return
 
+		if (!zone && lying)
+			zone = "chest"
+
 		if(!zone)
-			visible_message("<span class='notice'>\The [O] misses [src] narrowly!</span>")
+	//		visible_message("<span class='notice'>\The [O] misses [src] narrowly!</span>")
 			return
+
+		if (istype(AM, /obj/item))
+			var/obj/item/I = AM
+			if (I.throwforce >= 15 && prob(I.throwforce * 4))
+				Weaken(I.throwforce/5)
 
 		O.throwing = FALSE		//it hit, so stop moving
 
 		var/obj/item/organ/external/affecting = get_organ(zone)
 		var/hit_area = affecting.name
 
-		src.visible_message("\red [src] has been hit in the [hit_area] by [O].")
+		visible_message("<span class = 'red'>[src] has been hit in the [hit_area] by [O].</span>")
 		var/armor = run_armor_check(affecting, "melee", O.armor_penetration, "Your armor has protected your [hit_area].", "Your armor has softened hit to your [hit_area].") //I guess "melee" is the best fit here
 
 		if(armor < 2)
-			apply_damage(throw_damage, dtype, zone, armor, is_sharp(O), has_edge(O), O)
+			apply_damage(throw_damage, dtype, zone, armor, is_sharp(O), O.edge, O)
 
 		if(ismob(O.thrower))
 			var/mob/M = O.thrower
 			var/client/assailant = M.client
 			if(assailant)
-				src.attack_log += text("\[[time_stamp()]\] <font color='orange'>Has been hit with a [O], thrown by [M.name] ([assailant.ckey])</font>")
-				M.attack_log += text("\[[time_stamp()]\] <font color='red'>Hit [src.name] ([src.ckey]) with a thrown [O]</font>")
+				attack_log += text("\[[time_stamp()]\] <font color='orange'>Has been hit with a [O], thrown by [M.name] ([assailant.ckey])</font>")
+				M.attack_log += text("\[[time_stamp()]\] <font color='red'>Hit [name] ([ckey]) with a thrown [O]</font>")
 				if(!istype(src,/mob/living/simple_animal/mouse))
-					msg_admin_attack("[src.name] ([src.ckey]) was hit by a [O], thrown by [M.name] ([assailant.ckey]) (<A HREF='?_src_=holder;adminplayerobservecoodjump=1;X=[src.x];Y=[src.y];Z=[src.z]'>JMP</a>)")
+					msg_admin_attack("[name] ([ckey]) was hit by a [O], thrown by [M.name] ([assailant.ckey]) (<A HREF='?_src_=holder;adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)")
 
 		//thrown weapon embedded object code.
 		if(dtype == BRUTE && istype(O,/obj/item))
@@ -391,7 +490,8 @@ meteor_act
 				//Sharp objects will always embed if they do enough damage.
 				//Thrown sharp objects have some momentum already and have a small chance to embed even if the damage is below the threshold
 				if((sharp && prob(damage/(10*I.w_class)*100)) || (damage > embed_threshold && prob(embed_chance)))
-					affecting.embed(I)
+					if (I.w_class <= 2.0)
+						affecting.embed(I)
 
 		// Begin BS12 momentum-transfer code.
 		var/mass = 1.5
@@ -403,8 +503,8 @@ meteor_act
 		if(O.throw_source && momentum >= THROWNOBJ_KNOCKBACK_SPEED)
 			var/dir = get_dir(O.throw_source, src)
 
-			visible_message("\red [src] staggers under the impact!","\red You stagger under the impact!")
-			src.throw_at(get_edge_target_turf(src,dir),1,momentum)
+			visible_message("<span class = 'red'>[src] staggers under the impact!</span>","<span class = 'red'>You stagger under the impact!</span>")
+			throw_at(get_edge_target_turf(src,dir),1,momentum)
 
 			if(!O || !src) return
 
@@ -412,10 +512,10 @@ meteor_act
 				var/turf/T = near_wall(dir,2)
 
 				if(T)
-					src.loc = T
+					loc = T
 					visible_message("<span class='warning'>[src] is pinned to the wall by [O]!</span>","<span class='warning'>You are pinned to the wall by [O]!</span>")
-					src.anchored = TRUE
-					src.pinned += O
+					anchored = TRUE
+					pinned += O
 
 /mob/living/carbon/human/embed(var/obj/O, var/def_zone=null)
 	if(!def_zone) ..()
@@ -459,7 +559,7 @@ meteor_act
 		"hands" = THERMAL_PROTECTION_HAND_LEFT + THERMAL_PROTECTION_HAND_RIGHT
 		)
 
-	for(var/obj/item/clothing/C in src.get_equipped_items())
+	for(var/obj/item/clothing/C in get_equipped_items())
 		if(C.permeability_coefficient == TRUE || !C.body_parts_covered)
 			continue
 		if(C.body_parts_covered & HEAD)

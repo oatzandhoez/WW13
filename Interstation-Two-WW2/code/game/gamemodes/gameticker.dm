@@ -33,6 +33,8 @@ var/global/datum/lobby_music_player/lobby_music_player = null
 	var/can_latejoin_ruforce = TRUE
 	var/can_latejoin_geforce = TRUE
 
+	var/players_can_join = TRUE
+
 /datum/controller/gameticker/proc/pregame()
 
 	spawn (0)
@@ -45,8 +47,9 @@ var/global/datum/lobby_music_player/lobby_music_player = null
 		do
 			pregame_timeleft = 180
 			if (serverswap_open_status)
-				world << "<B><FONT color='blue'>Welcome to the pre-game lobby!</FONT></B>"
+				world << "<b><span style = 'notice'>Welcome to the pre-game lobby!</span></b>"
 				world << "Please, setup your character and select ready. Game will start in [pregame_timeleft] seconds"
+
 			while(current_state == GAME_STATE_PREGAME)
 				for(var/i=0, i<10, i++)
 					sleep(1)
@@ -79,39 +82,39 @@ var/global/datum/lobby_music_player/lobby_music_player = null
 /datum/controller/gameticker/proc/setup()
 	//Create and announce mode
 	if(master_mode=="secret")
-		src.hide_mode = TRUE
+		hide_mode = TRUE
 
 	var/list/runnable_modes = config.get_runnable_modes()
 	if((master_mode=="random") || (master_mode=="secret"))
 		if(!runnable_modes.len)
 			current_state = GAME_STATE_PREGAME
 			if (serverswap_open_status)
-				world << "<B>Unable to choose playable game mode.</B> Reverting to pre-game lobby."
+				world << "<b>Unable to choose playable game mode.</b> Reverting to pre-game lobby."
 			return FALSE
 		if(secret_force_mode != "secret")
-			src.mode = config.pick_mode(secret_force_mode)
-		if(!src.mode)
+			mode = config.pick_mode(secret_force_mode)
+		if(!mode)
 			var/list/weighted_modes = list()
 			for(var/datum/game_mode/GM in runnable_modes)
 				weighted_modes[GM.config_tag] = config.probabilities[GM.config_tag]
-			src.mode = gamemode_cache[pickweight(weighted_modes)]
+			mode = gamemode_cache[pickweight(weighted_modes)]
 	else
-		src.mode = config.pick_mode(master_mode)
+		mode = config.pick_mode(master_mode)
 
-	if(!src.mode)
+	if(!mode)
 		current_state = GAME_STATE_PREGAME
 		if (serverswap_open_status)
 			world << "<span class='danger'>Serious error in mode setup!</span> Reverting to pre-game lobby."
 		return FALSE
 
 	job_master.ResetOccupations()
-	src.mode.create_antagonists()
-	src.mode.pre_setup()
-	job_master.DivideOccupations() // Apparently important for new antagonist system to register specific job antags properly.
+	mode.create_antagonists()
+	mode.pre_setup()
+//	job_master.DivideOccupations() // Apparently important for new antagonist system to register specific job antags properly.
 
-	if(!src.mode.can_start())
+	if(!mode.can_start())
 		if (serverswap_open_status)
-			world << "<B>Unable to start [mode.name].</B> Not enough players, [mode.required_players] players needed. Reverting to pre-game lobby."
+			world << "<b>Unable to start [mode.name].</b> Not enough players, [mode.required_players] players needed. Reverting to pre-game lobby."
 		current_state = GAME_STATE_PREGAME
 		mode.fail_setup()
 		mode = null
@@ -119,16 +122,16 @@ var/global/datum/lobby_music_player/lobby_music_player = null
 		return FALSE
 
 	if(hide_mode)
-		world << "<B>The current game mode is - Secret!</B>"
+		world << "<b>The current game mode is - Secret!</b>"
 		if(runnable_modes.len)
 			var/list/tmpmodes = new
 			for (var/datum/game_mode/M in runnable_modes)
 				tmpmodes+=M.name
 			tmpmodes = sortList(tmpmodes)
 			if(tmpmodes.len)
-				world << "<B>Possibilities:</B> [english_list(tmpmodes)]"
+				world << "<b>Possibilities:</b> [english_list(tmpmodes)]"
 	else
-		src.mode.announce()
+		mode.announce()
 
 	current_state = GAME_STATE_PLAYING
 	create_characters() //Create player characters and transfer them
@@ -138,7 +141,10 @@ var/global/datum/lobby_music_player/lobby_music_player = null
 
 	// trains setup before roundstart hooks called because SS train ladders rely on it
 	if (map.uses_main_train)
-		start_train_loop()
+		setup_trains()
+		train_loop()
+
+	TOD_loop()
 
 	callHook("roundstart")
 
@@ -150,7 +156,7 @@ var/global/datum/lobby_music_player/lobby_music_player = null
 			if (S.name != "AI")
 				qdel(S)
 
-	//	world << "<FONT color='blue'><B>Enjoy the game!</B></FONT>"
+	//	world << "<span class = 'notice'><b>Enjoy the game!</b></FONT>"
 		//Holiday Round-start stuff	~Carn
 
 		// todo: make these hooks. Apparently they all fail on /hook/roundstart
@@ -368,8 +374,8 @@ var/global/datum/lobby_music_player/lobby_music_player = null
 		return TRUE
 
 /datum/controller/gameticker/proc/declare_completion()
-	world << "<br><br><br><H1>A round of [mode.name] has ended!</H1>"
 	if (!istype(mode, /datum/game_mode/ww2))
+		world << "<br><br><br><H1>A round of [mode.name] has ended!</H1>"
 		for(var/mob/Player in player_list)
 			if(Player.mind && !isnewplayer(Player))
 
@@ -378,7 +384,7 @@ var/global/datum/lobby_music_player/lobby_music_player = null
 					if(isAdminLevel(playerTurf.z))
 						Player << "<font color='green'><b>You successfully underwent crew transfer after events on [station_name()] as [Player.real_name].</b></font>"
 					else
-						Player << "<font color='blue'><b>You missed the crew transfer after the events on [station_name()] as [Player.real_name].</b></font>"
+						Player << "<span class = 'notice'><b>You missed the crew transfer after the events on [station_name()] as [Player.real_name].</b></span>"
 				else
 					if(isghost(Player))
 						var/mob/observer/ghost/O = Player

@@ -177,7 +177,7 @@
 	log_debug(msg)
 	message_admins(msg)
 
-	main.restartProcess(src.name)
+	main.restartProcess(name)
 
 /datum/controller/process/proc/kill()
 	if (!killed)
@@ -335,11 +335,21 @@
 	stat("[name]", "T#[getTicks()] | AR [averageRunTime] | LR [lastRunTime] | HR [highestRunTime] | D [cpu_defer_count]")
 
 /datum/controller/process/proc/catchException(var/exception/e, var/thrower)
+	if(ispath(thrower) || istext(thrower))
+		log_to_dd("[src].catchException() was given a path or text type, [thrower], which was set to null.")
+		log_debug("[src].catchException() was given a path or text type, [thrower], which was set to null.")
+		thrower = null // I think this prevents crashes - Kachnov
+		return
+
 	if(istype(e)) // Real runtimes go to the real error handler
 		// There are two newlines here, because handling desc sucks
 		e.desc = "  Caught by process: [name]\n\n" + e.desc
-		world.Error(e, e_src = thrower)
+		if (thrower)
+			world.Error(e, e_src = thrower)
+		else
+			world.Error(e)
 		return
+
 	var/etext = "[e]"
 	var/eid = "[e]" // Exception ID, for tracking repeated exceptions
 	var/ptext = "" // "processing..." text, for what was being processed (if known)

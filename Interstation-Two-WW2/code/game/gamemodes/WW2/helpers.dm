@@ -1,9 +1,9 @@
 /proc/WW2_soldiers_alive()
 
-	var/de = FALSE
-	var/ru = FALSE
-	var/partisan = FALSE
-	var/civilian = FALSE
+	var/de = 0
+	var/ru = 0
+	var/partisan = 0
+	var/civilian = 0
 
 	for(var/mob/living/carbon/human/H in human_mob_list)
 
@@ -12,7 +12,7 @@
 		if(!job)
 			continue
 
-		if(H.stat != DEAD && !H.restrained() && H.client)
+		if(H.stat != DEAD && H.stat != UNCONSCIOUS && !H.restrained() && H.client)
 			switch(job.base_type_flag())
 				if(GERMAN)
 					++de
@@ -29,12 +29,12 @@
 
 	var/list/soldiers = WW2_soldiers_alive()
 	// prevents dividing by FALSE - Kachnov
-	if (soldiers["en"] > FALSE && soldiers["ru"] == FALSE)
+	if (soldiers["en"] > 0 && soldiers["ru"] == 0)
 		return 1000
-	else if (soldiers["ru"] > FALSE && soldiers["en"] == FALSE)
-		return TRUE/1000
+	else if (soldiers["ru"] > 0 && soldiers["en"] == 0)
+		return 1/1000
 	else if (soldiers["ru"] == soldiers["en"])
-		return TRUE
+		return 1
 
 	return max(soldiers["en"], TRUE)/max(soldiers["ru"], TRUE) // we need decimals here so no rounding
 

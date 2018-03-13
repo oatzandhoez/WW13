@@ -61,8 +61,8 @@
 	//put this here for easier tracking ingame
 	var/datum/money_account/initial_account
 
-/datum/mind/New(var/key)
-	src.key = key
+/datum/mind/New(var/_key)
+	key = _key
 	..()
 
 /datum/mind/proc/transfer_to(mob/living/new_character)
@@ -85,15 +85,15 @@
 	memory += "[new_text]<BR>"
 
 /datum/mind/proc/show_memory(mob/recipient)
-	var/output = "<B>[current.real_name]'s Memory</B><HR>"
+	var/output = "<b>[current.real_name]'s Memory</b><HR>"
 	output += memory
 
 	if(objectives.len>0)
-		output += "<HR><B>Objectives:</B>"
+		output += "<HR><b>Objectives:</b>"
 
 		var/obj_count = TRUE
 		for(var/datum/objective/objective in objectives)
-			output += "<B>Objective #[obj_count]</B>: [objective.explanation_text]"
+			output += "<b>Objective #[obj_count]</b>: [objective.explanation_text]"
 			obj_count++
 
 	recipient << browse(output,"window=memory")
@@ -103,7 +103,7 @@
 		alert("Not before round-start!", "Alert")
 		return
 
-	var/out = "<B>[name]</B>[(current&&(current.real_name!=name))?" (as [current.real_name])":""]<br>"
+	var/out = "<b>[name]</b>[(current&&(current.real_name!=name))?" (as [current.real_name])":""]<br>"
 	out += "Mind currently owned by key: [key] [active?"(synced)":"(not synced)"]<br>"
 	out += "Assigned role: [assigned_role]. <a href='?src=\ref[src];role_edit=1'>Edit</a><br>"
 	out += "<hr>"
@@ -149,15 +149,15 @@
 
 	else if(href_list["equip_antagonist"])
 		var/datum/antagonist/antag = all_antag_types[href_list["equip_antagonist"]]
-		if(antag) antag.equip(src.current)
+		if(antag) antag.equip(current)
 
 	else if(href_list["unequip_antagonist"])
 		var/datum/antagonist/antag = all_antag_types[href_list["unequip_antagonist"]]
-		if(antag) antag.unequip(src.current)
+		if(antag) antag.unequip(current)
 
 	else if(href_list["move_antag_to_spawn"])
 		var/datum/antagonist/antag = all_antag_types[href_list["move_antag_to_spawn"]]
-		if(antag) antag.place_mob(src.current)
+		if(antag) antag.place_mob(current)
 
 	else if (href_list["role_edit"])
 		var/new_role = input("Select new role", "Assigned role", assigned_role) as null|anything in joblist
@@ -312,9 +312,9 @@
 
 	else if (href_list["obj_announce"])
 		var/obj_count = TRUE
-		current << "\blue Your current objectives:"
+		current << "<span class = 'notice'>Your current objectives:</span>"
 		for(var/datum/objective/objective in objectives)
-			current << "<B>Objective #[obj_count]</B>: [objective.explanation_text]"
+			current << "<b>Objective #[obj_count]</b>: [objective.explanation_text]"
 			obj_count++
 	edit_memory()
 

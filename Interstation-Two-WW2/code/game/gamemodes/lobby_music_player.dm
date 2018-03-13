@@ -7,7 +7,15 @@
     // format is 'title:probability_multiplier = ogg'
 	var/list/songs = list(
 		"Bots - Was Wollen Wir Trinken (Harcourt Edit):1" = 'sound/music/BotsWaswollenwirtrinkenWehrmachtHarcourt.ogg',
-		"Farewell of Slavianka:1" = 'sound/music/FarewellofSlavianka.ogg')
+		"ERIKA:1" = 'sound/music/ERIKA.ogg',
+		"Fallschirmjager Lied:1" = 'sound/music/Fallschirmjager_lied_German_paratrooper_song.ogg',
+		"Farewell of Slavianka:1" = 'sound/music/FarewellofSlavianka.ogg',
+		"Katyusha:1" = 'sound/music/katyusha.ogg',
+		"Smuglianka:1" = 'sound/music/smuglianka.ogg',
+		"SS Marschiert in Feindesland:1" = 'sound/music/SSmarschiertinFeindesland.ogg',
+		"Latvian SS Anthem:1" = 'sound/music/latvianss.ogg',
+		"r2.ogg:1" = 'sound/music/r2.ogg')
+
 
 /datum/lobby_music_player/New()
 	..()
@@ -25,7 +33,7 @@
 
 	for (var/title_mult in random_order_songs)
 		var/split_title_mult = splittext(title_mult, ":")
-		var/multiplier = (text2num(split_title_mult[2]) || TRUE)
+		var/multiplier = (text2num(split_title_mult[2]) || 1)
 		if (prob(default_prob * multiplier))
 			song_title = title_mult // yes, not title
 			break

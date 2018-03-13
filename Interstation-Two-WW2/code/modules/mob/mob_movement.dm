@@ -1,20 +1,20 @@
 /mob/var/velocity = FALSE
 /mob/var/velocity_lastdir = -1 // turning makes you lose TRUE or 2 velocity
-/mob/var/run_delay_maximum = 2.2 / 1.25
+/mob/var/run_delay_maximum = 1.75
 
 /mob/proc/get_run_delay()
 	switch (velocity)
 		if (0 to 3)
 			return run_delay_maximum
 		if (4 to 7)
-			return run_delay_maximum/1.08
+			return run_delay_maximum/1.05 // 5% faster
 		if (8 to 11)
-			return run_delay_maximum/1.16
+			return run_delay_maximum/1.10 // 10% faster
 		if (12 to INFINITY)
-			return run_delay_maximum/1.24
+			return run_delay_maximum/1.15 // 15% faster
 
-// walking
-/mob/var/walk_delay = 3.3 / 1.25
+/mob/proc/get_walk_delay()
+	return get_run_delay() * 1.33
 
 /mob/CanPass(atom/movable/mover, turf/target, height=0, air_group=0)
 
@@ -74,17 +74,17 @@
 				var/mob/living/carbon/C = usr
 				C.toggle_throw_mode()
 			else
-				usr << "\red This mob type cannot throw items."
+				usr << "<span class = 'red'>This mob type cannot throw items.</span>"
 			return
 		if(NORTHWEST)
 			if(iscarbon(usr))
 				var/mob/living/carbon/C = usr
 				if(!C.get_active_hand())
-					usr << "\red You have nothing to drop in your hand."
+					usr << "<span class = 'red'>You have nothing to drop in your hand.</span>"
 					return
 				drop_item()
 			else
-				usr << "\red This mob type cannot drop items."
+				usr << "<span class = 'red'>This mob type cannot drop items.</span>"
 			return
 
 //This gets called when you press the delete button.
@@ -92,7 +92,7 @@
 	set hidden = TRUE
 
 	if(!usr.pulling)
-		usr << "\blue You are not pulling anything."
+		usr << "<span class = 'notice'>You are not pulling anything.</span>"
 		return
 	usr.stop_pulling()
 
@@ -171,7 +171,7 @@
 							if (step(src, WEST))
 								step(src, SOUTH)
 	else
-		var/atom/A = src.loc
+		var/atom/A = loc
 
 		var/olddir = dir //we can't override this without sacrificing the rest of movable/New()
 		. = ..()
@@ -179,11 +179,11 @@
 			dir = olddir
 			set_dir(direct)
 
-		src.move_speed = world.time - src.l_move_time
-		src.l_move_time = world.time
-		src.m_flag = TRUE
-		if ((A != src.loc && A && A.z == src.z))
-			src.last_move = get_dir(A, src.loc)
+		move_speed = world.time - l_move_time
+		l_move_time = world.time
+		m_flag = TRUE
+		if ((A != loc && A && A.z == z))
+			last_move = get_dir(A, loc)
 	return
 
 /client/proc/Move_object(direct)
@@ -199,12 +199,30 @@
 
 /mob/living/carbon/human/var/next_stamina_message = -1
 /mob/var/next_snow_message = -1
+/mob/var/next_mud_message = -1
+
 /client/Move(n, direct)
+
 	if(!canmove)
 		return
 
 	if(!mob)
 		return // Moved here to avoid nullrefs below
+
+	// makes chucklefucks who manage to cross the wall gib
+	if (map.check_prishtina_block(mob, mob.loc))
+		mob.gib()
+		return
+
+	for (var/obj/structure/noose/N in get_turf(mob))
+		if (N.hanging == mob)
+			return
+
+	if(mob.lying && istype(n, /turf))
+		var/turf/T = n
+		if(T.Adjacent(mob))
+			mob.scramble(T)
+			return
 
 	var/mob_is_observer = istype(mob, /mob/observer)
 	var/mob_is_living = istype(mob, /mob/living)
@@ -303,23 +321,23 @@
 	if(!mob.lastarea)
 		mob.lastarea = get_area(mob_loc)
 
-	if(isobj(mob_loc) || ismob(mob_loc))//Inside an object, tell it we moved
+	if(isobj(mob_loc) || ismob(mob_loc)) //Inside an object, tell it we moved
 		var/atom/O = mob_loc
 		if (!istype(O, /obj/tank))
 			return O.relaymove(mob, direct)
 
-	if(isturf(mob_loc))
-		if(mob.restrained())//Why being pulled while cuffed prevents you from moving
+	else if(isturf(mob_loc))
+		if(mob.restrained()) //Why being pulled while cuffed prevents you from moving
 			for(var/mob/M in range(mob, 1))
 				if(M.pulling == mob)
-					if(!M.restrained() && M.stat == FALSE && M.canmove && mob.Adjacent(M))
-						src << "\blue You're restrained! You can't move!"
+					if(!M.restrained() && M.stat == 0 && M.canmove && mob.Adjacent(M))
+						src << "<span class = 'notice'>You're restrained! You can't move!</span>"
 						return FALSE
 					else
 						M.stop_pulling()
 
 		if(mob.pinned.len)
-			src << "\blue You're pinned to a wall by [mob.pinned[1]]!"
+			src << "<span class = 'notice'>You're pinned to a wall by [mob.pinned[1]]!</span>"
 			return FALSE
 
 		move_delay = world.time + mob.movement_delay()//set move delay
@@ -334,6 +352,13 @@
 		var/standing_on_snow = FALSE
 
 		if (F && F_is_valid_floor)
+
+			var/area/F_area = get_area(F)
+			if (F_area.weather == WEATHER_RAIN && !istype(F, /turf/floor/plating/cobblestone) && !istype(F, /turf/floor/plating/road))
+				F.muddy = TRUE
+			else
+				F.muddy = FALSE
+
 			var/obj/snow/S = F.has_snow()
 			var/snow_message = ""
 			var/snow_span = "notice"
@@ -367,9 +392,12 @@
 				if (snow_message && world.time >= mob.next_snow_message)
 					mob << "<span class = '[snow_span]'>[snow_message]</span>"
 					mob.next_snow_message = world.time+100
+
 			else if (F.muddy)
-				standing_on_snow = rand(2,4)
-				mob << "<span class = 'warning'>The mud slows you down.</span>"
+				standing_on_snow = rand(2,3)
+				if (world.time >= mob.next_mud_message)
+					mob << "<span class = 'warning'>The mud slows you down.</span>"
+					mob.next_mud_message = world.time+100
 
 		if (mob.velocity_lastdir != -1)
 			if (direct != mob.velocity_lastdir)
@@ -381,20 +409,31 @@
 				mob.velocity_lastdir = direct
 				if(mob.drowsyness > FALSE)
 					move_delay += 6
-				move_delay += mob.get_run_delay() + standing_on_snow
+				move_delay += (mob.get_run_delay()/mob.movement_speed_multiplier) + standing_on_snow
 				if (mob_is_human)
 					var/mob/living/carbon/human/H = mob
-					H.nutrition -= 0.03
+					H.nutrition -= 0.02
+					H.water -= 0.02
 					--H.stamina
+					if (H.bodytemperature < H.species.body_temperature)
+						H.bodytemperature += 0.66
 			if("walk")
-				move_delay += mob.walk_delay + standing_on_snow
+				move_delay += (mob.get_walk_delay()/mob.movement_speed_multiplier) + standing_on_snow
 				if (mob_is_human)
 					var/mob/living/carbon/human/H = mob
-					H.nutrition -= 0.003
+					H.nutrition -= 0.002
+					H.water -= 0.002
+
 
 		if (mob.pulling)
 			if (istype(mob.pulling, /mob))
 				move_delay += 1.0
+				if (istype(mob.pulling, /mob/living/carbon/human))
+					var/mob/living/carbon/human/H = mob.pulling
+					for (var/obj/structure/noose/N in get_turf(H))
+						if (N.hanging == H)
+							mob.stop_pulling()
+
 			else if (istype(mob.pulling, /obj/structure))
 				move_delay += 0.75
 
@@ -414,7 +453,7 @@
 					H.m_intent = "walk" // in case we don't have a m_intent HUD, somehow
 
 		if (!mob_is_observer && F_is_valid_floor)
-			move_delay += F.move_delay
+			move_delay += F.get_move_delay()
 
 		var/tickcomp = FALSE //moved this out here so we can use it for vehicles
 		if(config.Tickcomp)
@@ -427,8 +466,9 @@
 			//specific vehicle move delays are set in code\modules\vehicles\vehicle.dm
 			move_delay = world.time + tickcomp
 			//drunk driving
-			if(mob.confused)
+			if(mob.confused && prob(40))
 				direct = pick(cardinal)
+
 			return mob.buckled.relaymove(mob,direct)
 
 		if(mob.machine && istype(mob.machine, /obj/machinery))
@@ -446,23 +486,29 @@
 					if((!l_hand || l_hand.is_stump()) && (!r_hand || r_hand.is_stump()))
 						return // No hands to drive your chair? Tough luck!
 				//drunk wheelchair driving
-				if(mob.confused)
+				if(mob.confused && prob(40))
 					direct = pick(cardinal)
 				move_delay += 2
 				return mob.buckled.relaymove(mob,direct)
 
 		//We are now going to move
 		moving = TRUE
-		//Something with pulling things
+
+		//Something with grabbing things
 		if(locate(/obj/item/weapon/grab, mob))
-			move_delay = max(move_delay, world.time + 7)
+		//	move_delay = max(move_delay, world.time + 7)
+			move_delay += 1.0
 			var/list/L = mob.ret_grab()
 			if(istype(L, /list))
 				if(L.len == 2)
 					L -= mob
 					var/mob/M = L[1]
 					if(M)
-						if ((get_dist(mob, M) <= TRUE || M.loc == mob.loc))
+						for (var/obj/structure/noose/N in get_turf(M))
+							if (N.hanging == M)
+								goto skipgrab
+
+						if ((get_dist(mob, M) <= 1 || M.loc == mob.loc))
 							var/turf/T = mob.loc
 							. = ..()
 							if (isturf(M.loc))
@@ -486,10 +532,28 @@
 							M.animate_movement = 2
 							return
 
-		else if(mob.confused)
+		else if(mob.confused && prob(40))
 			step(mob, pick(cardinal))
 		else
 			. = mob.SelfMove(n, direct)
+
+		skipgrab
+
+		//Step on nerds in our way
+		if (mob_is_human)
+			if (H.a_intent != I_HELP)
+				for (var/mob/living/L in t1)
+					if (L.lying && L != H) // you could step on yourself, this fixes it - Kachnov
+						H.visible_message("<span class = 'danger'>[H] steps on [L]!</span>")
+						playsound(t1, 'sound/effects/gore/fallsmash.ogg', 100, TRUE)
+						L.adjustBruteLoss(rand(8,12))
+						if (ishuman(L))
+							L.emote("scream")
+						sleep(5)
+			else
+				for (var/mob/living/L in t1)
+					if (L.lying && L != H)
+						H.visible_message("<span class = 'warning'>[H] steps over [L].</span>")
 
 		if (!mob_is_observer)
 			for (var/obj/structure/multiz/ladder/ww2/manhole/M in mob.loc)
@@ -521,8 +585,8 @@
 
 	return
 
-/mob/proc/lastMovedRecently()
-	if (abs(last_movement - world.time) < 2)
+/mob/proc/lastMovedRecently(threshold)
+	if (abs(last_movement - world.time) <= (threshold ? threshold : get_walk_delay()))
 		return TRUE
 	return FALSE
 
@@ -622,8 +686,8 @@
 	//Check to see if we slipped
 	if(prob(slip_chance(5)) && !buckled)
 		src << "<span class='warning'>You slipped!</span>"
-		src.inertia_dir = src.last_move
-		step(src, src.inertia_dir)
+		inertia_dir = last_move
+		step(src, inertia_dir)
 		return FALSE
 	//If not then we can reset inertia and move
 	inertia_dir = FALSE

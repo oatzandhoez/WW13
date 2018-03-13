@@ -3,7 +3,7 @@
 	range_step = 2
 
 	base_spread = FALSE //causes it to be treated as a shrapnel explosion instead of cone
-	spread_step = 20
+	spread_step = 12
 
 	silenced = TRUE //embedding messages are still produced so it's kind of weird when enabled.
 	no_attack_log = TRUE
@@ -37,36 +37,35 @@
 		if(!T) return
 
 		if(explosion_size)
-			on_explosion(T)
+			spawn (2)
+				on_explosion(T)
 
 		var/list/target_turfs = getcircle(T, spread_range)
 		var/fragments_per_projectile = round(num_fragments/target_turfs.len)
 
 		for(var/turf/TT in target_turfs)
-			sleep(0)
-			var/obj/item/projectile/bullet/pellet/fragment/P = new fragment_type(TT)
-
+			var/obj/item/projectile/bullet/pellet/fragment/P = new fragment_type(T)
 			P.damage = fragment_damage
 			P.pellets = fragments_per_projectile
 			P.range_step = damage_step
-			P.shot_from = src.name
-
+			P.shot_from = name
 			P.launch_fragment(TT)
 
 			//Make sure to hit any mobs in the source turf
-			for(var/mob/living/M in TT)
+			for(var/mob/living/L in TT)
 				//lying on a frag grenade while the grenade is on the ground causes you to absorb most of the shrapnel.
 				//you will most likely be dead, but others nearby will be spared the fragments that hit you instead.
-				if(M.lying && isturf(src.loc))
-					P.attack_mob(M, FALSE, FALSE)
+				if(L.lying)
+					P.attack_mob(L, FALSE, FALSE)
 				else
-					P.attack_mob(M, FALSE, 100) //otherwise, allow a decent amount of fragments to pass
+					P.attack_mob(L, FALSE, 100) //otherwise, allow a decent amount of fragments to pass
 
-		qdel(src)
+		spawn (5)
+			qdel(src)
 
 /obj/item/weapon/grenade/explosive/proc/on_explosion(var/turf/T)
 	if(explosion_size)
-		explosion(T, TRUE, -1, 2, round(explosion_size/2), FALSE)
+		explosion(T, 1, -1, 2, round(explosion_size/2), FALSE)
 
 /obj/item/weapon/grenade/explosive/frag
 	name = "fragmentation grenade"

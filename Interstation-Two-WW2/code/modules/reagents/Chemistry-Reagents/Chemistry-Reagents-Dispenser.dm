@@ -89,7 +89,7 @@
 	color = "#404030"
 	touch_met = 5
 	var/nutriment_factor = FALSE
-	var/strength = 10 // This is, essentially, units between stages - the lower, the stronger. Less fine tuning, more clarity.
+	var/strength = 50 // This is, essentially, units between stages - the lower, the stronger. Less fine tuning, more clarity.
 	var/toxicity = TRUE
 
 	var/druggy = FALSE
@@ -110,7 +110,7 @@
 /datum/reagent/ethanol/affect_ingest(var/mob/living/carbon/M, var/alien, var/removed)
 	if(issmall(M)) removed *= 2
 	M.nutrition += nutriment_factor * removed
-	var/strength_mod = TRUE
+	var/strength_mod = 1.0
 
 	if (M.water < FALSE)
 		M.water += rand(20,30)

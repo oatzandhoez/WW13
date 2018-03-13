@@ -19,13 +19,17 @@
 
 	gun_type = GUN_TYPE_HEAVY
 
+/obj/item/weapon/gun/projectile/heavysniper/ptrd/german
+	name = "14.5mm PaB 783"
+
 /obj/item/weapon/gun/projectile/heavysniper/ptrd/update_icon()
 	if(bolt_open)
 		icon_state = "ptrd"
 	else
 		icon_state = "ptrd"
 
-/obj/item/weapon/gun/projectile/mk12
+
+/obj/item/weapon/gun/projectile/heavysniper/mk12
 	name = "\improper MK12"
 	desc = "Heavy scoped rifle."
 	icon_state = "mk12_loaded"
@@ -47,7 +51,7 @@
 		list(name="single shot",	burst=1, move_delay=4, fire_delay=10, dispersion = list(0))
 		)
 
-/obj/item/weapon/gun/projectile/mk12/update_icon()
+/obj/item/weapon/gun/projectile/heavysniper/mk12/update_icon()
 	if(ammo_magazine)
 		icon_state = "mk12_loaded"
 		if(wielded)

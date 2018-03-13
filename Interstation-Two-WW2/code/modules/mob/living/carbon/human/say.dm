@@ -1,5 +1,9 @@
 /mob/living/carbon/human/say(var/message)
 
+	// workaround for language bug that happens when you're spawned in
+	if (!languages.len)
+		languages[1] = default_language
+
 	if (!message)
 		return
 
@@ -17,12 +21,35 @@
 		else if (dd_hassuffix(message, "!!"))
 			message = "<span class = 'font-size: 1.2em;'><b>[message]</b></span>"
 
-	..(message, alt_name = alt_name, alt_message = message_without_html)
+	var/normal_message = message
+	for (var/rp in radio_prefixes)
+		if (dd_hasprefix(normal_message, rp))
+			normal_message = copytext(normal_message, lentext(rp)+1, lentext(normal_message)+1)
 
-	post_say(message_without_html)
+	var/normal_message_without_html = message_without_html
+	for (var/rp in radio_prefixes)
+		if (dd_hasprefix(normal_message_without_html, rp))
+			normal_message_without_html = copytext(normal_message_without_html, lentext(rp)+1, lentext(normal_message_without_html)+1)
+
+
+	..(normal_message, alt_name = alt_name, alt_message = normal_message_without_html)
 
 	for (var/mob/living/simple_animal/complex_animal/canine/dog/D in view(world.view, src))
 		D.hear_command(message_without_html, src)
+
+	message_without_html = handle_speech_problems(message_without_html)[1]
+
+	// radio talk
+	if ((!dd_hasprefix(message_without_html, ":t") && !dd_hasprefix(message_without_html, ":T")) || !istype(loc, /obj/tank))
+		post_say(message_without_html)
+
+	// tank talk
+	else if ((dd_hasprefix(message_without_html, ":t") || dd_hasprefix(message_without_html, ":T")) && istype(loc, /obj/tank))
+		var/obj/tank/my_tank = loc
+		if (my_tank.radio)
+			for (var/mob/living/carbon/human/H in world)
+				if (H.loc == loc)
+					H.on_hear_radio(my_tank.radio, "<span class = 'srvradio'><big><b>TANKCHAT</b>: [real_name] says, \"<span class = 'notice'>[capitalize(trim_left(copytext(message_without_html, 3, length(message_without_html)+1)))]</span>\"</big></span>")
 
 /mob/living/carbon/human/proc/forcesay(list/append)
 	if(stat == CONSCIOUS)
@@ -75,7 +102,7 @@
 
 	//This is already covered by mob/say_understands()
 	//if (istype(other, /mob/living/simple_animal))
-	//	if((other.universal_speak && !speaking) || src.universal_speak || src.universal_understand)
+	//	if((other.universal_speak && !speaking) || universal_speak || universal_understand)
 	//		return TRUE
 	//	return FALSE
 
@@ -130,6 +157,9 @@
 		else if(ending == "?")
 			verb="asks"
 
+	if (speaking != languages[1])
+		verb = "[verb] in <span class = 'info'>[speaking.name]</span>"
+
 	return verb
 
 /mob/living/carbon/human/handle_speech_problems(var/message, var/verb)
@@ -159,7 +189,7 @@
 /mob/living/carbon/human/handle_message_mode(message_mode, message, verb, speaking, used_radios, alt_name)
 	switch(message_mode)
 		if("intercom")
-			if(!src.restrained())
+			if(!restrained())
 				for(var/obj/item/device/radio/intercom/I in view(1))
 					I.talk_into(src, message, null, verb, speaking)
 					I.add_fingerprint(src)

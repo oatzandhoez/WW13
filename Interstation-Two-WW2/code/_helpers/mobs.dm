@@ -93,7 +93,7 @@ proc/random_german_name(gender, species = "Human")
 
 proc/russify(var/list/name_list, gender)
 	var/list/l = name_list.Copy()
-	for (var/v in TRUE to l.len)
+	for (var/v in 1 to l.len)
 		var/name = l[v]
 		if (gender == FEMALE)
 			name = replacetext(name, "ovich", "ovna")
@@ -154,7 +154,7 @@ proc/skintone2racedescription(tone)
 
 proc/age2agedescription(age)
 	switch(age)
-		if(0 to TRUE)			return "infant"
+		if(0 to 1)			return "infant"
 		if(1 to 3)			return "toddler"
 		if(3 to 13)			return "child"
 		if(13 to 19)		return "teenager"
@@ -209,7 +209,7 @@ proc/RoundHealth(health)
 			return "health10"
 		if(1 to 5)
 			return "health1"
-		if(-99 to FALSE)
+		if(-99 to 0)
 			return "health0"
 		else
 			return "health-100"
@@ -447,11 +447,9 @@ Proc for attack log creation, because really why not
 			partisans += H
 	return partisans
 
-// doesn't it suck to get a list of alive people you can observe,
-// only to find out that 90% of them are half dead and not where the action
-// is?
 
 /proc/getfitmobs(var/faction)
+
 	var/list/mobs = null
 	var/list/newmobs = list()
 
@@ -459,23 +457,39 @@ Proc for attack log creation, because really why not
 		if (null)
 			mobs = mob_list // we want actual mobs, not name = mob
 		if (GERMAN)
-			mobs = getgermanmobs(1)
+			mobs = getgermanmobs(0)
 		if (SOVIET, "SOVIET")
-			mobs = getsovietmobs(1)
+			mobs = getsovietmobs(0)
 		if ("PARATROOPERS")
-			mobs = getgermanparatroopers(1)
+			mobs = getgermanparatroopers(0)
 		if ("SS")
-			mobs = getSS(1)
+			mobs = getSS(0)
 		if (PARTISAN)
-			mobs = getpartisans(1)
+			mobs = getpartisans(0)
 		if (CIVILIAN)
-			mobs = getcivilians(1)
+			mobs = getcivilians(0)
+		if (PILLARMEN, "UNDEAD")
+			mobs = list()
+			for (var/mob/living/carbon/human/H in human_mob_list)
+				if (istype(H, /mob/living/carbon/human/vampire) || istype(H, /mob/living/carbon/human/pillarman))
+					mobs += H
 
-	for (var/mob/m in mobs)
-		if (m.stat == UNCONSCIOUS || m.stat == DEAD)
-			continue
-
-		newmobs[m.real_name] = m
+	// sort mobs by stat: alive, unconscious, then dead
+	for (var/v in 0 to 2)
+		for (var/mob/m in mobs)
+			if (m.stat == v)
+				if (!m.loc)
+					continue
+				if (m.stat == UNCONSCIOUS)
+					var/mob/living/L = m
+					if (istype(L) && L.getTotalLoss() > 100)
+						newmobs["[m.real_name] (DYING)"] = m
+					else
+						newmobs["[m.real_name] (UNCONSCIOUS)"] = m
+				else if (m.stat == DEAD)
+					newmobs["[m.real_name] (DEAD)"] = m
+				else
+					newmobs[m.real_name] = m
 
 	return newmobs
 
