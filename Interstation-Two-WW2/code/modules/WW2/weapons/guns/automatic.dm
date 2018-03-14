@@ -4,8 +4,8 @@
 	icon_state = "dp"
 	item_state = "dp"
 	load_method = MAGAZINE
-	w_class = 4
-	accuracy = DEFAULT_MG_ACCURACY-1
+	w_class = 5
+	accuracy = DEFAULT_MG_ACCURACY
 	scoped_accuracy = DEFAULT_MG_SCOPED_ACCURACY
 	caliber = "a762x39"
 	magazine_type = /obj/item/ammo_magazine/a762/dp
@@ -43,7 +43,7 @@
 	desc = "German light machinegun chambered in 7.92x57mm Mauser. An utterly devastating support weapon."
 	icon_state = "l6closed100"
 	item_state = "l6closedmag"
-	w_class = 4
+	w_class = 5
 	max_shells = 50
 	caliber = "a792x57"
 	slot_flags = SLOT_BACK
@@ -56,7 +56,7 @@
 	fire_sound = 'sound/weapons/guns/fire/mg34_firing.ogg'
 	requires_two_hands = FALSE
 	wielded_icon = "assault-wielded"
-	accuracy = DEFAULT_MG_ACCURACY-3 //Prevents shitters from going CQC as they will begin to "miss" more unless they go into scope sight. Shindes- FUCK MGS ACCURACY NERF - ShinDes
+	accuracy = DEFAULT_MG_ACCURACY-2 //Prevents shitters from going CQC as they will begin to "miss" more unless they go into scope sight. Shindes- FUCK MGS ACCURACY NERF - ShinDes
 	scoped_accuracy = DEFAULT_MG_SCOPED_ACCURACY
 
 	firemodes = list(
